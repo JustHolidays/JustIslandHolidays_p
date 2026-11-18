@@ -11,6 +11,13 @@ return [
     'redirect_hosts' => array_filter(explode(',', env('SITE_REDIRECT_HOSTS',
         'justislandholidays.uk,www.justislandholidays.uk,justislandholidays.co.uk,www.justislandholidays.co.uk'))),
 
+    /*
+    | Behind the host's CDN or load balancer, its addresses (comma-separated, or *) so https and
+    | the visitor's address are read correctly. Empty by default: trusting every proxy would let
+    | anyone fake their address and slip past the enquiry rate limit.
+    */
+    'trusted_proxies' => env('TRUSTED_PROXIES', ''),
+
     // Shown on the contact page and in the privacy notice. Set before launch.
     'contact_email' => env('SITE_CONTACT_EMAIL'),
 

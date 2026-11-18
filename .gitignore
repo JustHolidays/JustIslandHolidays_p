@@ -1,3 +1,7 @@
 Thumbs.db
 .DS_Store
 .claude/settings.local.json
+
+# Private notes with passwords: never commit
+Just Island Holidays.txt
+*.private.txt

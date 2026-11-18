@@ -33,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (filled($proxies = config('site.trusted_proxies'))) {
+            \Illuminate\Http\Middleware\TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
+
         // Last sign-in for the Staff and Owners lists. Fires after the two-factor challenge.
         Event::listen(Login::class, function (Login $event) {
             if ($event->user instanceof User) {

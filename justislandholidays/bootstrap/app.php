@@ -19,12 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(\App\Http\Middleware\CanonicalHost::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
-        // Behind the host's CDN or load balancer, set TRUSTED_PROXIES to its addresses (comma-separated)
-        // so https and the visitor's address are read correctly. Off by default: trusting every proxy
-        // would let anyone fake their address and slip past the enquiry rate limit.
-        if (filled(env('TRUSTED_PROXIES'))) {
-            $middleware->trustProxies(at: env('TRUSTED_PROXIES') === '*' ? '*' : explode(',', env('TRUSTED_PROXIES')));
-        }
+        // Trusted proxies are set in AppServiceProvider from config('site.trusted_proxies'),
+        // so they still work when the config is cached on the server.
 
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAccountIsActive::class,
