@@ -7,7 +7,7 @@ The full specification is in `docs/balearic-spec.md`. Read it before building an
 ## Business facts
 - Brand and legal name: Just Island Holidays. Not VAT registered, so subscription prices carry no VAT.
 - Registered office: 86 Manston Road, Ramsgate, CT11 0RJ, United Kingdom (used in the privacy notice and terms).
-- Staging: https://justislandholidays-uk.stackstaging.com/. Live domain is justislandholidays.uk or justislandholidays.co.uk (both owned or planned, main address still to decide). Keep the site URL in config so the switch is a one-line change, and make one domain redirect to the other.
+- Main domain (decided 18 Nov 2026): https://justislandholidays.co.uk. justislandholidays.uk and both www. hosts redirect to it (301) through `SITE_CANONICAL_HOST=justislandholidays.co.uk` in the server's `.env`. The hosting package moved from the staging address https://justislandholidays-uk.stackstaging.com/ to this domain, so until launch the server sets `SITE_BLOCK_INDEXING=true` to keep search engines out.
 
 ## Stack (decided)
 - PHP 8.3 or later, Laravel 12 (only Laravel 12 is available now). Upgrade to Laravel 13 is roadmap item 1b, soon after launch and before Laravel 12 security fixes end on 24 Feb 2027. Do not use anything that blocks that upgrade.

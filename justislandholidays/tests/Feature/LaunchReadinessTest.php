@@ -48,6 +48,44 @@ class LaunchReadinessTest extends TestCase
         $this->get('https://justislandholidays.uk/en')->assertOk();
     }
 
+    public function test_pre_launch_block_keeps_search_engines_out_everywhere(): void
+    {
+        config(['site.block_indexing' => true]);
+
+        $this->get('/en')->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+        $this->get('/account/login')->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+        $this->get('/robots.txt')->assertOk()->assertSeeText("Disallow: /\n", false)
+            ->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
+    }
+
+    public function test_after_launch_only_private_areas_are_blocked(): void
+    {
+        config(['site.block_indexing' => false]);
+
+        $this->get('/en')->assertHeaderMissing('X-Robots-Tag');
+        $robots = $this->get('/robots.txt')->assertOk()->getContent();
+        $this->assertStringNotContainsString("Disallow: /\n", $robots);
+        $this->assertStringContainsString('Disallow: /admin', $robots);
+        $this->assertStringContainsString('Disallow: /go/', $robots);
+    }
+
+    public function test_launch_gate_fails_while_search_engines_are_blocked(): void
+    {
+        config(['site.block_indexing' => true]);
+
+        $failing = collect((new \App\Console\Commands\LaunchCheck())->automaticChecks())->reject(fn ($c) => $c[1])->pluck(0);
+
+        $this->assertContains('Search engines allowed (pre-launch block switched off)', $failing);
+    }
+
+    public function test_dot_uk_redirects_to_dot_co_uk(): void
+    {
+        config(['site.canonical_host' => 'justislandholidays.co.uk']);
+
+        $this->get('https://justislandholidays.uk/')->assertStatus(301)->assertRedirect('https://justislandholidays.co.uk/');
+        $this->get('https://www.justislandholidays.uk/en/p/privacy')->assertRedirect('https://justislandholidays.co.uk/en/p/privacy');
+    }
+
     // --- Legal pages ----------------------------------------------------------------------
 
     public function test_legal_pages_are_seeded_as_published_drafts(): void

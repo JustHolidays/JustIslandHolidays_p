@@ -3,9 +3,9 @@
 return [
 
     /*
-    | The main address, and the other hosts that redirect to it (301). Choosing between
-    | justislandholidays.uk and .co.uk is a one-line change to SITE_CANONICAL_HOST.
-    | Leave empty locally and on staging.
+    | The main address, and the other hosts that redirect to it (301). Decided:
+    | justislandholidays.co.uk, so the server sets SITE_CANONICAL_HOST=justislandholidays.co.uk
+    | and justislandholidays.uk and the www. hosts redirect to it. Leave empty locally.
     */
     'canonical_host' => env('SITE_CANONICAL_HOST', ''),
     'redirect_hosts' => array_filter(explode(',', env('SITE_REDIRECT_HOSTS',
@@ -17,6 +17,13 @@ return [
     | anyone fake their address and slip past the enquiry rate limit.
     */
     'trusted_proxies' => env('TRUSTED_PROXIES', ''),
+
+    /*
+    | Keep search engines out (every response says noindex, robots.txt disallows all).
+    | On until launch, because the site is already reachable on its real domain.
+    | launch:check fails while it is on.
+    */
+    'block_indexing' => (bool) env('SITE_BLOCK_INDEXING', false),
 
     // Shown on the contact page and in the privacy notice. Set before launch.
     'contact_email' => env('SITE_CONTACT_EMAIL'),

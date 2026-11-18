@@ -23,6 +23,11 @@ class SecurityHeaders
         $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
         $headers->set('Cross-Origin-Opener-Policy', 'same-origin');
 
+        // Before launch: nothing on the site may be indexed.
+        if (config('site.block_indexing')) {
+            $headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
         if ($request->isSecure()) {
             $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }

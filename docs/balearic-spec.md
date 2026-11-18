@@ -1243,7 +1243,7 @@ The biggest risk is not technical: a directory with few listings gets no visitor
 
 **Open questions to decide before build**
 
-- [ ] Domain: the staging site is justislandholidays-uk.stackstaging.com and the live domain will be justislandholidays.uk, switched over once the site is built. The owner also holds justislandholidays.co.uk and has for several years. Still to decide: which of the two is the main address, with the other redirecting to it. Trademark: the owner has used the Just Holidays name for 20 years without trademark issues; a quick UK IPO search for Just Island Holidays itself is still worth doing
+- [x] Domain: decided, the main address is justislandholidays.co.uk (held by the owner for several years); justislandholidays.uk redirects to it. The hosting package has moved there from the staging address justislandholidays-uk.stackstaging.com, and search engines are kept out until launch. Trademark, still open: the owner has used the Just Holidays name for 20 years without trademark issues; a quick UK IPO search for Just Island Holidays itself is still worth doing
 - [ ] Legal entity: Just Island Holidays, not VAT registered. Registered office: 86 Manston Road, Ramsgate, CT11 0RJ, United Kingdom. Still to confirm: whether it trades as a company or a sole trader, which sets the controller identity in the privacy notice.
 - [x] VAT approach for subscriptions: decided, no VAT is charged because Just Island Holidays is not VAT registered.
 - [ ] Final plan names, limits and prices, after speaking to a sample of owners. To be decided when the website is complete; the build uses placeholder plans until then.

@@ -94,7 +94,8 @@ class LaunchCheck extends Command
             // Live settings
             ['Running in production mode with debug off', app()->isProduction() && ! config('app.debug'), 'APP_ENV='.app()->environment().', APP_DEBUG='.(config('app.debug') ? 'true' : 'false')],
             ['Site address uses https', str_starts_with($appUrl, 'https://'), $appUrl],
-            ['Main domain chosen (one redirects to the other)', $canonical !== '', $canonical ?: 'Set SITE_CANONICAL_HOST to justislandholidays.uk or .co.uk'],
+            ['Main domain set (the other redirects to it)', $canonical === 'justislandholidays.co.uk', $canonical ?: 'Set SITE_CANONICAL_HOST=justislandholidays.co.uk'],
+            ['Search engines allowed (pre-launch block switched off)', ! config('site.block_indexing'), config('site.block_indexing') ? 'Set SITE_BLOCK_INDEXING=false at launch' : 'Allowed'],
             ['Email is sent through a real provider', ! in_array(config('mail.default'), ['log', 'array'], true), 'MAIL_MAILER='.config('mail.default')],
             ['Database is MySQL', config('database.default') === 'mysql', 'DB_CONNECTION='.config('database.default')],
             ['PayPal is in live mode with a webhook', $paypalLive, 'PAYPAL_MODE='.config('services.paypal.mode')],

@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Route;
 | no session, no cookies, no CSRF token.
 */
 
+// robots.txt: everything blocked before launch (SITE_BLOCK_INDEXING), otherwise only private areas.
+Route::get('/robots.txt', \App\Http\Controllers\Public\RobotsController::class)->name('robots');
+
 // Click tracking: the redirect sets no cookies.
 Route::get('/go/{ref}', GoController::class)->where('ref', '[a-z2-9]{8}')->name('go');
 
