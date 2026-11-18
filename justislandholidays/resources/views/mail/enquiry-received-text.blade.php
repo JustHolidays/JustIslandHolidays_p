@@ -1,0 +1,19 @@
+New enquiry for {{ $enquiry->listing->title('en') }}
+
+From: {{ $enquiry->guest_name }} ({{ $enquiry->guest_email }})
+@if ($enquiry->guest_phone)
+Phone: {{ $enquiry->guest_phone }}
+@endif
+@if ($enquiry->check_in || $enquiry->check_out)
+Dates: {{ $enquiry->check_in?->format('j M Y') ?? '?' }} to {{ $enquiry->check_out?->format('j M Y') ?? '?' }}
+@endif
+@if ($enquiry->adults !== null || $enquiry->children !== null)
+Guests: {{ $enquiry->adults ?? 0 }} adults, {{ $enquiry->children ?? 0 }} children
+@endif
+
+{{ $enquiry->message }}
+
+Reply to this email to answer {{ $enquiry->guest_name }} directly.
+The guest agreed to our privacy notice when sending this. Please use their details only to reply about this booking.
+
+Just Island Holidays

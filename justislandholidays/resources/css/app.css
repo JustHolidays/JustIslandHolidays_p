@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+
+@source '../../storage/framework/views/*.php';
+@source "../**/*.blade.php";
+@source "../**/*.js";
+@source "../**/*.vue";
+
+@theme {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji';
+}
+
+/*
+ | Accessibility basics (WCAG 2.2 AA)
+ */
+
+/* A strong, consistent focus ring for keyboard users, visible on light and dark backgrounds. */
+:focus-visible {
+    outline: 3px solid #1d4ed8;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px #ffffff;
+    border-radius: 2px;
+}
+
+/* Links inside text are underlined so they do not rely on colour alone. */
+.prose a,
+main p a {
+    text-decoration-line: underline;
+    text-underline-offset: 2px;
+}
+
+/* Respect "reduce motion". */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/*
+ | Text written in Markdown (content pages, island and resort introductions).
+ | Tailwind's reset removes heading sizes and list bullets, so they are put back here.
+ */
+.prose { line-height: 1.7; max-width: 70ch; }
+.prose > * + * { margin-top: 1em; }
+.prose h2 { font-size: 1.5rem; font-weight: 600; margin-top: 1.75em; line-height: 1.3; }
+.prose h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5em; line-height: 1.3; }
+.prose h4 { font-weight: 600; margin-top: 1.25em; }
+.prose ul { list-style: disc; padding-left: 1.5em; }
+.prose ol { list-style: decimal; padding-left: 1.5em; }
+.prose li + li { margin-top: 0.35em; }
+.prose strong { font-weight: 600; }
+.prose blockquote { border-left: 4px solid #94a3b8; padding: 0.5em 1em; background: #f8fafc; }
+.prose table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+.prose th, .prose td { border: 1px solid #cbd5e1; padding: 0.5em 0.75em; text-align: left; vertical-align: top; }
+.prose th { background: #f1f5f9; font-weight: 600; }
+.prose code { font-family: ui-monospace, monospace; font-size: 0.9em; }
+.max-w-none.prose { max-width: none; }

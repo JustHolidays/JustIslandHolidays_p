@@ -1,0 +1,149 @@
+<?php
+
+use App\Http\Controllers\Admin\AffiliateController;
+use App\Http\Controllers\Admin\AppearanceController;
+use App\Http\Controllers\Admin\AuditController;
+use App\Http\Controllers\Admin\ClickController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DeeplinkController;
+use App\Http\Controllers\Admin\EnquiryController;
+use App\Http\Controllers\Admin\ImportController;
+use App\Http\Controllers\Admin\IslandController;
+use App\Http\Controllers\Admin\IslandSelectorController;
+use App\Http\Controllers\Admin\LicenceController;
+use App\Http\Controllers\Admin\ListingController;
+use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\RecommendationController;
+use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\UserController;
+use Illuminate\Support\Facades\Route;
+
+/*
+| Admin area at /admin. Every route: signed in, email verified, island admin or super admin,
+| two-factor set up. Every list goes through AdminScope (App\Admin\AdminContext); a record on
+| another island opened by URL is refused with 403. Super admin pages are behind gates.
+*/
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', DashboardController::class)->name('dashboard');
+    Route::post('/island', IslandSelectorController::class)->name('island');
+
+    // Listings and review
+    Route::get('/listings', [ListingController::class, 'index'])->name('listings.index');
+    Route::post('/listings/bulk', [ListingController::class, 'bulk'])->name('listings.bulk');
+    Route::get('/listings/import', [ImportController::class, 'create'])->name('import.create');
+    Route::post('/listings/import/fetch', [ImportController::class, 'fetch'])->middleware('throttle:20,1')->name('import.fetch');
+    Route::post('/listings/import', [ImportController::class, 'store'])->name('import.store');
+    Route::get('/listings/{listing}', [ListingController::class, 'show'])->middleware('can:view,listing')->name('listings.show');
+    Route::put('/listings/{listing}', [ListingController::class, 'update'])->name('listings.update');
+    Route::post('/listings/{listing}/approve', [ListingController::class, 'approve'])->name('listings.approve');
+    Route::post('/listings/{listing}/reject', [ListingController::class, 'reject'])->name('listings.reject');
+    Route::post('/listings/{listing}/recommend-rejection', [ListingController::class, 'recommendRejection'])->name('listings.recommend');
+    Route::post('/listings/{listing}/pause', [ListingController::class, 'pause'])->name('listings.pause');
+    Route::post('/listings/{listing}/archive', [ListingController::class, 'archive'])->name('listings.archive');
+    Route::get('/listings/{listing}/test-link', [ListingController::class, 'testLink'])->name('listings.test-link');
+    Route::post('/listings/{listing}/check-link', [ListingController::class, 'checkLink'])->middleware('throttle:30,1')->name('listings.check-link');
+    Route::post('/recommendations/{recommendation}/decide', [RecommendationController::class, 'decide'])->middleware('can:decide-recommendations')->name('recommendations.decide');
+
+    // Licence checks
+    Route::get('/licences', [LicenceController::class, 'index'])->name('licences.index');
+    Route::post('/licences/register', [LicenceController::class, 'registerUrl'])->name('licences.register');
+    Route::post('/licences/{listing}/verify', [LicenceController::class, 'verify'])->name('licences.verify');
+    Route::post('/licences/{listing}/reject', [LicenceController::class, 'reject'])->name('licences.reject');
+    Route::get('/licences/{listing}/document', [LicenceController::class, 'document'])->name('licences.document');
+
+    // Deeplink monitor
+    Route::get('/deeplinks', [DeeplinkController::class, 'index'])->name('deeplinks.index');
+    Route::post('/deeplinks/hosts', [DeeplinkController::class, 'allowedHosts'])->name('deeplinks.hosts');
+    Route::post('/deeplinks/{listing}/recheck', [DeeplinkController::class, 'recheck'])->middleware('throttle:30,1')->name('deeplinks.recheck');
+    Route::post('/deeplinks/{listing}/switch-off', [DeeplinkController::class, 'switchOff'])->name('deeplinks.switch-off');
+    Route::post('/deeplinks/{listing}/pause', [DeeplinkController::class, 'pause'])->name('deeplinks.pause');
+    Route::post('/deeplinks/{listing}/message', [DeeplinkController::class, 'message'])->name('deeplinks.message');
+
+    // Enquiries (read only)
+    Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries.index');
+    Route::get('/enquiries/{enquiry}', [EnquiryController::class, 'show'])->middleware('can:view,enquiry')->name('enquiries.show');
+    Route::post('/enquiries/{enquiry}/spam', [EnquiryController::class, 'markSpam'])->name('enquiries.spam');
+
+    // Owners and agents
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}', [UserController::class, 'show'])->middleware('can:view,user')->name('users.show');
+    Route::put('/users/{user}', [UserController::class, 'update'])->middleware('can:update,user')->name('users.update');
+    Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+    Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->middleware('can:update,user')->name('users.reactivate');
+    Route::post('/users/{user}/recommend-suspension', [UserController::class, 'recommendSuspension'])->name('users.recommend');
+
+    // Click reports
+    Route::get('/clicks', [ClickController::class, 'index'])->name('clicks.index');
+    Route::get('/clicks/events', [ClickController::class, 'events'])->name('clicks.events');
+    Route::get('/clicks/export', [ClickController::class, 'export'])->name('clicks.export');
+
+    // Islands and resorts
+    Route::get('/islands', [IslandController::class, 'index'])->name('islands.index');
+    Route::post('/islands', [IslandController::class, 'storeIsland'])->middleware('can:manage-islands')->name('islands.store');
+    Route::get('/islands/{island}/edit', [IslandController::class, 'editIsland'])->name('islands.edit');
+    Route::put('/islands/{island}', [IslandController::class, 'updateIsland'])->name('islands.update');
+    Route::post('/islands/{island}/areas', [IslandController::class, 'storeArea'])->middleware('can:manage-islands')->name('areas.store');
+    Route::get('/areas/{area}/edit', [IslandController::class, 'editArea'])->name('areas.edit');
+    Route::put('/areas/{area}', [IslandController::class, 'updateArea'])->name('areas.update');
+
+    // Content pages
+    Route::get('/pages', [PageController::class, 'index'])->name('pages.index');
+    Route::get('/pages/create', [PageController::class, 'create'])->name('pages.create');
+    Route::post('/pages', [PageController::class, 'store'])->name('pages.store');
+    Route::get('/pages/{page}/edit', [PageController::class, 'edit'])->middleware('can:update,page')->name('pages.edit');
+    Route::put('/pages/{page}', [PageController::class, 'update'])->middleware('can:update,page')->name('pages.update');
+    Route::post('/markdown-preview', [PageController::class, 'preview'])->middleware('throttle:120,1')->name('pages.preview');
+
+    // Super admin only
+    Route::middleware('can:manage-affiliates')->group(function () {
+        Route::get('/affiliates', [AffiliateController::class, 'index'])->name('affiliates.index');
+        Route::get('/affiliates/create', [AffiliateController::class, 'create'])->name('affiliates.create');
+        Route::post('/affiliates', [AffiliateController::class, 'store'])->name('affiliates.store');
+        Route::get('/affiliates/{affiliate}', [AffiliateController::class, 'show'])->name('affiliates.show');
+        Route::put('/affiliates/{affiliate}', [AffiliateController::class, 'update'])->name('affiliates.update');
+        Route::post('/affiliates/{affiliate}/deactivate', [AffiliateController::class, 'deactivate'])->name('affiliates.deactivate');
+        Route::post('/affiliates/{affiliate}/reactivate', [AffiliateController::class, 'reactivate'])->name('affiliates.reactivate');
+        Route::post('/affiliates/{affiliate}/invite', [AffiliateController::class, 'invite'])->name('affiliates.invite');
+    });
+
+    Route::middleware('can:manage-staff')->group(function () {
+        Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
+        Route::get('/staff/create', [StaffController::class, 'create'])->name('staff.create');
+        Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+        Route::get('/staff/{staff}/edit', [StaffController::class, 'edit'])->name('staff.edit');
+        Route::put('/staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
+        Route::post('/staff/{staff}/deactivate', [StaffController::class, 'deactivate'])->name('staff.deactivate');
+        Route::post('/staff/{staff}/reactivate', [StaffController::class, 'reactivate'])->name('staff.reactivate');
+        Route::post('/staff/{staff}/reset-two-factor', [StaffController::class, 'resetTwoFactor'])->name('staff.reset-2fa');
+        Route::post('/staff/{staff}/sign-out', [StaffController::class, 'signOut'])->name('staff.sign-out');
+        Route::post('/staff/{staff}/invite', [StaffController::class, 'invite'])->name('staff.invite');
+    });
+
+    Route::middleware('can:manage-appearance')->prefix('appearance')->name('appearance.')->group(function () {
+        Route::get('/', [AppearanceController::class, 'edit'])->name('edit');
+        Route::put('/colours', [AppearanceController::class, 'saveColours'])->name('colours');
+        Route::post('/logo', [AppearanceController::class, 'saveLogo'])->name('logo');
+        Route::post('/favicon', [AppearanceController::class, 'saveFavicon'])->name('favicon');
+        Route::post('/hero', [AppearanceController::class, 'uploadHero'])->name('hero.upload');
+        Route::put('/hero', [AppearanceController::class, 'arrangeHeroes'])->name('hero.arrange');
+        Route::delete('/hero/{hero}', [AppearanceController::class, 'removeHero'])->name('hero.remove');
+        Route::post('/publish', [AppearanceController::class, 'publish'])->name('publish');
+        Route::post('/discard', [AppearanceController::class, 'discard'])->name('discard');
+        Route::post('/undo', [AppearanceController::class, 'undo'])->name('undo');
+    });
+
+    Route::middleware('can:manage-plans')->group(function () {
+        Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
+        Route::get('/plans/{plan}/edit', [PlanController::class, 'edit'])->name('plans.edit');
+        Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('plans.update');
+        Route::post('/plans/grant', [PlanController::class, 'grant'])->name('plans.grant');
+        Route::get('/subscriptions/{subscription}', [PlanController::class, 'subscription'])->name('subscriptions.show');
+        Route::post('/payments/{payment}/refunded', [PlanController::class, 'markRefunded'])->name('payments.refunded');
+    });
+
+    Route::middleware('can:view-audit-log')->group(function () {
+        Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+        Route::get('/audit/export', [AuditController::class, 'export'])->name('audit.export');
+    });
+});
