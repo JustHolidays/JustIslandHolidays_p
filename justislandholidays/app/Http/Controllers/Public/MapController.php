@@ -26,6 +26,7 @@ class MapController extends Controller
 
         $pins = $result['pins']->map(fn (Listing $l) => [
             'ref' => $l->public_ref,
+            'kind' => $l->markerKind(),
             'title' => $l->title($lang),
             'place' => $l->area->translate('name').', '.$l->island->translate('name'),
             'price' => $l->guidePrice(),

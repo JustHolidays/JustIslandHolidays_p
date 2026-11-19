@@ -64,6 +64,12 @@ function pinsMap(el) {
     const status = document.getElementById(el.dataset.status);
     const api = el.dataset.api;
     const query = el.dataset.query || '';
+    let markers = {};
+    try {
+        markers = JSON.parse(el.dataset.markers || '{}');
+    } catch {
+        markers = {};
+    }
     let request = 0;
 
     if (el.dataset.lat && el.dataset.lng) {
@@ -90,14 +96,21 @@ function pinsMap(el) {
 
         layer.clearLayers();
         for (const pin of data.pins) {
-            const label = pin.price ? `${pin.title}, ${pin.price}` : pin.title;
+            // Marker per kind (affiliate, free, paid), set on the Appearance page.
+            // Colours are checked as #rrggbb on the server, so they are safe in a style.
+            const style = markers[pin.kind] || markers.free || {};
+            const colour = /^#[0-9a-f]{6}$/i.test(style.colour || '') ? style.colour : '';
+            const icon = style.icon ? `<img src="${escapeHtml(style.icon)}" alt="" width="18" height="18">` : '';
+            const kindLabel = style.label ? ` (${style.label})` : '';
+            const label = (pin.price ? `${pin.title}, ${pin.price}` : pin.title) + kindLabel;
             const marker = L.marker([pin.lat, pin.lng], {
                 title: label,
                 alt: label,
                 keyboard: true,
+                zIndexOffset: { paid: 200, affiliate: 100 }[pin.kind] || 0,
                 icon: L.divIcon({
-                    className: 'jih-pin',
-                    html: `<span>${escapeHtml(pin.price || '•')}</span>`,
+                    className: `jih-pin jih-pin-${escapeHtml(pin.kind)}`,
+                    html: `<span${colour ? ` style="background:${colour}"` : ''}>${icon}${escapeHtml(pin.price || '•')}</span>`,
                     iconSize: null,
                 }),
             });
@@ -106,7 +119,8 @@ function pinsMap(el) {
                 : '';
             marker.bindPopup(
                 `<a href="${escapeHtml(pin.url)}" class="jih-popup">${image}<strong>${escapeHtml(pin.title)}</strong>`
-                + `<span>${escapeHtml(pin.place)}</span>${pin.price ? `<span>${escapeHtml(el.dataset.textFrom.replace(':price', pin.price))}</span>` : ''}</a>`,
+                + `<span>${escapeHtml(pin.place)}</span>${pin.price ? `<span>${escapeHtml(el.dataset.textFrom.replace(':price', pin.price))}</span>` : ''}`
+                + `${style.label ? `<em>${escapeHtml(style.label)}</em>` : ''}</a>`,
             );
             marker.addTo(layer);
         }

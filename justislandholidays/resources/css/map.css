@@ -4,7 +4,9 @@
     border: 0;
 }
 .jih-pin span {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     transform: translate(-50%, -50%);
     min-width: 1.75rem;
     padding: 0.2rem 0.5rem;
@@ -36,6 +38,14 @@
     object-fit: cover;
     border-radius: 0.25rem;
     margin-bottom: 0.35rem;
+}
+.jih-pin img {
+    width: 18px;
+    height: 18px;
+}
+.jih-popup em {
+    font-size: 0.8125rem;
+    color: #475569;
 }
 .jih-popup strong {
     text-decoration: underline;

@@ -47,6 +47,17 @@ return [
         'attribution' => env('MAP_TILE_ATTRIBUTION', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'),
         'max_pins' => 200,              // pins returned per map view (spec)
         'area_radius_m' => 400,         // circle on the listing page; the public point is 250 to 350 m from the home
+
+        /*
+        | Default map markers, one per kind of listing. A super admin changes the label,
+        | colour and optional icon on the Appearance page. White price text sits on the
+        | colour, so each colour must reach 4.5 to 1 against white.
+        */
+        'markers' => [
+            'affiliate' => ['label' => 'Partner booking site', 'colour' => '#9a3412'],
+            'free' => ['label' => 'Owner listing', 'colour' => '#475569'],
+            'paid' => ['label' => 'Premium listing', 'colour' => '#0b4f6c'],
+        ],
     ],
 
     // Search results per page, and featured listings shown above them per page.

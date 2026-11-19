@@ -110,7 +110,7 @@ class MapTest extends TestCase
             ->assertJsonPath('pins.0.url', $inside->publicUrl('en'))
             ->assertJsonPath('pins.0.lat', 39.95);
 
-        $this->assertSame(['ref', 'title', 'place', 'price', 'image', 'url', 'lat', 'lng'], array_keys($response->json('pins.0')));
+        $this->assertSame(['ref', 'kind', 'title', 'place', 'price', 'image', 'url', 'lat', 'lng'], array_keys($response->json('pins.0')));
         $this->assertStringNotContainsString('39.912345', $response->getContent());
         $this->assertStringNotContainsString('x@example.com', $response->getContent());
     }

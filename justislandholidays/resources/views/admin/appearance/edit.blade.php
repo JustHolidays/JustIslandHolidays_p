@@ -9,7 +9,7 @@
             <p class="font-medium">You have draft changes.</p>
             <form method="POST" action="{{ route('admin.appearance.publish') }}">@csrf<button @disabled(! $canPublish) class="min-h-11 rounded bg-green-800 px-4 font-medium text-white disabled:opacity-50">Publish</button></form>
             <form method="POST" action="{{ route('admin.appearance.discard') }}" onsubmit="return confirm('Throw away all draft changes?')">@csrf<button class="min-h-11 rounded border border-slate-400 px-4">Discard draft</button></form>
-            @unless ($canPublish)<p class="font-medium text-red-800">Publishing is blocked until the text and button colours pass the contrast check.</p>@endunless
+            @unless ($canPublish)<p class="font-medium text-red-800">Publishing is blocked until the text, button and map marker colours pass the contrast check.</p>@endunless
         @else
             <p>No draft changes. The site shows the published settings.</p>
         @endif
@@ -80,6 +80,60 @@
             </form>
         </section>
     </div>
+
+    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm" aria-labelledby="markers-heading">
+        <h2 id="markers-heading" class="text-lg font-semibold">Map markers</h2>
+        <p class="mt-1 max-w-3xl text-sm">Each home on the island, resort and search maps gets one of three markers. The marker shows the weekly price in white on its colour, with your icon beside it if you add one. The label appears in the key under each map and on the home's pop-up.</p>
+        <ul class="mt-1 max-w-3xl list-disc pl-5 text-sm">
+            <li><strong>Partner booking site:</strong> homes added for affiliates.</li>
+            <li><strong>Owner listing:</strong> owners and agents on the Free plan.</li>
+            <li><strong>Premium listing:</strong> owners and agents on any paid plan, including a granted one.</li>
+        </ul>
+
+        <div class="mt-4 grid gap-4 md:grid-cols-3">
+            @foreach ($markers as $kind => $marker)
+                @php
+                    $ratio = \App\Support\Appearance::contrast('#ffffff', $marker['colour']);
+                    $title = ['affiliate' => 'Partner homes', 'free' => 'Free plan', 'paid' => 'Paid plans'][$kind];
+                @endphp
+                <form method="POST" action="{{ route('admin.appearance.marker', $kind) }}" enctype="multipart/form-data" class="space-y-2 rounded border border-slate-200 p-3" aria-labelledby="mk-{{ $kind }}-heading">
+                    @csrf @method('PUT')
+                    <h3 id="mk-{{ $kind }}-heading" class="font-semibold">{{ $title }}</h3>
+                    <p class="text-sm">Preview:
+                        <span class="ml-1 inline-flex items-center gap-1 rounded-full border-2 border-white px-2 py-0.5 text-sm font-semibold text-white shadow" style="background: {{ $marker['colour'] }}">
+                            @if ($marker['icon_url'])<img src="{{ $marker['icon_url'] }}" alt="" width="18" height="18">@endif
+                            €900
+                        </span>
+                    </p>
+                    <div>
+                        <label for="mk-{{ $kind }}-label" class="block font-medium">Label</label>
+                        <input id="mk-{{ $kind }}-label" name="label" type="text" maxlength="40" required value="{{ $marker['label'] }}" class="min-h-11 w-full rounded border border-slate-400 px-2">
+                    </div>
+                    <div>
+                        <label for="mk-{{ $kind }}-colour" class="block font-medium">Colour</label>
+                        <div class="mt-1 flex items-center gap-2">
+                            <input type="color" value="{{ $marker['colour'] }}" aria-label="{{ $title }} colour picker" class="h-11 w-14 cursor-pointer rounded border border-slate-400"
+                                   oninput="document.getElementById('mk-{{ $kind }}-colour').value = this.value">
+                            <input id="mk-{{ $kind }}-colour" name="colour" type="text" value="{{ $marker['colour'] }}" pattern="#[0-9a-fA-F]{6}" required class="min-h-11 w-28 rounded border border-slate-400 px-2 font-mono">
+                        </div>
+                        <p @class(['mt-1 text-sm', 'font-semibold text-red-800' => $ratio < 4.5, 'text-green-800' => $ratio >= 4.5])>
+                            Contrast with the white price: {{ number_format($ratio, 2) }} to 1 {{ $ratio >= 4.5 ? '– passes' : '– too low, needs 4.5' }}
+                        </p>
+                        <p class="text-xs text-slate-600">Published: <span class="font-mono">{{ $publishedMarkers[$kind]['colour'] }}</span>, “{{ $publishedMarkers[$kind]['label'] }}”</p>
+                    </div>
+                    <div>
+                        <label for="mk-{{ $kind }}-icon" class="block font-medium">Icon (optional)</label>
+                        <p class="text-xs text-slate-600">A square PNG of at least 64 pixels, up to 512 KB.</p>
+                        <input id="mk-{{ $kind }}-icon" name="icon" type="file" accept="image/png" class="block min-h-11">
+                    </div>
+                    @if ($marker['icon'])
+                        <div class="flex min-h-11 items-center gap-2"><input id="mk-{{ $kind }}-remove" type="checkbox" name="remove_icon" value="1" class="h-5 w-5"><label for="mk-{{ $kind }}-remove">Remove the icon</label></div>
+                    @endif
+                    <x-button>Save marker as draft</x-button>
+                </form>
+            @endforeach
+        </div>
+    </section>
 
     <section class="mt-6 rounded-lg bg-white p-5 shadow-sm" aria-labelledby="hero-heading">
         <h2 id="hero-heading" class="text-lg font-semibold">Home page hero images</h2>

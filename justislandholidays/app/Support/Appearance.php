@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
  * The public site reads the published values; a super admin can preview the draft
  * by adding ?preview=draft to a public address.
  *
- * Keys in site_settings: theme.colours, brand.logo, brand.favicon, home.hero_mode, home.hero.
+ * Keys in site_settings: theme.colours, brand.logo, brand.favicon, home.hero_mode, home.hero, map.markers.
  */
 final class Appearance
 {
@@ -59,6 +59,36 @@ final class Appearance
         $icon = self::get('brand.favicon', $draft);
 
         return collect($icon['sizes'] ?? [])->mapWithKeys(fn ($path, $size) => [(int) $size => Storage::disk('public')->url($path)])->all();
+    }
+
+    /**
+     * Map markers per kind (affiliate, free, paid): label, colour and an optional icon.
+     *
+     * @return array<string, array{label: string, colour: string, icon: ?string, icon_url: ?string}>
+     */
+    public static function markers(?bool $draft = null): array
+    {
+        $saved = self::get('map.markers', $draft) ?? [];
+        $markers = [];
+        foreach (config('site.map.markers') as $kind => $default) {
+            $s = is_array($saved[$kind] ?? null) ? $saved[$kind] : [];
+            $colour = is_string($s['colour'] ?? null) && preg_match('/^#[0-9a-fA-F]{6}$/', $s['colour']) ? strtolower($s['colour']) : $default['colour'];
+            $icon = is_string($s['icon'] ?? null) && $s['icon'] !== '' ? $s['icon'] : null;
+            $markers[$kind] = [
+                'label' => is_string($s['label'] ?? null) && trim($s['label']) !== '' ? $s['label'] : $default['label'],
+                'colour' => $colour,
+                'icon' => $icon,
+                'icon_url' => $icon ? Storage::disk('public')->url($icon) : null,
+            ];
+        }
+
+        return $markers;
+    }
+
+    /** White price text on each marker colour must reach 4.5 to 1. */
+    public static function canPublishMarkers(array $markers): bool
+    {
+        return collect($markers)->every(fn ($m) => self::contrast('#ffffff', $m['colour']) >= 4.5);
     }
 
     public static function heroMode(?bool $draft = null): string

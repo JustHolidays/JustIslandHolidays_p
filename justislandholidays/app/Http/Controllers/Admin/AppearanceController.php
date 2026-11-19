@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
- * Appearance (super admins only): colours, logo, favicon and home page hero images.
+ * Appearance (super admins only): colours, logo, favicon, home page hero images and map markers.
  * Everything is saved as a draft and goes live only on Publish. Every publish is audited
  * with the previous values, so the last publish can be undone.
  *
@@ -28,7 +28,7 @@ use Illuminate\View\View;
  */
 class AppearanceController extends AdminController
 {
-    private const KEYS = ['theme.colours', 'brand.logo', 'brand.favicon', 'home.hero_mode', 'home.hero'];
+    private const KEYS = ['theme.colours', 'brand.logo', 'brand.favicon', 'home.hero_mode', 'home.hero', 'map.markers'];
 
     private const HERO_WIDTHS = [800, 1600, 2400];
 
@@ -40,7 +40,9 @@ class AppearanceController extends AdminController
             'colours' => $draftColours,
             'published' => Appearance::colours(false),
             'checks' => Appearance::contrastChecks($draftColours),
-            'canPublish' => Appearance::canPublishColours($draftColours),
+            'canPublish' => Appearance::canPublishColours($draftColours) && Appearance::canPublishMarkers(Appearance::markers(true)),
+            'markers' => Appearance::markers(true),
+            'publishedMarkers' => Appearance::markers(false),
             'logo' => Appearance::get('brand.logo', true),
             'logoUrl' => Appearance::logo(true)['url'] ?? null,
             'favicons' => Appearance::favicons(true),
@@ -113,6 +115,50 @@ class AppearanceController extends AdminController
         $this->saveDraft('brand.favicon', ['sizes' => $sizes], $request);
 
         return back()->with('status', 'Favicon saved as a draft.');
+    }
+
+    /**
+     * One marker kind at a time (affiliate, free or paid): label, colour, and an optional
+     * square PNG icon shown beside the price. Saved as a draft like everything else here.
+     */
+    public function saveMarker(Request $request, string $kind): RedirectResponse
+    {
+        abort_unless(array_key_exists($kind, config('site.map.markers')), 404);
+
+        $data = $request->validate([
+            'label' => ['required', 'string', 'max:40'],
+            'colour' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'icon' => ['nullable', 'file', 'mimes:png', 'max:512', 'dimensions:min_width=64,ratio=1'],
+            'remove_icon' => ['nullable', 'boolean'],
+        ], [
+            'colour.regex' => 'Use a colour code like #0b4f6c.',
+            'icon.mimes' => 'The icon must be a PNG file.',
+            'icon.dimensions' => 'The icon must be square and at least 64 pixels wide.',
+        ]);
+
+        $all = Appearance::markers(true);
+        $current = $all[$kind];
+
+        $icon = $current['icon'];
+        if ($request->boolean('remove_icon')) {
+            $icon = null;
+        }
+        if ($request->hasFile('icon')) {
+            $icon = "map/marker-{$kind}-".Str::uuid().'.png';
+            Storage::disk('public')->put($icon, $this->pngBytes($this->resize($this->gd($request->file('icon')), 64, 64)), 'public');
+        }
+
+        $all[$kind] = ['label' => trim($data['label']), 'colour' => strtolower($data['colour']), 'icon' => $icon];
+        $value = collect($all)->map(fn ($m) => ['label' => $m['label'], 'colour' => $m['colour'], 'icon' => $m['icon']])->all();
+
+        $this->saveDraft('map.markers', $value, $request);
+
+        $status = 'Marker saved as a draft.';
+        if (Appearance::contrast('#ffffff', $value[$kind]['colour']) < 4.5) {
+            $status .= ' The colour is too light for white price text, so publishing is blocked until it is darker.';
+        }
+
+        return back()->with('status', $status);
     }
 
     public function uploadHero(Request $request): RedirectResponse
@@ -202,6 +248,9 @@ class AppearanceController extends AdminController
     {
         if (! Appearance::canPublishColours(Appearance::colours(true))) {
             return back()->withErrors(['colours' => 'Publishing is blocked: the text and button colours need a contrast of at least 4.5 to 1.']);
+        }
+        if (! Appearance::canPublishMarkers(Appearance::markers(true))) {
+            return back()->withErrors(['markers' => 'Publishing is blocked: each map marker colour needs a contrast of at least 4.5 to 1 with its white price text.']);
         }
 
         $changes = DB::transaction(function () use ($request) {

@@ -155,6 +155,19 @@ class Listing extends Model
     }
 
     /**
+     * Which map marker this listing gets: affiliate, paid (any plan but Free, including
+     * a complimentary one) or free. plan_code is kept in step by AccountPlan::sync.
+     */
+    public function markerKind(): string
+    {
+        if ($this->isAffiliateListing()) {
+            return 'affiliate';
+        }
+
+        return $this->plan_code !== null && $this->plan_code !== 'free' ? 'paid' : 'free';
+    }
+
+    /**
      * Text in the visitor's language, falling back to English.
      * Returns [translation or null, true when it is the English fallback].
      *

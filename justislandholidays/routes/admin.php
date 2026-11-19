@@ -125,6 +125,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::put('/colours', [AppearanceController::class, 'saveColours'])->name('colours');
         Route::post('/logo', [AppearanceController::class, 'saveLogo'])->name('logo');
         Route::post('/favicon', [AppearanceController::class, 'saveFavicon'])->name('favicon');
+        Route::put('/markers/{kind}', [AppearanceController::class, 'saveMarker'])->where('kind', 'affiliate|free|paid')->name('marker');
         Route::post('/hero', [AppearanceController::class, 'uploadHero'])->name('hero.upload');
         Route::put('/hero', [AppearanceController::class, 'arrangeHeroes'])->name('hero.arrange');
         Route::delete('/hero/{hero}', [AppearanceController::class, 'removeHero'])->name('hero.remove');

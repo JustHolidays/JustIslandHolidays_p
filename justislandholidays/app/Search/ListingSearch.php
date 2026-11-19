@@ -61,7 +61,7 @@ final class ListingSearch
 
         $total = (clone $query)->count();
         $pins = $query->orderByDesc('rank_score')->orderBy('id')
-            ->with(['island', 'area', 'translations'])
+            ->with(['island', 'area', 'translations', 'owner'])
             ->limit((int) config('site.map.max_pins'))
             ->get();
 
