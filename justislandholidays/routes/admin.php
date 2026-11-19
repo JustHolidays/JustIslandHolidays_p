@@ -88,6 +88,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/islands', [IslandController::class, 'storeIsland'])->middleware('can:manage-islands')->name('islands.store');
     Route::get('/islands/{island}/edit', [IslandController::class, 'editIsland'])->name('islands.edit');
     Route::put('/islands/{island}', [IslandController::class, 'updateIsland'])->name('islands.update');
+    Route::post('/islands/{island}/header', [IslandController::class, 'updateIslandHeader'])->name('islands.header');
     Route::post('/islands/{island}/areas', [IslandController::class, 'storeArea'])->middleware('can:manage-islands')->name('areas.store');
     Route::get('/areas/{area}/edit', [IslandController::class, 'editArea'])->name('areas.edit');
     Route::put('/areas/{area}', [IslandController::class, 'updateArea'])->name('areas.update');

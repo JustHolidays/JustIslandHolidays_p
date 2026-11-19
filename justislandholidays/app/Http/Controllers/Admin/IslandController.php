@@ -6,6 +6,7 @@ use App\Enums\ListingStatus;
 use App\Models\Area;
 use App\Models\Island;
 use App\Support\Audit;
+use App\Support\HeaderImage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,6 +56,49 @@ class IslandController extends AdminController
         $request->validate(['island' => ['required', 'integer', 'exists:islands,id']], ['island.required' => 'Choose the island.']);
 
         return $this->storeArea($request, Island::findOrFail((int) $request->input('island')));
+    }
+
+    /** Header image for an island page. Island admins for their own islands, like the intro text. */
+    public function updateIslandHeader(Request $request, Island $island): RedirectResponse
+    {
+        $this->authorizeText($island);
+
+        return $this->saveHeader($request, $island, 'island');
+    }
+
+    /** Add or replace the image, change its description, or remove it. Audited. Islands only. */
+    private function saveHeader(Request $request, Island $place, string $kind): RedirectResponse
+    {
+        if ($request->boolean('remove')) {
+            $before = $place->only(['header_image_path', 'header_image_alt']);
+            HeaderImage::delete($place->header_image_path);
+            $place->forceFill(['header_image_path' => null, 'header_image_alt' => null])->save();
+            Audit::record($request->user(), "{$kind}.header_remove", $place, null, ['before' => $before]);
+
+            return back()->with('status', 'Header image removed.');
+        }
+
+        $request->validate([
+            'header_image' => [$place->header_image_path ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,webp', 'max:5120', 'dimensions:min_width='.HeaderImage::MIN_WIDTH.',min_height='.HeaderImage::HEIGHT],
+            'header_image_alt' => ['required', 'string', 'max:160'],
+        ], [
+            'header_image.required' => 'Choose an image.',
+            'header_image.mimes' => 'The image must be a JPG or WebP file.',
+            'header_image.max' => 'The image must be 5 MB or smaller.',
+            'header_image.dimensions' => 'The image must be at least '.HeaderImage::MIN_WIDTH.' pixels wide and '.HeaderImage::HEIGHT.' pixels tall.',
+            'header_image_alt.required' => 'Describe the image for people who cannot see it.',
+        ]);
+
+        $before = $place->only(['header_image_path', 'header_image_alt']);
+        $path = $place->header_image_path;
+        if ($request->hasFile('header_image')) {
+            $path = HeaderImage::store($request->file('header_image'));
+            HeaderImage::delete($place->header_image_path);
+        }
+        $place->forceFill(['header_image_path' => $path, 'header_image_alt' => trim((string) $request->input('header_image_alt'))])->save();
+        Audit::record($request->user(), "{$kind}.header_update", $place, null, ['before' => $before, 'after' => $place->only(['header_image_path', 'header_image_alt'])]);
+
+        return back()->with('status', $request->hasFile('header_image') ? 'Header image saved. It is on the page now.' : 'Description saved.');
     }
 
     private function withCounts($query)

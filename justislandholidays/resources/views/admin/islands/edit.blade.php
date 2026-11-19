@@ -51,4 +51,40 @@
 
         <x-button>Save</x-button>
     </form>
+
+    {{-- Islands only: resort pages have no header image. A separate form, so an upload is saved straight away. --}}
+    @if ($kind === 'island')
+        @php
+            $headerAction = route('admin.islands.header', $place);
+            $headerUrl = \App\Support\HeaderImage::url($place);
+        @endphp
+        <section class="mt-6 max-w-3xl rounded-lg bg-white p-5 shadow-sm" aria-labelledby="header-heading">
+            <h2 id="header-heading" class="text-lg font-semibold">Page header image</h2>
+            <p class="mt-1 text-sm">Shown full width at the top of the island page, below the menu, {{ \App\Support\HeaderImage::HEIGHT }} pixels tall (shorter on phones) and cropped to fit. A wide landscape photo works best, ideally 2400 × {{ \App\Support\HeaderImage::HEIGHT }} pixels or larger. JPG or WebP, at least {{ \App\Support\HeaderImage::MIN_WIDTH }} pixels wide and {{ \App\Support\HeaderImage::HEIGHT }} tall, up to 5 MB. Smaller copies for phones are made for you. Resort and town pages have no header image.</p>
+
+            @if ($headerUrl)
+                <img src="{{ $headerUrl }}" alt="{{ $place->header_image_alt }}" class="mt-3 aspect-[6/1] w-full rounded object-cover" width="2400" height="400">
+            @else
+                <img src="{{ \App\Support\HeaderImage::placeholderUrl() }}" alt="" class="mt-3 aspect-[6/1] w-full rounded object-cover" width="2400" height="400">
+                <p class="mt-2 text-sm font-medium">The page shows this placeholder until you add a photo.</p>
+            @endif
+
+            <form method="POST" action="{{ $headerAction }}" enctype="multipart/form-data" class="mt-4 space-y-2">
+                @csrf
+                <label for="header_image" class="block font-medium">{{ $headerUrl ? 'Replace the image (optional)' : 'Image' }}</label>
+                <input id="header_image" name="header_image" type="file" accept="image/jpeg,image/webp" class="block min-h-11" @unless ($headerUrl) required @endunless
+                       @error('header_image') aria-invalid="true" aria-errormessage="header_image-error" @enderror>
+                @error('header_image')<p id="header_image-error" class="text-sm text-red-700">{{ $message }}</p>@enderror
+                <x-field name="header_image_alt" label="Description (alt text)" :value="$place->header_image_alt" hint="What the photo shows, for people who cannot see it. For example: Turquoise water and white sand at Cala Macarella." required />
+                <x-button>{{ $headerUrl ? 'Save header image' : 'Add header image' }}</x-button>
+            </form>
+            @if ($headerUrl)
+                <form method="POST" action="{{ $headerAction }}" class="mt-2" onsubmit="return confirm('Remove the header image from this page?')">
+                    @csrf
+                    <input type="hidden" name="remove" value="1">
+                    <button type="submit" class="min-h-11 rounded border border-red-800 px-4 text-red-800">Remove header image</button>
+                </form>
+            @endif
+        </section>
+    @endif
 @endsection

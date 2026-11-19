@@ -64,6 +64,7 @@ MVP scope is Menorca and Mallorca, English only. Spanish and German, Ibiza and F
 - `users.last_login_at` and `users.deactivated_at` are added to the spec schema. Deactivating sets `deactivated_at`, ends the account's sessions and blocks sign-in; it never soft-deletes, because soft-deleted accounts are purged after 30 days.
 - `listings.public_ref` (VARCHAR(12), unique, random) is added to the spec schema. It is the `{ref}` in listing URLs and `/go/{ref}`.
 - The FULLTEXT index is on `listing_translations (title, summary)`. There is no description column.
+- `islands` has `header_image_path` and `header_image_alt` (added 19 Nov 2026): a full-width header image under the menu on island pages, 400 pixels tall (240 on phones), stored as WebP copies by `App\Support\HeaderImage`. A placeholder in `public/images/placeholders` shows until one is added. Island admins edit it for their own islands, like the intro text. Resort and town pages have no header image.
 - No Livewire. Search caching uses Laravel's cache store, not Redis by default.
 - Affiliate listings show a licence number only if one is supplied.
 - Paid plans with `show_direct_contact` show the owner's phone and website on the listing page (decided 18 Nov 2026). Only those two columns of `listing_private` are ever read on a public route, through `App\Listings\DirectContact`. Affiliate listings never show them.
