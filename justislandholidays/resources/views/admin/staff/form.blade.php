@@ -10,7 +10,7 @@
     <p><a href="{{ route('admin.staff.index') }}" class="inline-flex min-h-11 items-center underline">Back to staff</a></p>
     <h1 class="text-2xl font-semibold">{{ $staff->exists ? $staff->name : 'Add an admin' }}</h1>
     @unless ($staff->exists)
-        <p class="mt-1">They receive an email to set a password, then set up two-factor sign-in at their first sign-in.</p>
+        <p class="mt-1">They receive an email to set a password. Each time they sign in, they also get a 6-digit code by email, or use an authenticator app if they set one up.</p>
     @endunless
 
     <form method="POST" action="{{ $staff->exists ? route('admin.staff.update', $staff) : route('admin.staff.store') }}" class="mt-6 max-w-2xl rounded-lg bg-white p-5 shadow-sm">
@@ -40,7 +40,7 @@
     @if ($staff->exists && ! $self)
         <section class="mt-6 flex max-w-2xl flex-wrap items-start gap-3" aria-label="Account actions">
             <form method="POST" action="{{ route('admin.staff.sign-out', $staff) }}" onsubmit="return confirm('Sign {{ $staff->name }} out on every device?')">@csrf<button class="min-h-11 rounded border border-slate-400 bg-white px-4">Sign out everywhere</button></form>
-            <form method="POST" action="{{ route('admin.staff.reset-2fa', $staff) }}" onsubmit="return confirm('Reset two-factor sign-in? They will set it up again at their next sign-in.')">@csrf<button class="min-h-11 rounded border border-slate-400 bg-white px-4">Reset two-factor sign-in</button></form>
+            <form method="POST" action="{{ route('admin.staff.reset-2fa', $staff) }}" onsubmit="return confirm('Remove their authenticator app? They will get sign-in codes by email instead.')">@csrf<button class="min-h-11 rounded border border-slate-400 bg-white px-4">Remove authenticator app (use email codes)</button></form>
             <form method="POST" action="{{ route('admin.staff.invite', $staff) }}">@csrf<button class="min-h-11 rounded border border-slate-400 bg-white px-4">Send a new invitation</button></form>
             @if ($staff->isDeactivated())
                 <form method="POST" action="{{ route('admin.staff.reactivate', $staff) }}">@csrf<button class="min-h-11 rounded bg-slate-900 px-4 font-medium text-white">Reactivate</button></form>

@@ -47,9 +47,9 @@ class InvitationController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        // Admins must set up two-factor sign-in before they can use the admin area.
+        // Admins then get an emailed sign-in code (RequireSecondFactor) before the admin area.
         return $user->isAdmin()
-            ? redirect()->route('account.security')->with('status', 'Password set. Now set up two-factor sign-in.')
+            ? redirect()->route('second-factor.show')
             : redirect()->route('account.home')->with('status', 'Password set. Welcome to Just Island Holidays.');
     }
 }

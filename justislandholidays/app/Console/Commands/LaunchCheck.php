@@ -74,7 +74,8 @@ class LaunchCheck extends Command
         $drafts = $legal->filter(fn ($p) => str_contains((string) $p->translations->firstWhere('lang', 'en')?->body_md, 'Draft for legal review'))->keys();
 
         $supers = User::active()->where('role', Role::SuperAdmin)->get();
-        $supersWith2fa = $supers->filter->hasConfirmedTwoFactor()->count();
+        $supersVerified = $supers->filter(fn ($u) => $u->email_verified_at !== null)->count();
+        $supersWithApp = $supers->filter->hasConfirmedTwoFactor()->count();
         $registerUrl = SiteSetting::find('licences.register_url')?->value['url'] ?? null;
         $paypalLive = config('services.paypal.mode') === 'live' && filled(config('services.paypal.client_id')) && filled(config('services.paypal.webhook_id'));
         $appUrl = (string) config('app.url');
@@ -83,7 +84,8 @@ class LaunchCheck extends Command
         return [
             // Licence verification working
             ['Licence register address is set', (bool) $registerUrl, $registerUrl ?: 'Set it on the Licence checks page'],
-            ['At least two active super admins with two-factor sign-in', $supersWith2fa >= 2, "{$supersWith2fa} of {$supers->count()} super admins have two-factor set up"],
+            // Every admin sign-in needs a second step (emailed code or authenticator app), so a verified email is enough.
+            ['At least two active super admins with a verified email', $supersVerified >= 2, "{$supersVerified} of {$supers->count()} verified; {$supersWithApp} use an authenticator app, the rest get emailed codes"],
 
             // Legal pages
             ['Legal pages exist and are published', $missing->isEmpty(), $missing->isEmpty() ? implode(', ', LegalPagesSeeder::SLUGS) : 'Missing or unpublished: '.$missing->implode(', ')],

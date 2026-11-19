@@ -80,7 +80,7 @@ class PeopleTest extends TestCase
         $this->assertSame('new@example.com', $owner->fresh()->email);
     }
 
-    public function test_staff_invitation_flow_ends_with_two_factor_setup(): void
+    public function test_staff_invitation_flow_ends_with_the_emailed_sign_in_code(): void
     {
         $super = $this->superAdmin();
 
@@ -101,11 +101,11 @@ class PeopleTest extends TestCase
         auth()->logout();
         $this->get("/account/invitation/{$token}?email=isla@example.com")->assertOk()->assertSee('Set your password');
         $this->post('/account/invitation', ['token' => $token, 'email' => 'isla@example.com', 'password' => 'a-long-password-1', 'password_confirmation' => 'a-long-password-1'])
-            ->assertRedirect(route('account.security'));
+            ->assertRedirect(route('second-factor.show'));
 
         $this->assertAuthenticatedAs($isla);
         $this->assertNotNull($isla->fresh()->email_verified_at);
-        $this->get('/admin')->assertRedirect(route('account.security'));
+        $this->get('/admin')->assertRedirect(route('second-factor.show'));
     }
 
     public function test_bad_invitation_token_is_refused(): void

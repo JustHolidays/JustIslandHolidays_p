@@ -26,12 +26,13 @@ class AdminAccessTest extends TestCase
         }
     }
 
-    public function test_admin_without_two_factor_is_sent_to_set_it_up(): void
+    public function test_admin_without_an_app_can_use_the_admin_area_after_an_emailed_code(): void
     {
         $admin = User::factory()->superAdmin()->withoutTwoFactor()->create();
 
-        $this->actingAs($admin)->get('/admin')->assertRedirect(route('account.security'));
-        $this->actingAs($admin)->get('/account/security')->assertOk()->assertSee('Admin accounts must use two-factor sign-in');
+        // actingAs counts the second step as done (see Tests\TestCase).
+        $this->actingAs($admin)->get('/admin')->assertOk();
+        $this->actingAs($admin)->get('/account/security')->assertOk()->assertSee('You are using: <strong>a code by email</strong>', false);
     }
 
     public function test_island_admin_with_no_islands_is_refused(): void

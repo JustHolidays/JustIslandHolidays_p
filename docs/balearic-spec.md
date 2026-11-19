@@ -238,7 +238,7 @@ The last row stops a link or licence number being swapped after approval without
 **Staff (`/admin/staff`, super admin only)**
 
 - Lists every admin with name, email, role, islands, last sign-in, two-factor status and active or deactivated.
-- **Create** takes name, email, role (island admin or super admin) and, for island admins, one or more islands. The new admin gets an invitation email with a link to set a password, and must set up two-factor authentication at first sign-in.
+- **Create** takes name, email, role (island admin or super admin) and, for island admins, one or more islands. The new admin gets an invitation email with a link to set a password, and from then on gets a one-time 6-digit code by email at each sign-in, or uses an authenticator app if they choose one (decided 19 Nov 2026).
 - **Edit** changes role and islands, deactivates the account, resets two-factor, or signs the admin out everywhere. A change to islands applies on the admin's next request.
 - The last active super admin cannot be deactivated or demoted, and nobody can change their own role. Every change is audited.
 

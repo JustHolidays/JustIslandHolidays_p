@@ -103,7 +103,7 @@ class StaffController extends AdminController
         return back()->with('status', "{$staff->name} is active again.");
     }
 
-    /** They set up two-factor sign-in again at their next sign-in. */
+    /** Removes their authenticator app (for a lost phone); they get emailed sign-in codes instead. */
     public function resetTwoFactor(Request $request, User $staff, AccountStatus $accounts): RedirectResponse
     {
         $this->ensureStaff($staff);
@@ -111,7 +111,7 @@ class StaffController extends AdminController
         $accounts->endSessions($staff);
         Audit::record($request->user(), 'staff.reset_two_factor', $staff);
 
-        return back()->with('status', "Two-factor sign-in reset for {$staff->name}. They set it up again when they next sign in.");
+        return back()->with('status', "Authenticator app removed for {$staff->name}. They now get a sign-in code by email.");
     }
 
     public function signOut(Request $request, User $staff, AccountStatus $accounts): RedirectResponse

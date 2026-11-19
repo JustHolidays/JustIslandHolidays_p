@@ -37,6 +37,14 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Http\Middleware\TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
         }
 
+        // An admin who passed the authenticator app challenge at sign-in has done the
+        // second step for this session (App\Auth\SecondFactor). Fires before the login.
+        Event::listen(\Laravel\Fortify\Events\ValidTwoFactorAuthenticationCodeProvided::class, function ($event) {
+            if ($event->user instanceof User) {
+                \App\Auth\SecondFactor::markPassed($event->user);
+            }
+        });
+
         // Last sign-in for the Staff and Owners lists. Fires after the two-factor challenge.
         Event::listen(Login::class, function (Login $event) {
             if ($event->user instanceof User) {

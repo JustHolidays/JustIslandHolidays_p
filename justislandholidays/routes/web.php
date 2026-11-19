@@ -47,6 +47,13 @@ Route::prefix('{lang}')
 | Account area (owners, agents, affiliates; admins also land here after sign-in).
 | Fortify registers the sign-in, sign-up, password and two-factor routes under /account.
 */
+// Admins' second sign-in step: an emailed 6-digit code, or their authenticator app.
+Route::middleware(['auth'])->prefix('account/verify-sign-in')->name('second-factor.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\SecondFactorController::class, 'show'])->name('show');
+    Route::post('/', [\App\Http\Controllers\SecondFactorController::class, 'verify'])->middleware('throttle:20,1')->name('verify');
+    Route::post('/resend', [\App\Http\Controllers\SecondFactorController::class, 'resend'])->middleware('throttle:5,1')->name('resend');
+});
+
 Route::middleware(['auth'])->prefix('account')->name('account.')->group(function () {
     Route::get('/security', [AccountController::class, 'security'])->name('security');
 

@@ -13,6 +13,7 @@ The full specification is in `docs/balearic-spec.md`. Read it before building an
 - PHP 8.3 or later, Laravel 12 (only Laravel 12 is available now). Upgrade to Laravel 13 is roadmap item 1b, soon after launch and before Laravel 12 security fixes end on 24 Feb 2027. Do not use anything that blocks that upgrade.
 - MySQL 8.0.16 or later (InnoDB, utf8mb4). Schema is in the spec: 30 tables. Build it as Laravel migrations.
 - Server-rendered Blade views with Tailwind CSS, Laravel Fortify for auth (email verification, two-factor required for island admins and super admins).
+- Admin two-factor (decided 19 Nov 2026): by default a one-time 6-digit code emailed at each sign-in (`App\Auth\SecondFactor`: hashed in the cache, 10 minutes, used once, voided after 5 wrong tries, 5 sends an hour). Each admin can switch to an authenticator app on their security page, which is stronger. The `RequireSecondFactor` middleware in the web group keeps an admin on `/account/verify-sign-in` until the session has done the step, however they signed in. Owners, agents and affiliates are unchanged (app optional).
 - Payments: PayPal Subscriptions and webhooks, with an idempotency log in `paypal_events`. No card data on our servers.
 - Hosting: managed PHP host with a UK data centre. The host provides the CDN and DDoS protection. No Cloudflare.
 - Spam control: honeypot field, ALTCHA proof-of-work, per-IP-hash rate limits. No Turnstile.
@@ -78,7 +79,7 @@ MVP scope is Menorca and Mallorca, English only. Spanish and German, Ibiza and F
   - The nightly link check skips links that are already broken or were switched off, so an admin's switch-off sticks. Admins use Recheck now after a fix.
   - Purging a deleted account anonymises the user row and deletes their private listing details and licence documents, rather than removing the row, because listings, payments and the audit log still refer to it.
 - Launch gate (build step 6): run `php artisan launch:check` on the live server. It fails until every automatic check passes and every manual item is confirmed with `--confirm=<item> --by="Name"`.
-  - Automatic checks: licence register address set, two super admins with two-factor, legal pages free of "[TO CONFIRM" and draft notices, production settings, https, main domain, real mail, MySQL, live PayPal, separate secrets.
+  - Automatic checks: licence register address set, two super admins with a verified email, legal pages free of "[TO CONFIRM" and draft notices, production settings, https, main domain, real mail, MySQL, live PayPal, separate secrets.
   - Manual items: legal review, Spanish and German text review, CDN location, EU 2024/1028, trademark search, cron and queue, backups.
   - The legal pages (`LegalPagesSeeder`) are drafts for a lawyer, not legal advice. The seeder never overwrites pages edited in the admin.
 - MySQL-only DDL (CHECK constraints, FULLTEXT) runs only on the mysql driver. `php artisan test` runs on in-memory SQLite and skips the MySQL-only tests; `composer test:mysql` runs everything against MySQL. Run both before every commit.

@@ -19,7 +19,7 @@
                         <td class="p-2">{{ $s->role->label() }}</td>
                         <td class="p-2">{{ $s->isSuperAdmin() ? 'All' : ($s->islands->map(fn ($i) => $i->translate('name', 'en'))->implode(', ') ?: 'None') }}</td>
                         <td class="p-2">{{ $s->last_login_at?->format('j M Y H:i') ?? 'Never' }}</td>
-                        <td class="p-2">{{ $s->hasConfirmedTwoFactor() ? 'Set up' : 'Not set up' }}</td>
+                        <td class="p-2">{{ $s->hasConfirmedTwoFactor() ? 'Authenticator app' : 'Code by email' }}</td>
                         <td class="p-2">{{ $s->isDeactivated() ? 'Deactivated' : 'Active' }}</td>
                     </tr>
                 @endforeach

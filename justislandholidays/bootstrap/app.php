@@ -24,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAccountIsActive::class,
+            // Admins: emailed code or authenticator app before any signed-in page.
+            \App\Http\Middleware\RequireSecondFactor::class,
         ]);
 
         $middleware->alias([
