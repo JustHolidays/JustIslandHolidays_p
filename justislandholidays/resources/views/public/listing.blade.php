@@ -23,7 +23,7 @@
     'metaDescription' => $summary ? \Illuminate\Support\Str::limit($summary, 155) : null,
     'canonical' => $canonical,
     'alternates' => $alternates,
-    'extraScripts' => $isAffiliate ? [] : ['resources/js/altcha.js'],
+    'extraScripts' => $isAffiliate ? ['resources/js/map.js'] : ['resources/js/map.js', 'resources/js/altcha.js'],
 ])
 
 @push('head')
@@ -94,6 +94,17 @@
                         </ul>
                     </section>
                 @endif
+
+                <section class="mt-8" aria-labelledby="location-heading">
+                    <h2 id="location-heading" class="text-xl font-semibold">{{ __('Location') }}</h2>
+                    <p class="mt-2">{{ __('The home is inside the circle, in or near :place. You get the exact address when you book.', ['place' => $place]) }}</p>
+                    <div data-map="area" data-lat="{{ $listing->display_lat }}" data-lng="{{ $listing->display_lng }}" data-radius="{{ config('site.map.area_radius_m') }}"
+                         data-tiles="{{ config('site.map.tile_url') }}" data-attribution="{{ config('site.map.attribution') }}"
+                         role="region" aria-label="{{ __('Map showing roughly where the home is') }}"
+                         class="mt-3 h-72 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:h-80">
+                        <noscript><p class="p-4">{{ __('Turn on JavaScript to see the map.') }}</p></noscript>
+                    </div>
+                </section>
 
                 @if ($licence && ($licence->registration_number || $licence->national_registry_no))
                     <section class="mt-8" aria-labelledby="licence-heading">

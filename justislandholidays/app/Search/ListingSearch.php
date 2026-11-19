@@ -40,6 +40,34 @@ final class ListingSearch
         return new SearchResult($listings, $featured, $typeCounts);
     }
 
+    /**
+     * Map pins: the same filters as the list, limited to a bounding box on the public
+     * (offset) coordinates. Best-ranked first, at most site.map.max_pins.
+     *
+     * @param  array{0: float, 1: float, 2: float, 3: float}|null  $bbox  south, west, north, east
+     * @return array{pins: \Illuminate\Support\Collection<int, Listing>, total: int}
+     */
+    public function pins(SearchFilters $filters, ?array $bbox, ?string $lang = null): array
+    {
+        $lang ??= app()->getLocale();
+
+        $query = $this->baseQuery($filters, $lang)
+            ->when($filters->types !== [], fn (Builder $q) => $q->whereIn('property_type', $filters->types));
+
+        if ($bbox !== null) {
+            [$south, $west, $north, $east] = $bbox;
+            $query->whereBetween('display_lat', [$south, $north])->whereBetween('display_lng', [$west, $east]);
+        }
+
+        $total = (clone $query)->count();
+        $pins = $query->orderByDesc('rank_score')->orderBy('id')
+            ->with(['island', 'area', 'translations'])
+            ->limit((int) config('site.map.max_pins'))
+            ->get();
+
+        return ['pins' => $pins, 'total' => $total];
+    }
+
     private function baseQuery(SearchFilters $f, string $lang): Builder
     {
         $query = Listing::query()

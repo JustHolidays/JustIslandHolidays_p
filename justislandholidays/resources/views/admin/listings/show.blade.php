@@ -10,6 +10,10 @@
     $pets = $listing->pets_allowed === null ? 'not_stated' : ($listing->pets_allowed ? 'yes' : 'no');
 @endphp
 
+@push('head')
+    @vite('resources/js/map.js')
+@endpush
+
 @section('content')
     <p><a href="{{ route('admin.listings.index') }}" class="inline-flex min-h-11 items-center underline">Back to listings</a></p>
     <h1 class="text-2xl font-semibold">{{ $listing->title('en') }}</h1>
@@ -41,6 +45,13 @@
             </dl>
             <p class="mt-4 text-sm"><strong>Public map pin:</strong> {{ $listing->display_lat }}, {{ $listing->display_lng }} (about 300 m from the exact location)
                 @if ($listing->private) · <strong>Exact:</strong> {{ $listing->private->lat }}, {{ $listing->private->lng }} @endif</p>
+            {{-- Admins only: the dark dot is the exact location, which visitors never see. --}}
+            <div data-map="area" data-lat="{{ $listing->display_lat }}" data-lng="{{ $listing->display_lng }}" data-radius="{{ config('site.map.area_radius_m') }}"
+                 @if ($listing->private) data-exact-lat="{{ $listing->private->lat }}" data-exact-lng="{{ $listing->private->lng }}" @endif
+                 data-tiles="{{ config('site.map.tile_url') }}" data-attribution="{{ config('site.map.attribution') }}"
+                 role="region" aria-label="Map: the circle is what visitors see, the dark dot is the exact location"
+                 class="mt-3 h-64 overflow-hidden rounded border border-slate-200 bg-slate-100"></div>
+            <p class="mt-1 text-sm text-slate-700">Visitors see the circle only. The dark dot is the exact location (admins only).</p>
             @if ($listing->source_url)
                 <p class="mt-1 text-sm"><strong>Imported from:</strong> <span class="break-all">{{ $listing->source_url }}</span> (admins only)</p>
             @endif

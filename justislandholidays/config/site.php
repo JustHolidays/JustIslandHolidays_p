@@ -35,6 +35,20 @@ return [
     'languages' => ['en', 'es', 'de'],
     'enabled_languages' => explode(',', env('SITE_LANGUAGES', 'en')),
 
+    /*
+    | Maps (Leaflet). The map images come from a tile provider, which sees the visitor's
+    | address when their browser loads them (the privacy notice says so). The default is
+    | OpenStreetMap's own server, fine for building but not for a live commercial site:
+    | before launch, set MAP_TILE_URL and MAP_TILE_ATTRIBUTION from a provider such as
+    | MapTiler or Stadia Maps. No cookies are set either way.
+    */
+    'map' => [
+        'tile_url' => env('MAP_TILE_URL', 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+        'attribution' => env('MAP_TILE_ATTRIBUTION', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'),
+        'max_pins' => 200,              // pins returned per map view (spec)
+        'area_radius_m' => 400,         // circle on the listing page; the public point is 250 to 350 m from the home
+    ],
+
     // Search results per page, and featured listings shown above them per page.
     'per_page' => 24,
     'featured_per_page' => 3,

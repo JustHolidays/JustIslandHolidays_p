@@ -89,6 +89,9 @@
         </select>
     </div>
 
+    @if (request()->query('view') === 'map')
+        <input type="hidden" name="view" value="map">
+    @endif
     <button type="submit" class="min-h-11 w-full rounded bg-[var(--colour-button)] px-5 font-medium text-white">{{ __('Show homes') }}</button>
     @if ($filters->hasFilters())
         <p class="mt-3 text-center"><a href="{{ $action }}" class="inline-flex min-h-11 items-center underline">{{ __('Clear filters') }}</a></p>

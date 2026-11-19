@@ -21,6 +21,7 @@
     'metaDescription' => __('Villas, apartments and fincas to rent in :place. Contact the owners directly.', ['place' => $placeName]),
     'canonical' => $pageUrl,
     'noindex' => ! $filters->isIndexable(),
+    'extraScripts' => ['resources/js/map.js'],
 ])
 
 @push('head')
@@ -63,6 +64,11 @@
                 </ul>
             </section>
         @endif
+
+        <section class="mt-8" aria-labelledby="map-heading">
+            <h2 id="map-heading" class="text-xl font-semibold">{{ __('Map') }}</h2>
+            <div class="mt-3">@include('public.partials.map-pins')</div>
+        </section>
 
         <div class="mt-8 grid gap-8 lg:grid-cols-[18rem_1fr]">
             <div>@include('public.partials.filters', ['action' => $pageUrl])</div>

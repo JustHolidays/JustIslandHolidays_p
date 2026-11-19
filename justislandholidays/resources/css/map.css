@@ -1,0 +1,53 @@
+/* Map pins and popups (loaded only on pages with a map, through resources/js/map.js). */
+.jih-pin {
+    background: transparent;
+    border: 0;
+}
+.jih-pin span {
+    display: inline-block;
+    transform: translate(-50%, -50%);
+    min-width: 1.75rem;
+    padding: 0.2rem 0.5rem;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: var(--colour-button, #0b4f6c);
+    color: #fff;
+    font: 600 0.8125rem/1.3 system-ui, sans-serif;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.jih-pin:focus-visible span,
+.jih-pin:hover span {
+    outline: 3px solid #111;
+    outline-offset: 1px;
+}
+.jih-popup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    width: 200px;
+    color: #1f2933;
+    text-decoration: none;
+}
+.jih-popup img {
+    width: 200px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+    margin-bottom: 0.35rem;
+}
+.jih-popup strong {
+    text-decoration: underline;
+}
+.leaflet-container {
+    font: inherit;
+}
+.leaflet-container :focus-visible {
+    outline: 3px solid #111;
+}
+.leaflet-bar a {
+    width: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+}

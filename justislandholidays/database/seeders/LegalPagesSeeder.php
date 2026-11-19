@@ -88,6 +88,10 @@ We only use cookies that are needed for the site to work:
 
 We use no advertising cookies. Visitor statistics are collected without cookies and without following you around the web, by [TO CONFIRM: Plausible or Matomo] running on our own server. Because of this we do not need to ask for cookie consent.
 
+## Maps
+
+Our maps are made of map images from [TO CONFIRM: map provider, for example MapTiler or Stadia Maps]. To show them, your browser asks that provider for the images, so it receives your internet address and the area of the map you are looking at. It sets no cookies. The map on a home's page shows a circle around the area, not the exact address.
+
 ## Who we share data with
 
 - **Owners**, who receive the enquiries sent to them.
@@ -214,6 +218,7 @@ We want everyone to be able to use Just Island Holidays. We aim to meet the Web 
 - The site is in English only for now. Spanish and German will follow.
 - Owners write their own descriptions and choose their own photos. We ask them for photo descriptions and check them, but some may be less helpful than we would like.
 - Check availability links go to other companies' booking sites, which we do not control.
+- Maps can be moved and zoomed with the keyboard, but are hard to use with a screen reader. Every home on a map is also in the list on the same page, and each home's page names its resort.
 
 ## Tell us about a problem
 
