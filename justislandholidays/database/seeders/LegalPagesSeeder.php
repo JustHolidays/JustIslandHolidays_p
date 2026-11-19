@@ -152,7 +152,9 @@ Just Island Holidays [TO CONFIRM: company name and number, or the sole trader's 
 
 **Your content.** You must own, or have permission to use, the photos and text you add. You give us a free, non-exclusive licence to show them on this site, and in our own promotion of it, while the listing is on the site. Your content must be accurate and must not mislead.
 
-**Our checks.** We review every new listing, and changes to booking links and licence numbers, usually within 48 hours. We may refuse, pause or remove a listing, or close an account, if it breaks these terms or the law. We will tell you why.
+**Your booking link.** If you add a Check availability link, you are responsible for keeping it working and pointing at the right home. We do not check whether owners' and agents' links work, and a change to your link shows straight away.
+
+**Our checks.** We review every new listing, changes to licence numbers, and changes to partners' booking links, usually within 48 hours. We may refuse, pause or remove a listing, or close an account, if it breaks these terms or the law. We will tell you why.
 
 **Enquiries.** Use guests' details only to reply about their stay. Do not add them to mailing lists without their agreement.
 

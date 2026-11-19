@@ -7,7 +7,6 @@
         ['admin.dashboard', 'Dashboard', null],
         ['admin.listings.index', 'Listings', null],
         ['admin.licences.index', 'Licence checks', null],
-        ['admin.deeplinks.index', 'Owner and agent links', null],   // affiliates' links are under each affiliate
         ['admin.enquiries.index', 'Enquiries', null],
         ['admin.users.index', 'Owners', null],
         ['admin.agents.index', 'Agents', null],   // a dropdown of agents, each with a page of their properties

@@ -122,7 +122,8 @@ class LaunchReadinessTest extends TestCase
         $this->get('/en/p/terms')->assertOk()
             ->assertSee('You are responsible for holding a valid licence')
             ->assertSee('not VAT registered')
-            ->assertSee('We do not take bookings or payments from guests');
+            ->assertSee('We do not take bookings or payments from guests')
+            ->assertSee('you are responsible for keeping it working');
     }
 
     public function test_seeder_never_overwrites_an_edited_page(): void

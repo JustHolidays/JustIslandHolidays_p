@@ -140,7 +140,7 @@ class ReportsContentTest extends TestCase
         $affiliate = User::factory()->affiliate()->create();
 
         foreach (['/admin', '/admin/listings', '/admin/listings?tab=recommended', "/admin/listings/{$listing->id}", '/admin/listings/import',
-            '/admin/licences', '/admin/deeplinks', '/admin/enquiries', '/admin/users', "/admin/users/{$listing->owner_id}",
+            '/admin/licences', '/admin/enquiries', '/admin/users', "/admin/users/{$listing->owner_id}",
             '/admin/affiliates', '/admin/affiliates/create', "/admin/affiliates/{$affiliate->id}", '/admin/staff', '/admin/staff/create',
             "/admin/staff/{$super->id}/edit", '/admin/clicks', '/admin/clicks/events', '/admin/islands', "/admin/islands/{$this->island->id}/edit",
             "/admin/areas/{$area->id}/edit", '/admin/pages', '/admin/pages/create', "/admin/pages/{$page->id}/edit",

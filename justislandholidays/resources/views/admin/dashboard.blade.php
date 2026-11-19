@@ -19,12 +19,7 @@
                 <p class="text-3xl font-semibold">{{ $licences }}</p>
             </a>
         </li>
-        <li>
-            <a href="{{ route('admin.deeplinks.index', ['status' => 'broken']) }}" class="block rounded-lg bg-white p-5 shadow-sm hover:ring-2 hover:ring-slate-400">
-                <p class="text-sm text-slate-600">Broken owner and agent links on live listings</p>
-                <p @class(['text-3xl font-semibold', 'text-red-800' => $broken > 0])>{{ $broken }}</p>
-            </a>
-        </li>
+        {{-- Affiliate links only: owners and agents look after their own links. --}}
         @if ($brokenAffiliate !== null)
             <li>
                 <a href="{{ route('admin.affiliates.index') }}" class="block rounded-lg bg-white p-5 shadow-sm hover:ring-2 hover:ring-slate-400">

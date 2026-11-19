@@ -1,20 +1,15 @@
 @php
-    $pageTitle = $affiliate ? $affiliate->name.': deeplinks' : 'Owner and agent links';
-    $filterUrl = fn ($status) => $affiliate
-        ? route('admin.affiliates.deeplinks', array_filter(['affiliate' => $affiliate->id, 'status' => $status]))
-        : route('admin.deeplinks.index', array_filter(['status' => $status]));
+    // Affiliates only: owners and agents look after their own links, which are not checked.
+    $pageTitle = $affiliate->name.': deeplinks';
+    $filterUrl = fn ($status) => route('admin.affiliates.deeplinks', array_filter(['affiliate' => $affiliate->id, 'status' => $status]));
 @endphp
 
 @extends('layouts.admin', ['title' => $pageTitle])
 
 @section('content')
     <h1 class="text-2xl font-semibold">{{ $pageTitle }}</h1>
-    @if ($affiliate)
-        <p class="mt-1">Every listing {{ $affiliate->name }} has with a Check availability link. Broken links come first, then the most clicked.
-            <a href="{{ route('admin.affiliates.show', $affiliate) }}" class="inline-flex min-h-11 items-center underline">Back to {{ $affiliate->name }}</a></p>
-    @else
-        <p class="mt-1">Check availability links that owners and agents have added to their own listings. Broken links come first, then the most clicked. Affiliates' links are under each affiliate in the Affiliates menu.</p>
-    @endif
+    <p class="mt-1">Every listing {{ $affiliate->name }} has with a Check availability link. Broken links come first, then the most clicked.
+        <a href="{{ route('admin.affiliates.show', $affiliate) }}" class="inline-flex min-h-11 items-center underline">Back to {{ $affiliate->name }}</a></p>
 
     <nav aria-label="Filter by status" class="mt-4">
         <ul class="flex flex-wrap gap-2">
@@ -39,7 +34,7 @@
                         <td class="p-2"><a href="{{ route('admin.listings.show', $listing) }}" class="font-medium underline">{{ $listing->title('en') }}</a><br><span class="text-slate-600">{{ $listing->island->translate('name', 'en') }} · {{ $listing->status->label() }}</span></td>
                         <td class="p-2">{{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}
                             @unless ($allowed)<span class="mt-1 block font-medium text-amber-800">Not on the allowed list</span>@endunless</td>
-                        <td class="p-2">{{ ['unchecked' => 'Not checked', 'ok' => 'Working', 'broken' => 'Broken'][$listing->deeplink_status] }}</td>
+                        <td class="p-2">{{ $listing->deeplinkStatusLabel() }}</td>
                         <td class="p-2">{{ $listing->deeplink_checked_at?->diffForHumans() ?? 'Never' }}</td>
                         <td class="p-2 text-right">{{ $listing->clicks_7 }}</td>
                         <td class="space-y-2 p-2">

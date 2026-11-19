@@ -51,7 +51,8 @@ final class ListingChecklist
         if (! $listing->isAffiliateListing() && $listing->licence?->status !== 'verified') {
             $missing[] = 'The licence number has not been verified yet.';
         }
-        if ($listing->deeplink_url !== null && $listing->deeplink_status !== 'ok') {
+        // Affiliate links only: owners and agents are responsible for their own links.
+        if ($listing->isAffiliateListing() && $listing->deeplink_url !== null && $listing->deeplink_status !== 'ok') {
             $missing[] = 'The Check availability link has not been checked yet.';
         }
 

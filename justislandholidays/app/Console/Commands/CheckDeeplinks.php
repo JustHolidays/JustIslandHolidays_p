@@ -20,15 +20,18 @@ class CheckDeeplinks extends Command
 {
     protected $signature = 'deeplinks:check {--limit= : How many links to check this run}';
 
-    protected $description = 'Check the Check availability links on live listings';
+    protected $description = 'Check the Check availability links on live affiliate listings';
 
     public function handle(DeeplinkChecker $checker): int
     {
         $limit = (int) ($this->option('limit') ?? config('site.deeplink_check.per_run'));
         $pause = (int) config('site.deeplink_check.pause_ms');
 
+        // Affiliate links only. Owners and agents are responsible for their own links
+        // (decided 19 Nov 2026), so those are never checked.
         $listings = Listing::where('status', ListingStatus::Live)
             ->whereNotNull('deeplink_url')
+            ->whereHas('owner', fn ($q) => $q->where('role', \App\Enums\Role::Affiliate->value))
             ->whereIn('deeplink_status', ['ok', 'unchecked'])
             ->orderByRaw('deeplink_checked_at IS NOT NULL')
             ->orderBy('deeplink_checked_at')

@@ -58,7 +58,10 @@ class ListingController extends AdminController
             $query->whereHas('licence', fn (Builder $q) => $q->where('status', $licence));
         }
         if (in_array($deeplink = $request->query('deeplink'), ['unchecked', 'ok', 'broken'], true)) {
-            $query->whereNotNull('deeplink_url')->where('deeplink_status', $deeplink);
+            // Check results exist for affiliate links only.
+            $query->whereNotNull('deeplink_url')->where('deeplink_status', $deeplink)->whereHas('owner', fn (Builder $q) => $q->where('role', 'affiliate'));
+        } elseif ($deeplink === 'lister') {
+            $query->whereNotNull('deeplink_url')->whereHas('owner', fn (Builder $q) => $q->where('role', '!=', 'affiliate'));
         } elseif ($deeplink === 'none') {
             $query->whereNull('deeplink_url');
         }
@@ -237,6 +240,8 @@ class ListingController extends AdminController
     {
         $this->ctx()->authorizeIsland($listing->island_id);
         abort_unless($listing->deeplink_url, 404);
+        // Owners and agents look after their own links: there is nothing for us to check.
+        abort_unless($listing->isAffiliateListing(), 404);
 
         if ($request->input('mode') === 'manual_ok') {
             $listing->forceFill(['deeplink_status' => 'ok', 'deeplink_checked_at' => now()])->saveQuietly();

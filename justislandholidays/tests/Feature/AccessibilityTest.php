@@ -84,7 +84,7 @@ class AccessibilityTest extends TestCase
         \App\Models\Listing::factory()->live()->onIsland($this->island)->titled('Agent villa')->create(['owner_id' => $agent->id]);
 
         foreach (['/admin', '/admin/listings', '/admin/listings?status=live', "/admin/listings/{$this->listing->id}", '/admin/listings/import',
-            '/admin/licences', '/admin/deeplinks', '/admin/enquiries', "/admin/enquiries/{$enquiry->id}", '/admin/users',
+            '/admin/licences', '/admin/enquiries', "/admin/enquiries/{$enquiry->id}", '/admin/users',
             "/admin/users/{$this->listing->owner_id}", '/admin/agents', "/admin/agents/{$agent->id}", '/admin/affiliates', '/admin/affiliates/create', "/admin/affiliates/{$affiliate->id}", "/admin/affiliates/{$affiliate->id}/deeplinks",
             '/admin/staff', '/admin/staff/create', "/admin/staff/{$super->id}/edit", '/admin/clicks', '/admin/clicks/events',
             '/admin/islands', "/admin/islands/{$this->island->id}", '/admin/locations/create', "/admin/islands/{$this->island->id}/edit", '/admin/pages', '/admin/pages/create', "/admin/pages/{$page->id}/edit",

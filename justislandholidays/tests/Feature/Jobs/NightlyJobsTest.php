@@ -75,11 +75,15 @@ class NightlyJobsTest extends TestCase
     {
         $this->app->instance(SafeFetcher::class, new SafeFetcher(fn () => ['93.184.216.34']));
         Http::fake(['https://good.example/*' => Http::response('ok'), 'https://gone.example/*' => Http::response('', 404), '*' => Http::response('ok')]);
+        $partner = User::factory()->affiliate()->create();   // only affiliate links are checked
 
-        $good = Listing::factory()->live()->withDeeplink('https://good.example/1', status: 'unchecked')->create();
-        $gone = Listing::factory()->live()->withDeeplink('https://gone.example/1', status: 'ok')->create();
-        $off = Listing::factory()->live()->withDeeplink('https://good.example/2', status: 'broken')->create();
-        $draft = Listing::factory()->withDeeplink('https://good.example/3', status: 'unchecked')->create();
+        $good = Listing::factory()->live()->withDeeplink('https://good.example/1', status: 'unchecked')->create(['owner_id' => $partner->id]);
+        $gone = Listing::factory()->live()->withDeeplink('https://gone.example/1', status: 'ok')->create(['owner_id' => $partner->id]);
+        $off = Listing::factory()->live()->withDeeplink('https://good.example/2', status: 'broken')->create(['owner_id' => $partner->id]);
+        $draft = Listing::factory()->withDeeplink('https://good.example/3', status: 'unchecked')->create(['owner_id' => $partner->id]);
+        // Owners and agents look after their own links: never checked, even when live.
+        $owners = Listing::factory()->live()->withDeeplink('https://gone.example/owner', status: 'unchecked')->create(['owner_id' => User::factory()->owner()]);
+        $agents = Listing::factory()->live()->withDeeplink('https://gone.example/agent', status: 'unchecked')->create(['owner_id' => User::factory()->agent()]);
 
         $this->artisan('deeplinks:check')->assertSuccessful();
 
@@ -89,16 +93,23 @@ class NightlyJobsTest extends TestCase
         $this->assertSame('unchecked', $draft->fresh()->deeplink_status, 'Only live listings.');
         $this->assertFalse($gone->fresh()->showsCheckAvailability());
         $this->assertSame(2, AuditLog::where('action', 'job.deeplinks_check')->sole()->detail['checked']);
+        foreach ([$owners, $agents] as $lister) {
+            $this->assertSame('unchecked', $lister->fresh()->deeplink_status);
+            $this->assertNull($lister->fresh()->deeplink_checked_at);
+            $this->assertTrue($lister->fresh()->showsCheckAvailability());
+        }
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '/owner') || str_contains($request->url(), '/agent'));
     }
 
     public function test_link_checker_takes_the_longest_unchecked_first_and_respects_the_limit(): void
     {
         $this->app->instance(SafeFetcher::class, new SafeFetcher(fn () => ['93.184.216.34']));
         Http::fake(['*' => Http::response('ok')]);
+        $partner = User::factory()->affiliate()->create();
 
-        $recent = Listing::factory()->live()->withDeeplink('https://a.example/1')->create();
+        $recent = Listing::factory()->live()->withDeeplink('https://a.example/1')->create(['owner_id' => $partner->id]);
         $recent->forceFill(['deeplink_checked_at' => now()->subHour()])->save();
-        $never = Listing::factory()->live()->withDeeplink('https://a.example/2', status: 'unchecked')->create();
+        $never = Listing::factory()->live()->withDeeplink('https://a.example/2', status: 'unchecked')->create(['owner_id' => $partner->id]);
 
         $this->artisan('deeplinks:check --limit=1')->assertSuccessful();
 

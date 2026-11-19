@@ -44,7 +44,8 @@ class AffiliateMenuTest extends TestCase
         $this->assertStringContainsString(route('admin.affiliates.show', $this->partner), $html);
         $this->assertStringContainsString(route('admin.affiliates.show', $this->other), $html);
         $this->assertStringNotContainsString(route('admin.affiliates.show', $gone), $html);
-        $this->assertStringContainsString('>Owner and agent links</a>', $html);
+        // Owners and agents look after their own links, so there is no menu item for them.
+        $this->assertStringNotContainsString('Owner and agent links', $html);
         // Alphabetical.
         $this->assertLessThan(strpos($html, 'Sunny Stays'), strpos($html, 'Bay Villas'));
     }
@@ -55,7 +56,7 @@ class AffiliateMenuTest extends TestCase
 
         $this->assertStringNotContainsString('All affiliates', $html);
         $this->assertStringNotContainsString('Sunny Stays', $html);
-        $this->assertStringContainsString('>Owner and agent links</a>', $html);
+        $this->assertStringNotContainsString('Owner and agent links', $html);
     }
 
     public function test_current_affiliate_shows_its_deeplinks_item(): void
@@ -87,15 +88,10 @@ class AffiliateMenuTest extends TestCase
             ->assertDontSee('Sunny One');
     }
 
-    public function test_owner_and_agent_links_page_leaves_out_affiliates(): void
+    public function test_there_is_no_page_for_owner_and_agent_links(): void
     {
-        $this->linked($this->partner, 'Sunny One');
-        $this->linked(User::factory()->owner()->create(), 'Owner Home');
-
-        $this->actingAs($this->islandAdmin($this->island))->get(route('admin.deeplinks.index'))->assertOk()
-            ->assertSee('Owner and agent links')
-            ->assertSee('Owner Home')
-            ->assertDontSee('Sunny One');
+        $this->actingAs($this->superAdmin())->get('/admin/deeplinks')->assertNotFound();
+        $this->actingAs($this->islandAdmin($this->island))->get('/admin/deeplinks')->assertNotFound();
     }
 
     public function test_affiliate_deeplinks_page_is_super_admin_only_and_affiliates_only(): void
@@ -116,19 +112,19 @@ class AffiliateMenuTest extends TestCase
         $this->actingAs($admin)->get(route('admin.affiliates.index'))->assertOk()->assertSee('1<span class="sr-only"> broken links for Sunny Stays</span>', false);
     }
 
-    public function test_dashboard_counts_owner_and_affiliate_broken_links_apart(): void
+    public function test_dashboard_counts_broken_affiliate_links_only(): void
     {
         $this->linked($this->partner, 'Sunny One', 'broken');
         $this->linked($this->partner, 'Sunny Two', 'broken');
         $this->linked(User::factory()->owner()->create(), 'Owner Home', 'broken');
 
         $this->actingAs($this->superAdmin())->get('/admin')->assertOk()
-            ->assertViewHas('broken', 1)
             ->assertViewHas('brokenAffiliate', 2)
-            ->assertSee('Broken affiliate links on live listings');
+            ->assertViewMissing('broken')
+            ->assertSee('Broken affiliate links on live listings')
+            ->assertDontSee('owner and agent links');
 
         $this->actingAs($this->islandAdmin($this->island))->get('/admin')->assertOk()
-            ->assertViewHas('broken', 1)
             ->assertDontSee('Broken affiliate links');
     }
 }

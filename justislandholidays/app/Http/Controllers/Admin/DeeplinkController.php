@@ -18,21 +18,12 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * Deeplink monitor, most-used broken links first, in two views:
- * - each affiliate's links, from the Affiliates menu (super admins);
- * - owner and agent links, for every admin within their islands.
+ * Deeplink monitor for each affiliate's links, from the Affiliates menu (super admins),
+ * most-used broken links first. Owner and agent links are their own responsibility
+ * (decided 19 Nov 2026): they are not checked and have no page here.
  */
 class DeeplinkController extends AdminController
 {
-    /** Owner and agent links (everything not added for an affiliate). */
-    public function index(Request $request): View
-    {
-        $query = $this->ctx()->scope(Listing::query())
-            ->whereHas('owner', fn (Builder $q) => $q->where('role', '!=', Role::Affiliate->value));
-
-        return $this->monitor($request, $query, null);
-    }
-
     /** One affiliate's links (super admins, through can:manage-affiliates). */
     public function affiliate(Request $request, User $affiliate): View
     {
@@ -66,6 +57,7 @@ class DeeplinkController extends AdminController
     public function recheck(Request $request, Listing $listing, DeeplinkChecker $checker): RedirectResponse
     {
         $this->ctx()->authorizeIsland($listing->island_id);
+        abort_unless($listing->isAffiliateListing(), 404);
         $result = $checker->check($listing, $request->user());
 
         return back()->with('status', ($result['status'] === 'ok' ? 'Working. ' : 'Broken. ').$result['detail']);
@@ -75,6 +67,7 @@ class DeeplinkController extends AdminController
     public function switchOff(Request $request, Listing $listing): RedirectResponse
     {
         $this->ctx()->authorizeIsland($listing->island_id);
+        abort_unless($listing->isAffiliateListing(), 404);
         $listing->forceFill(['deeplink_status' => 'broken', 'deeplink_checked_at' => now()])->saveQuietly();
         Audit::record($request->user(), 'deeplink.switch_off', $listing);
 

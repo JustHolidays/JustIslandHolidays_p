@@ -53,7 +53,6 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/licences/{listing}/document', [LicenceController::class, 'document'])->name('licences.document');
 
     // Deeplink monitor
-    Route::get('/deeplinks', [DeeplinkController::class, 'index'])->name('deeplinks.index');
     Route::post('/deeplinks/hosts', [DeeplinkController::class, 'allowedHosts'])->name('deeplinks.hosts');
     Route::post('/deeplinks/{listing}/recheck', [DeeplinkController::class, 'recheck'])->middleware('throttle:30,1')->name('deeplinks.recheck');
     Route::post('/deeplinks/{listing}/switch-off', [DeeplinkController::class, 'switchOff'])->name('deeplinks.switch-off');

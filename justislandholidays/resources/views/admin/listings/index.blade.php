@@ -35,7 +35,7 @@
         <div><label for="f-licence" class="block text-sm font-medium">Licence</label>
             <select id="f-licence" name="licence" class="{{ $select }}"><option value="">Any</option>@foreach ($licenceLabels as $v => $l)<option value="{{ $v }}" @selected(request('licence') === $v)>{{ $l }}</option>@endforeach</select></div>
         <div><label for="f-deeplink" class="block text-sm font-medium">Booking link</label>
-            <select id="f-deeplink" name="deeplink" class="{{ $select }}"><option value="">Any</option>@foreach (['unchecked' => 'Not checked', 'ok' => 'Working', 'broken' => 'Broken', 'none' => 'No link'] as $v => $l)<option value="{{ $v }}" @selected(request('deeplink') === $v)>{{ $l }}</option>@endforeach</select></div>
+            <select id="f-deeplink" name="deeplink" class="{{ $select }}"><option value="">Any</option>@foreach (['broken' => 'Affiliate link broken', 'unchecked' => 'Affiliate link not checked', 'ok' => 'Affiliate link working', 'lister' => 'Owner or agent link', 'none' => 'No link'] as $v => $l)<option value="{{ $v }}" @selected(request('deeplink') === $v)>{{ $l }}</option>@endforeach</select></div>
         <button type="submit" class="min-h-11 rounded bg-slate-900 px-4 font-medium text-white">Filter</button>
     </form>
 
@@ -75,7 +75,7 @@
                             <td class="p-2">{{ ucfirst($listing->property_type) }}</td>
                             <td class="p-2">{{ $submitted?->format('j M Y H:i') ?? '–' }} @if ($late)<span class="block font-semibold text-red-800">Over {{ config('site.review_target_hours') }} hours</span>@endif</td>
                             <td class="p-2">{{ $listing->owner->isAffiliate() ? 'Not needed' : ($listing->licence ? $licenceLabels[$listing->licence->status] : 'Not added') }}</td>
-                            <td class="p-2">{{ $listing->deeplink_url ? ['unchecked' => 'Not checked', 'ok' => 'Working', 'broken' => 'Broken'][$listing->deeplink_status] : 'No link' }}</td>
+                            <td class="p-2">{{ $listing->deeplinkStatusLabel() }}</td>
                             <td class="p-2">{{ $listing->status->label() }}</td>
                         </tr>
                     @empty

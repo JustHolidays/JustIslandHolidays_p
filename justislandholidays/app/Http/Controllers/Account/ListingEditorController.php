@@ -216,7 +216,9 @@ class ListingEditorController extends Controller
 
             Audit::record($request->user(), 'listing.update', $listing, null, ['step' => 'link', 'changed' => $changed]);
 
-            if ($changed) {
+            // Affiliate links are checked, so a new one goes back for review. Owners and agents
+            // look after their own links (decided 19 Nov 2026): their change goes live straight away.
+            if ($changed && $isAffiliate) {
                 $this->workflow->sendBackForReview($listing, $request->user(), 'The Check availability link changed.');
             }
         });

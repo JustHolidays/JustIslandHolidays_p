@@ -207,10 +207,31 @@ class Listing extends Model
         ]);
     }
 
-    /** The banner shows only when there is a link and it has not been switched off or found broken. */
+    /**
+     * The banner shows whenever there is a link. For affiliate links, only while it has not
+     * been switched off or found broken. Owner and agent links are never checked, so an old
+     * check result does not hide them.
+     */
     public function showsCheckAvailability(): bool
     {
-        return $this->deeplink_url !== null && $this->deeplink_status !== 'broken';
+        if ($this->deeplink_url === null) {
+            return false;
+        }
+
+        return ! $this->isAffiliateListing() || $this->deeplink_status !== 'broken';
+    }
+
+    /** Plain words for the link's state on admin screens. */
+    public function deeplinkStatusLabel(): string
+    {
+        if ($this->deeplink_url === null) {
+            return 'No link';
+        }
+        if (! $this->isAffiliateListing()) {
+            return 'Lister looks after it';
+        }
+
+        return ['unchecked' => 'Not checked', 'ok' => 'Working', 'broken' => 'Broken'][$this->deeplink_status] ?? 'Not checked';
     }
 
     /** Tracked link for the Check availability banner. */

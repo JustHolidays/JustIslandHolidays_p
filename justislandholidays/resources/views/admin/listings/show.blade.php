@@ -90,14 +90,20 @@
                 <h2 id="link-heading" class="text-lg font-semibold">Check availability link</h2>
                 @if ($listing->deeplink_url)
                     <p class="mt-2 break-all text-sm">{{ $listing->deeplink_url }}</p>
-                    <p class="mt-1">Goes to <strong>{{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}</strong> · {{ ['unchecked' => 'Not checked', 'ok' => 'Working', 'broken' => 'Broken'][$listing->deeplink_status] }}
-                        @if ($listing->deeplink_checked_at) · checked {{ $listing->deeplink_checked_at->diffForHumans() }} @endif</p>
-                    @unless ($hostAllowed)<p class="mt-1 font-medium text-amber-800">This website is not on the list of allowed booking sites.</p>@endunless
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        <a href="{{ route('admin.listings.test-link', $listing) }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Test link (opens in a new tab, no click recorded)</a>
-                        <form method="POST" action="{{ route('admin.listings.check-link', $listing) }}">@csrf<button type="submit" class="min-h-11 rounded border border-slate-400 px-3">Recheck now</button></form>
-                        <form method="POST" action="{{ route('admin.listings.check-link', $listing) }}">@csrf<input type="hidden" name="mode" value="manual_ok"><button type="submit" class="min-h-11 rounded border border-slate-400 px-3">I tested it: it opens the right property</button></form>
-                    </div>
+                    @if ($isAffiliate)
+                        <p class="mt-1">Goes to <strong>{{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}</strong> · {{ $listing->deeplinkStatusLabel() }}
+                            @if ($listing->deeplink_checked_at) · checked {{ $listing->deeplink_checked_at->diffForHumans() }} @endif</p>
+                        @unless ($hostAllowed)<p class="mt-1 font-medium text-amber-800">This website is not on the list of allowed booking sites.</p>@endunless
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <a href="{{ route('admin.listings.test-link', $listing) }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Test link (opens in a new tab, no click recorded)</a>
+                            <form method="POST" action="{{ route('admin.listings.check-link', $listing) }}">@csrf<button type="submit" class="min-h-11 rounded border border-slate-400 px-3">Recheck now</button></form>
+                            <form method="POST" action="{{ route('admin.listings.check-link', $listing) }}">@csrf<input type="hidden" name="mode" value="manual_ok"><button type="submit" class="min-h-11 rounded border border-slate-400 px-3">I tested it: it opens the right property</button></form>
+                        </div>
+                    @else
+                        <p class="mt-1">Goes to <strong>{{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}</strong>.</p>
+                        <p class="mt-1 text-sm">The {{ $listing->owner->role->label() === 'Agent' ? 'agent' : 'owner' }} looks after this link. We do not check whether it works, and it does not need checking before approval.</p>
+                        <p class="mt-3"><a href="{{ route('admin.listings.test-link', $listing) }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Open the link (new tab, no click recorded)</a></p>
+                    @endif
                 @else
                     <p class="mt-2">No link.</p>
                 @endif

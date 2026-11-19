@@ -184,6 +184,7 @@
                         <p class="mb-4">The page on your booking site for this property. Visitors reach it through the Check availability button.</p>
                     @else
                         <p class="mb-4">Optional. If guests can check dates and book on your own website or a booking site, add the page here and visitors will see a Check availability button.</p>
+                        <p class="mb-4 rounded border border-slate-300 bg-white p-3 text-sm"><strong>You look after this link.</strong> We do not check whether it works. Please make sure it opens the right property, and update it here if the page moves.</p>
                     @endif
 
                     <x-field name="deeplink_url" label="Booking page address" type="url" :value="$listing->deeplink_url" hint="Must start with https://" :required="$isAffiliate" />
@@ -193,7 +194,8 @@
                                  hint="If your programme reports a sub-id back to us, the name of that parameter, for example subid. We add our click id to it." />
                     @endif
 
-                    @if ($listing->status->value === 'live')
+                    {{-- Only affiliate links are checked, so only they go back for review. --}}
+                    @if ($isAffiliate && $listing->status->value === 'live')
                         <p class="mb-4 rounded bg-amber-50 p-3 text-sm">Changing the link sends your listing back for a quick check before it is live again.</p>
                     @endif
 
@@ -258,7 +260,11 @@
                         <x-button>Edit and send again</x-button>
                     </form>
                 @else
-                    <p>Status: <strong>{{ $listing->status->label() }}</strong>. Changes to your text and photo show straight away. Changes to the booking link or licence number are checked first.</p>
+                    @if ($isAffiliate)
+                        <p>Status: <strong>{{ $listing->status->label() }}</strong>. Changes to your text and photo show straight away. Changes to the booking link are checked first.</p>
+                    @else
+                        <p>Status: <strong>{{ $listing->status->label() }}</strong>. Changes to your text, photo and booking link show straight away. Changes to the licence number are checked first.</p>
+                    @endif
                 @endif
                 @break
         @endswitch

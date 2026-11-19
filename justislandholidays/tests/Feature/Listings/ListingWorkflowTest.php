@@ -73,7 +73,7 @@ class ListingWorkflowTest extends TestCase
         $this->workflow->submit($listing, User::factory()->owner()->create());
     }
 
-    public function test_approval_needs_a_verified_licence_and_a_checked_link(): void
+    public function test_approval_needs_a_verified_licence_but_no_check_of_an_owners_link(): void
     {
         $island = Island::factory()->create();
         $admin = $this->islandAdmin($island);
@@ -81,16 +81,27 @@ class ListingWorkflowTest extends TestCase
 
         $this->expectProblem(fn () => $this->workflow->approve($listing, $admin), 'The licence number has not been verified yet.');
 
+        // Owners and agents look after their own links: an unchecked link does not hold approval.
         $listing->licence->forceFill(['status' => 'verified'])->save();
         $listing->forceFill(['deeplink_url' => 'https://booking.example.com/1', 'deeplink_status' => 'unchecked'])->save();
-        $this->expectProblem(fn () => $this->workflow->approve($listing->fresh(), $admin), 'The Check availability link has not been checked yet.');
-
-        $listing->forceFill(['deeplink_status' => 'ok'])->save();
         $this->workflow->approve($listing->fresh(), $admin);
 
         $fresh = $listing->fresh();
         $this->assertSame(S::Live, $fresh->status);
         $this->assertNotNull($fresh->published_at);
+    }
+
+    public function test_affiliate_approval_needs_a_checked_link(): void
+    {
+        $island = Island::factory()->create();
+        $admin = $this->islandAdmin($island);
+        $listing = $this->setStatus($this->completeListing(User::factory()->affiliate()->create(), $island, ['deeplink_url' => 'https://b.example/1', 'deeplink_status' => 'unchecked']), S::PendingReview);
+
+        $this->expectProblem(fn () => $this->workflow->approve($listing, $admin), 'The Check availability link has not been checked yet.');
+
+        $listing->forceFill(['deeplink_status' => 'ok'])->save();
+        $this->workflow->approve($listing->fresh(), $admin);
+        $this->assertSame(S::Live, $listing->fresh()->status);
     }
 
     public function test_affiliate_listing_is_approved_without_a_licence(): void

@@ -196,11 +196,32 @@ class ListingEditorTest extends TestCase
         Queue::assertNothingPushed();
     }
 
-    public function test_changing_the_link_on_a_live_listing_sends_it_back_for_review(): void
+    public function test_an_owner_or_agent_changing_their_link_stays_live(): void
     {
-        $listing = $this->setStatus($this->completeListing($this->owner), S::Live);
+        $agent = User::factory()->agent()->create();
+        foreach ([$this->owner, $agent] as $lister) {
+            $listing = $this->setStatus($this->completeListing($lister), S::Live);
 
-        $this->actingAs($this->owner)->put("/account/listings/{$listing->id}/link", ['deeplink_url' => 'https://booking.example.com/new'])
+            $this->actingAs($lister)->get("/account/listings/{$listing->id}/edit/link")->assertOk()
+                ->assertDontSee('sends your listing back');
+            $this->actingAs($lister)->put("/account/listings/{$listing->id}/link", ['deeplink_url' => 'https://booking.example.com/new'])
+                ->assertSessionHasNoErrors();
+
+            $fresh = $listing->fresh();
+            $this->assertSame(S::Live, $fresh->status, 'Owners and agents look after their own links.');
+            $this->assertSame('https://booking.example.com/new', $fresh->deeplink_url);
+            $this->assertTrue($fresh->showsCheckAvailability());
+        }
+    }
+
+    public function test_an_affiliate_changing_their_link_goes_back_for_review(): void
+    {
+        $affiliate = User::factory()->affiliate()->create();
+        $listing = $this->setStatus($this->completeListing($affiliate, null, ['deeplink_url' => 'https://partner.example/1', 'deeplink_status' => 'ok']), S::Live);
+
+        $this->actingAs($affiliate)->get("/account/listings/{$listing->id}/edit/link")->assertOk()
+            ->assertSee('Changing the link sends your listing back for a quick check');
+        $this->actingAs($affiliate)->put("/account/listings/{$listing->id}/link", ['deeplink_url' => 'https://partner.example/2'])
             ->assertSessionHasNoErrors();
 
         $fresh = $listing->fresh();
@@ -249,6 +270,19 @@ class ListingEditorTest extends TestCase
         $fresh = $listing->fresh();
         $this->assertSame(S::PendingReview, $fresh->status);
         $this->assertSame('pending', $fresh->licence->status);
+    }
+
+    public function test_owners_are_told_they_look_after_their_own_link(): void
+    {
+        $listing = $this->completeListing($this->owner);
+        $this->actingAs($this->owner)->get("/account/listings/{$listing->id}/edit/link")->assertOk()
+            ->assertSee('You look after this link.')
+            ->assertSee('We do not check whether it works.');
+
+        $affiliate = User::factory()->affiliate()->create();
+        $theirs = $this->completeListing($affiliate);
+        $this->actingAs($affiliate)->get("/account/listings/{$theirs->id}/edit/link")->assertOk()
+            ->assertDontSee('You look after this link.');
     }
 
     public function test_affiliates_have_no_licence_step(): void

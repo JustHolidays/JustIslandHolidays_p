@@ -10,8 +10,9 @@ use App\Support\Fetch\FetchException;
 use App\Support\Fetch\SafeFetcher;
 
 /**
- * Checks that a Check availability link still opens. An error response or no answer
- * marks it broken, which hides the banner. Used by Recheck now and the nightly job.
+ * Checks that an affiliate's Check availability link still opens. An error response or
+ * no answer marks it broken, which hides the banner. Used by Recheck now and the nightly
+ * job. Owner and agent links are their own responsibility and are never checked.
  */
 final class DeeplinkChecker
 {
@@ -24,6 +25,10 @@ final class DeeplinkChecker
     {
         if (! $listing->deeplink_url) {
             return ['status' => 'unchecked', 'detail' => 'No link', 'final_host' => null];
+        }
+        // Owners and agents look after their own links; we never check them.
+        if (! $listing->isAffiliateListing()) {
+            return ['status' => $listing->deeplink_status, 'detail' => 'Owners and agents look after their own links. We do not check them.', 'final_host' => null];
         }
 
         try {
