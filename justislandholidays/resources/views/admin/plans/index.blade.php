@@ -33,7 +33,7 @@
 
     <section class="mt-6 max-w-3xl rounded-lg bg-white p-5 shadow-sm" aria-labelledby="grant-heading">
         <h2 id="grant-heading" class="text-lg font-semibold">Gift A Plan</h2>
-        <p class="mt-1 text-sm">Gives an owner or agent a plan free of charge until a date, for example Featured Property for a year for early owners. For an agent in an agency it covers the whole agency.</p>
+        <p class="mt-1 text-sm">Gives an owner or agent a plan free of charge until a date, for example the Featured Plan for a year for early owners. For an agent in an agency it covers the whole agency.</p>
         <form method="POST" action="{{ route('admin.plans.grant') }}" class="mt-3 grid gap-3 sm:grid-cols-2">
             @csrf
             <x-field name="email" label="Their account email" type="email" required />

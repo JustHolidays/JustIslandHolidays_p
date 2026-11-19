@@ -152,8 +152,8 @@ class BillingController extends Controller
         $until = $subscription->fresh()->ends_at;
 
         return redirect()->route('account.billing')->with('status', $until && $until->isFuture()
-            ? 'Your plan is cancelled. It stays active until '.$until->format('j F Y').', then your listings move to the Free plan.'
-            : 'Your plan is cancelled. Your listings are now on the Free plan.');
+            ? 'Your plan is cancelled. It stays active until '.$until->format('j F Y').', then your listings move to the Free Plan.'
+            : 'Your plan is cancelled. Your listings are now on the Free Plan.');
     }
 
     /**
@@ -217,7 +217,7 @@ class BillingController extends Controller
             return redirect()->route('account.billing')->withErrors(['months' => 'We could not find that payment.']);
         }
         if ($purchase->status === 'completed') {
-            return redirect()->route('account.billing')->with('status', 'Your Featured Property period is already active.');
+            return redirect()->route('account.billing')->with('status', 'Your Featured Plan period is already active.');
         }
 
         try {

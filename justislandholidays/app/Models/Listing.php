@@ -221,6 +221,26 @@ class Listing extends Model
         return ! $this->isAffiliateListing() || $this->deeplink_status !== 'broken';
     }
 
+    /** The booking calendar: owner and agent properties on a plan that includes it (paid plans). */
+    public function hasCalendar(): bool
+    {
+        if ($this->isAffiliateListing()) {
+            return false;
+        }
+
+        return (bool) Plan::where('code', $this->plan_code ?: 'free')->value('has_booking_calendar');
+    }
+
+    public function calendarFeeds(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CalendarFeed::class)->orderBy('id');
+    }
+
+    public function calendarBookings(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CalendarBooking::class)->orderBy('check_in');
+    }
+
     /** Extra photos after the main one, in order. */
     public function photos(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

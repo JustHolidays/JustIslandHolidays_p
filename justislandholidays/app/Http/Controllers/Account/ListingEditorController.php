@@ -93,6 +93,9 @@ class ListingEditorController extends Controller
         if ($step === 'licence' && $listing->isAffiliateListing()) {
             abort(404);
         }
+        if ($step === 'calendar' && ! $listing->hasCalendar()) {
+            abort(404);   // paid plans only
+        }
 
         return view('account.listings.edit', $this->editorData($request, $listing, $step));
     }
@@ -456,9 +459,24 @@ class ListingEditorController extends Controller
         if (! $isAffiliate) {
             $steps['licence'] = 'Licence';
         }
+        if ($listing->exists && $listing->hasCalendar()) {
+            $steps['calendar'] = 'Calendar';   // paid plans
+        }
         $steps['review'] = 'Review and send';
 
-        return [
+        $calendar = [];
+        if ($step === 'calendar') {
+            $from = \Carbon\CarbonImmutable::today()->startOfMonth();
+            $offset = max(0, min(33, (int) $request->query('months', 0)));
+            $calendar = [
+                'months' => \App\Calendar\Availability::months($listing, $from->addMonths($offset), 3),
+                'offset' => $offset,
+                'feeds' => $listing->calendarFeeds()->withCount('bookings')->get(),
+                'ownBookings' => $listing->calendarBookings()->whereNull('feed_id')->where('check_out', '>=', today()->toDateString())->get(),
+            ];
+        }
+
+        return $calendar + [
             'listing' => $listing,
             'step' => $step,
             'steps' => $steps,

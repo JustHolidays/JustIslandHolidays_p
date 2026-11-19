@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Schedule;
 
 $nightly = fn ($event) => $event->timezone('Europe/London')->withoutOverlapping(120)->onOneServer();
 
+// Booking calendars: import each property's iCal feeds (Airbnb, Booking.com, Google Calendar...).
+$nightly(Schedule::command('calendars:sync')->dailyAt('01:30'));
+
 // Plans that ended, featured periods, ranking.
 $nightly(Schedule::command('listings:reconcile')->dailyAt('02:00'));
 

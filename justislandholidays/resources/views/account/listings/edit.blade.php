@@ -299,6 +299,80 @@
                 </form>
                 @break
 
+            @case('calendar')
+                <h2 class="mb-2 text-xl font-semibold">Booking calendar</h2>
+                <p class="mb-6">Show guests which dates are free. Import your calendars from Airbnb, Booking.com, Vrbo, Google Calendar and others, and mark dates you take yourself. Changes show on your listing straight away.</p>
+
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="feeds-heading">
+                    <h3 id="feeds-heading" class="text-lg font-semibold">Imported calendars</h3>
+                    <p class="mt-1 text-sm text-slate-700">Paste the calendar's iCal address (it ends in .ics, or starts with webcal://). In Airbnb it is under Calendar, Availability, Connect calendars, Export calendar. In Google Calendar it is under Settings, your calendar, Secret address in iCal format. We check them every night, and you can press Sync now. Only the dates are imported, never guest names.</p>
+
+                    @if ($feeds->isNotEmpty())
+                        <ul class="mt-4 divide-y divide-slate-200">
+                            @foreach ($feeds as $feed)
+                                <li class="flex flex-wrap items-center justify-between gap-3 py-3" data-feed="{{ $feed->id }}">
+                                    <div>
+                                        <p class="font-medium">{{ $feed->name }}</p>
+                                        <p class="text-sm {{ $feed->last_status === 'failed' ? 'font-medium text-red-800' : 'text-slate-600' }}">
+                                            @if ($feed->last_status === 'ok') {{ trans_choice(':count booked stay|:count booked stays', $feed->bookings_count) }} · synced {{ $feed->last_synced_at?->diffForHumans() }}
+                                            @elseif ($feed->last_status === 'failed') Could not be read: {{ $feed->last_error }}
+                                            @else Not synced yet
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <form method="POST" action="{{ route('account.listings.calendar.feeds.sync', [$listing, $feed->id]) }}">@csrf<button type="submit" class="min-h-11 rounded border border-slate-400 px-3">Sync now<span class="sr-only"> {{ $feed->name }}</span></button></form>
+                                        <form method="POST" action="{{ route('account.listings.calendar.feeds.destroy', [$listing, $feed->id]) }}" onsubmit="return confirm('Remove this calendar and the dates it brought in?')">@csrf @method('DELETE')<button type="submit" class="min-h-11 rounded border border-red-800 px-3 text-red-800">Remove<span class="sr-only"> {{ $feed->name }}</span></button></form>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    <form method="POST" action="{{ route('account.listings.calendar.feeds.store', $listing) }}" class="mt-4 grid gap-3 sm:grid-cols-[12rem_1fr_auto] sm:items-end">
+                        @csrf
+                        <x-field name="feed_name" label="Name" hint="For example Airbnb." required />
+                        <x-field name="feed_url" label="iCal address" hint="Starts with https:// or webcal://" required autocomplete="off" />
+                        <div class="mb-4"><x-button>Add calendar</x-button></div>
+                    </form>
+                </section>
+
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="own-heading">
+                    <h3 id="own-heading" class="text-lg font-semibold">Dates you take yourself</h3>
+                    <p class="mt-1 text-sm text-slate-700">Press a day on the calendar below to book or free the night from that day, or enter a stay here. The departure day shows as a half day, because the home is free again from the afternoon.</p>
+                    <form method="POST" action="{{ route('account.listings.calendar.bookings.store', $listing) }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                        @csrf
+                        <x-field name="check_in" label="Arrival" type="date" :value="today()->toDateString()" required />
+                        <x-field name="check_out" label="Departure" type="date" :value="today()->addDay()->toDateString()" required />
+                        <div class="mb-4"><x-button>Mark as booked</x-button></div>
+                    </form>
+
+                    @if ($ownBookings->isNotEmpty())
+                        <ul class="mt-2 divide-y divide-slate-200 text-sm">
+                            @foreach ($ownBookings as $own)
+                                <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                                    <span>{{ $own->check_in->format('j M Y') }} to {{ $own->check_out->format('j M Y') }} ({{ trans_choice(':count night|:count nights', $own->check_in->diffInDays($own->check_out)) }})</span>
+                                    <form method="POST" action="{{ route('account.listings.calendar.bookings.destroy', [$listing, $own->id]) }}">@csrf @method('DELETE')<button type="submit" class="min-h-11 text-red-800 underline">Free these dates</button></form>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </section>
+
+                <section aria-labelledby="cal-heading">
+                    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <h3 id="cal-heading" class="text-lg font-semibold">Your calendar</h3>
+                        <nav aria-label="Calendar months" class="flex gap-2">
+                            @if ($offset > 0)<a href="{{ route('account.listings.edit', [$listing, 'calendar', 'months' => max(0, $offset - 3)]) }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Earlier months</a>@endif
+                            @if ($offset < 33)<a href="{{ route('account.listings.edit', [$listing, 'calendar', 'months' => $offset + 3]) }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Later months</a>@endif
+                        </nav>
+                    </div>
+                    <form id="calendar-toggle" method="POST" action="{{ route('account.listings.calendar.toggle', $listing) }}">@csrf</form>
+                    @error('date')<p class="mb-3 text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+                    @include('partials.calendar-months', ['months' => $months, 'toggleAction' => true])
+                </section>
+                @break
+
             @case('review')
                 <h2 class="mb-4 text-xl font-semibold">Review and send</h2>
                 @if ($missing !== [])

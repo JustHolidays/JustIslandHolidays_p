@@ -50,6 +50,11 @@ class ListingController extends Controller
             'isAffiliate' => $listing->isAffiliateListing(),
             'directContact' => \App\Listings\DirectContact::for($listing),
             'sidebarAdverts' => \App\Ads\IslandAdverts::sidebarFor($listing->island),   // Sidebar Section
+            // Booking calendar (paid plans): 3 months at a time, up to a year ahead.
+            'calendarOffset' => $offset = max(0, min(9, (int) request()->query('months', 0))),
+            'calendarMonths' => $listing->hasCalendar()
+                ? \App\Calendar\Availability::months($listing, \Carbon\CarbonImmutable::today()->startOfMonth()->addMonths($offset), 3)
+                : null,
             'canonical' => $canonical,
             'alternates' => collect(config('site.enabled_languages'))
                 ->mapWithKeys(fn ($l) => [$l => $listing->publicUrl($l)])->all(),

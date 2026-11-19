@@ -101,6 +101,20 @@
                     @endif
                 </section>
 
+                @if ($calendarMonths)
+                    <section class="mt-8" id="availability" aria-labelledby="availability-heading">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h2 id="availability-heading" class="text-xl font-semibold">{{ __('Availability') }}</h2>
+                            <nav aria-label="{{ __('Calendar months') }}" class="flex gap-2">
+                                @if ($calendarOffset > 0)<a href="{{ $canonical }}?months={{ max(0, $calendarOffset - 3) }}#availability" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Earlier months') }}</a>@endif
+                                @if ($calendarOffset < 9)<a href="{{ $canonical }}?months={{ $calendarOffset + 3 }}#availability" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Later months') }}</a>@endif
+                            </nav>
+                        </div>
+                        <p class="mt-1 text-sm text-slate-700">{{ __('Kept up to date by the owner. Send an enquiry to check your dates.') }}</p>
+                        <div class="mt-3">@include('partials.calendar-months', ['months' => $calendarMonths])</div>
+                    </section>
+                @endif
+
                 @if ($listing->amenities->isNotEmpty())
                     <section class="mt-8" aria-labelledby="amenities-heading">
                         <h2 id="amenities-heading" class="text-xl font-semibold">{{ __('Features') }}</h2>

@@ -49,11 +49,26 @@ class PlansPhotosAndFeaturedTest extends TestCase
 
     public function test_plans_are_renamed_and_photo_limits_set(): void
     {
-        $this->assertSame('Owners', Plan::where('code', 'standard')->value('name'));
-        $this->assertSame('Featured Property', Plan::where('code', 'featured')->value('name'));
+        $this->assertSame('Free Plan', Plan::where('code', 'free')->value('name'));
+        $this->assertSame('Owners Plan', Plan::where('code', 'standard')->value('name'));
+        $this->assertSame('Featured Plan', Plan::where('code', 'featured')->value('name'));
         $this->assertEqualsCanonicalizing(['free' => 3, 'standard' => 12, 'featured' => 12, 'agent_plus' => 12], Plan::pluck('max_photos', 'code')->map(fn ($n) => (int) $n)->all());
         $this->assertSame(3, Plan::where('code', 'free')->first()->photoLimit());
         $this->assertSame(12, Plan::where('code', 'agent_plus')->first()->photoLimit());
+    }
+
+    public function test_the_rename_migration_only_changes_the_old_default_names(): void
+    {
+        Plan::where('code', 'free')->update(['name' => 'Free']);
+        Plan::where('code', 'standard')->update(['name' => 'Owners']);
+        Plan::where('code', 'featured')->update(['name' => 'Something we chose']);
+
+        (require database_path('migrations/2026_11_19_000009_rename_plans.php'))->up();
+
+        $this->assertSame('Free Plan', Plan::where('code', 'free')->value('name'));
+        $this->assertSame('Owners Plan', Plan::where('code', 'standard')->value('name'));
+        $this->assertSame('Something we chose', Plan::where('code', 'featured')->value('name'), 'A name chosen in admin is kept.');
+        $this->get('/en/owners')->assertSee('Free Plan')->assertSee('Owners Plan');
     }
 
     public function test_list_your_holiday_home_page_shows_cards_with_images_photos_and_orange_prices(): void
@@ -88,7 +103,7 @@ class PlansPhotosAndFeaturedTest extends TestCase
         $this->actingAs($admin)->get(route('admin.plans.edit', $featured))->assertOk()->assertSee('3 months')->assertDontSee('Monthly price');
 
         $this->actingAs($admin)->put(route('admin.plans.update', $featured), [
-            'name' => 'Featured Property', 'max_photos' => 15, 'search_boost' => 20, 'is_featured' => 1, 'has_booking_calendar' => 1,
+            'name' => 'Featured Plan', 'max_photos' => 15, 'search_boost' => 20, 'is_featured' => 1, 'has_booking_calendar' => 1,
             'currency' => 'EUR', 'price_3m' => '35', 'price_6m' => '60', 'price_9m' => '80', 'price_12m' => '95', 'is_active' => 1,
         ])->assertSessionHasNoErrors();
         $featured->refresh();
@@ -203,7 +218,7 @@ class PlansPhotosAndFeaturedTest extends TestCase
         Http::assertSent(fn ($r) => str_ends_with($r->url(), '/v2/checkout/orders') && $r['purchase_units'][0]['amount']['value'] === '55.00');
 
         $this->actingAs($owner)->get(route('account.billing.featured.return', ['token' => 'ORDER-1']))
-            ->assertRedirect(route('account.billing'))->assertSessionHas('status', fn ($s) => str_contains($s, 'Featured Property is active until'));
+            ->assertRedirect(route('account.billing'))->assertSessionHas('status', fn ($s) => str_contains($s, 'Featured Plan is active until'));
 
         $subscription = Subscription::sole();
         $this->assertSame('one_off', $subscription->billing_interval);

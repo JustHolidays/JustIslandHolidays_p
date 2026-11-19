@@ -158,7 +158,7 @@ Just Island Holidays [TO CONFIRM: company name and number, or the sole trader's 
 
 **Enquiries.** Use guests' details only to reply about their stay. Do not add them to mailing lists without their agreement.
 
-**Plans and payment.** Paid plans are billed through PayPal, monthly or yearly, and renew automatically until you cancel. Prices are shown without VAT because Just Island Holidays is not VAT registered. If you cancel, your plan stays active until the end of the period you have paid for, then your listings move to the Free plan. [TO CONFIRM: refund policy, and cooling-off rights if any apply]
+**Plans and payment.** Paid plans are billed yearly through PayPal and renew automatically until you cancel. The Featured Plan is a single payment for 3, 6, 9 or 12 months from the day you pay, and does not renew. Prices are shown without VAT because Just Island Holidays is not VAT registered. If you cancel a yearly plan, it stays active until the end of the year you have paid for; when a plan ends, your listings move to the Free Plan. [TO CONFIRM: refund policy, and cooling-off rights if any apply]
 
 **Our responsibility.** [TO CONFIRM with a lawyer: limitation of liability wording]
 

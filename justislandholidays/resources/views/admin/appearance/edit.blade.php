@@ -86,7 +86,7 @@
         <p class="mt-1 max-w-3xl text-sm">Each home on the island, resort and search maps gets one of three markers. The marker shows the weekly price in white on its colour, with your icon beside it if you add one. The label appears in the key under each map and on the home's pop-up.</p>
         <ul class="mt-1 max-w-3xl list-disc pl-5 text-sm">
             <li><strong>Partner booking site:</strong> homes added for affiliates.</li>
-            <li><strong>Owner listing:</strong> owners and agents on the Free plan.</li>
+            <li><strong>Owner listing:</strong> owners and agents on the Free Plan.</li>
             <li><strong>Premium listing:</strong> owners and agents on any paid plan, including a granted one.</li>
         </ul>
 
@@ -94,7 +94,7 @@
             @foreach ($markers as $kind => $marker)
                 @php
                     $ratio = \App\Support\Appearance::contrast('#ffffff', $marker['colour']);
-                    $title = ['affiliate' => 'Partner homes', 'free' => 'Free plan', 'paid' => 'Paid plans'][$kind];
+                    $title = ['affiliate' => 'Partner homes', 'free' => 'Free Plan', 'paid' => 'Paid plans'][$kind];
                 @endphp
                 <form method="POST" action="{{ route('admin.appearance.marker', $kind) }}" enctype="multipart/form-data" class="space-y-2 rounded border border-slate-200 p-3" aria-labelledby="mk-{{ $kind }}-heading">
                     @csrf @method('PUT')

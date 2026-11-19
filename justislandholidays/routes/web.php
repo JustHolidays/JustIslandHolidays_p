@@ -69,11 +69,18 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
 
             Route::middleware('can:editAsLister,listing')->group(function () {
                 Route::get('/listings/{listing}/edit/{step?}', [ListingEditorController::class, 'edit'])
-                    ->where('step', 'basics|location|photo|link|licence|review')->name('listings.edit');
+                    ->where('step', 'basics|location|photo|link|licence|calendar|review')->name('listings.edit');
                 Route::put('/listings/{listing}/basics', [ListingEditorController::class, 'updateBasics'])->name('listings.basics');
                 Route::put('/listings/{listing}/location', [ListingEditorController::class, 'updateLocation'])->name('listings.location');
                 Route::put('/listings/{listing}/photo', [ListingEditorController::class, 'updatePhoto'])->name('listings.photo');
                 Route::post('/listings/{listing}/photos', [ListingEditorController::class, 'addPhoto'])->name('listings.photos.store');
+                // Booking calendar (paid plans).
+                Route::post('/listings/{listing}/calendar/feeds', [\App\Http\Controllers\Account\CalendarController::class, 'addFeed'])->middleware('throttle:10,1')->name('listings.calendar.feeds.store');
+                Route::post('/listings/{listing}/calendar/feeds/{feed}/sync', [\App\Http\Controllers\Account\CalendarController::class, 'syncFeed'])->whereNumber('feed')->middleware('throttle:10,1')->name('listings.calendar.feeds.sync');
+                Route::delete('/listings/{listing}/calendar/feeds/{feed}', [\App\Http\Controllers\Account\CalendarController::class, 'removeFeed'])->whereNumber('feed')->name('listings.calendar.feeds.destroy');
+                Route::post('/listings/{listing}/calendar/bookings', [\App\Http\Controllers\Account\CalendarController::class, 'addBooking'])->name('listings.calendar.bookings.store');
+                Route::post('/listings/{listing}/calendar/toggle', [\App\Http\Controllers\Account\CalendarController::class, 'toggleNight'])->name('listings.calendar.toggle');
+                Route::delete('/listings/{listing}/calendar/bookings/{booking}', [\App\Http\Controllers\Account\CalendarController::class, 'removeBooking'])->whereNumber('booking')->name('listings.calendar.bookings.destroy');
                 Route::delete('/listings/{listing}/photos/{photo}', [ListingEditorController::class, 'removePhoto'])->whereNumber('photo')->name('listings.photos.destroy');
                 Route::put('/listings/{listing}/link', [ListingEditorController::class, 'updateLink'])->name('listings.link');
                 Route::put('/listings/{listing}/licence', [ListingEditorController::class, 'updateLicence'])->name('listings.licence');

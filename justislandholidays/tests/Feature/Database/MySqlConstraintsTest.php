@@ -41,7 +41,8 @@ class MySqlConstraintsTest extends TestCase
         $this->fail("Not rejected: {$why}");
     }
 
-    public function test_all_ten_check_constraints_exist(): void
+    /** The spec's ten, plus chk_cal_dates for the booking calendar (19 Nov 2026). */
+    public function test_all_check_constraints_exist(): void
     {
         $names = collect(DB::select(
             "SELECT CONSTRAINT_NAME AS n FROM information_schema.TABLE_CONSTRAINTS
@@ -49,7 +50,7 @@ class MySqlConstraintsTest extends TestCase
         ))->pluck('n')->sort()->values()->all();
 
         $this->assertSame([
-            'chk_ad_dates', 'chk_ad_weight', 'chk_currency', 'chk_deeplink_https', 'chk_enq_adults',
+            'chk_ad_dates', 'chk_ad_weight', 'chk_cal_dates', 'chk_currency', 'chk_deeplink_https', 'chk_enq_adults',
             'chk_enq_dates', 'chk_enq_msg', 'chk_rec_target', 'chk_sleeps', 'chk_sub_payer',
         ], $names);
     }
