@@ -32,6 +32,9 @@ class ListingPageTest extends TestCase
             ->assertSee('Villa Sunset')
             ->assertSee('Lovely sea views')
             ->assertSee('€1,200')
+            ->assertSee('From Price')
+            ->assertSee('€1,200 a week')
+            ->assertDontSee('Guide price')
             ->assertSee('VacationRental')
             ->assertSee('rel="canonical" href="'.$listing->publicUrl('en').'"', false);
     }

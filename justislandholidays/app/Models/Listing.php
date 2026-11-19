@@ -221,6 +221,28 @@ class Listing extends Model
         return ! $this->isAffiliateListing() || $this->deeplink_status !== 'broken';
     }
 
+    /** Extra photos after the main one, in order. */
+    public function photos(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ListingPhoto::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /** Photos this listing's plan allows, counting the main photo (Free 3, paid 12; affiliates 1). */
+    public function photoLimit(): int
+    {
+        if ($this->isAffiliateListing()) {
+            return 1;
+        }
+
+        return Plan::where('code', $this->plan_code ?: 'free')->first()?->photoLimit() ?? 3;
+    }
+
+    /** Extra photos to show visitors: processed ones, within the plan's limit. */
+    public function visiblePhotos(): \Illuminate\Support\Collection
+    {
+        return $this->photos->filter(fn (ListingPhoto $p) => $p->image_path !== null)->take(max(0, $this->photoLimit() - 1))->values();
+    }
+
     /** Plain words for the link's state on admin screens. */
     public function deeplinkStatusLabel(): string
     {

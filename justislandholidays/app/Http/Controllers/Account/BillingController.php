@@ -8,11 +8,13 @@ use App\Billing\PayPalException;
 use App\Billing\SubscriptionUpdater;
 use App\Http\Controllers\Controller;
 use App\Models\Agency;
+use App\Models\FeaturedPurchase;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -42,10 +44,11 @@ class BillingController extends Controller
 
     public function checkout(Request $request): RedirectResponse
     {
+        // Yearly only (19 Nov 2026). Featured Property is bought for a period instead (featured()).
         $data = $request->validate([
-            'plan' => ['required', 'string', Rule::in($this->availablePlans($request)->pluck('code'))],
-            'interval' => ['required', Rule::in(['month', 'year'])],
+            'plan' => ['required', 'string', Rule::in($this->availablePlans($request)->reject->isSoldByPeriod()->pluck('code'))],
         ]);
+        $data['interval'] = 'year';
 
         $plan = Plan::where('code', $data['plan'])->firstOrFail();
         $paypalPlanId = $data['interval'] === 'year' ? $plan->paypal_plan_id_year : $plan->paypal_plan_id_month;
@@ -153,15 +156,112 @@ class BillingController extends Controller
             : 'Your plan is cancelled. Your listings are now on the Free plan.');
     }
 
-    /** Active plans for the user's audience that have a price. */
+    /**
+     * Featured Property: a one-off PayPal payment for 3, 6, 9 or 12 months from the day they
+     * pay. No renewal; they can buy again. The period is recorded as a subscription with
+     * billing_interval 'one_off' that ends on its end date.
+     */
+    public function featured(Request $request): RedirectResponse
+    {
+        $plan = $this->availablePlans($request)->first->isSoldByPeriod();
+        abort_unless($plan, 404);
+
+        $prices = $plan->periodPrices();
+        $months = (int) $request->validate(['months' => ['required', 'integer', Rule::in(array_keys($prices))]], [
+            'months.in' => 'Choose 3, 6, 9 or 12 months.',
+        ])['months'];
+        if (! $this->paypal->isConfigured()) {
+            return back()->withErrors(['months' => 'Online payment is not set up yet. Please contact us.']);
+        }
+
+        $account = $this->plans->accountFor($request->user());
+        $purchase = FeaturedPurchase::create([
+            'user_id' => $account instanceof Agency ? null : $account->id,
+            'agency_id' => $account instanceof Agency ? $account->id : null,
+            'plan_id' => $plan->id,
+            'months' => $months,
+            'amount_cents' => $prices[$months],
+            'currency' => $plan->currency,
+        ]);
+
+        try {
+            $order = $this->paypal->createOrder(
+                $prices[$months], $plan->currency, 'featured-'.$purchase->id,
+                "{$plan->name}, {$months} months",
+                route('account.billing.featured.return'), route('account.billing.abandoned'),
+            );
+        } catch (PayPalException $e) {
+            Log::warning('PayPal featured order failed', ['error' => $e->getMessage()]);
+            $purchase->update(['status' => 'failed']);
+
+            return back()->withErrors(['months' => 'We could not reach PayPal. Please try again in a few minutes.']);
+        }
+
+        $purchase->update(['paypal_order_id' => $order['id']]);
+        Audit::record($request->user(), 'featured.start', 'featured_purchase', $purchase->id, ['months' => $months, 'amount_cents' => $prices[$months]]);
+        abort_unless($order['approve_url'], 502);
+
+        return redirect()->away($order['approve_url']);
+    }
+
+    /** PayPal sends the payer back with ?token=ORDER_ID: take the payment and start the period. */
+    public function featuredReturned(Request $request): RedirectResponse
+    {
+        $account = $this->plans->accountFor($request->user());
+        $purchase = FeaturedPurchase::where('paypal_order_id', (string) $request->query('token'))
+            ->where($account instanceof Agency ? 'agency_id' : 'user_id', $account->id)
+            ->with('plan')
+            ->first();
+
+        if (! $purchase) {
+            return redirect()->route('account.billing')->withErrors(['months' => 'We could not find that payment.']);
+        }
+        if ($purchase->status === 'completed') {
+            return redirect()->route('account.billing')->with('status', 'Your Featured Property period is already active.');
+        }
+
+        try {
+            $status = $this->paypal->captureOrder($purchase->paypal_order_id);
+        } catch (PayPalException $e) {
+            Log::warning('PayPal featured capture failed', ['error' => $e->getMessage()]);
+
+            return redirect()->route('account.billing')->withErrors(['months' => 'PayPal could not take the payment, so nothing has changed. Please try again.']);
+        }
+
+        if ($status !== 'COMPLETED') {
+            $purchase->update(['status' => 'failed']);
+
+            return redirect()->route('account.billing')->withErrors(['months' => 'PayPal did not complete the payment, so nothing has changed.']);
+        }
+
+        DB::transaction(function () use ($purchase, $account, $request) {
+            $subscription = new Subscription();
+            $subscription->forceFill([
+                'user_id' => $purchase->user_id,
+                'agency_id' => $purchase->agency_id,
+                'plan_id' => $purchase->plan_id,
+                'billing_interval' => 'one_off',
+                'status' => 'active',
+                'ends_at' => now()->addMonthsNoOverflow($purchase->months),
+            ])->save();
+            $purchase->update(['status' => 'completed', 'subscription_id' => $subscription->id]);
+            $this->plans->sync($account);
+            Audit::record($request->user(), 'featured.paid', 'featured_purchase', $purchase->id, ['months' => $purchase->months, 'ends_at' => $subscription->ends_at->toDateString()]);
+        });
+
+        return redirect()->route('account.billing')->with('status', 'Thank you. '.$purchase->plan->name.' is active until '.now()->addMonthsNoOverflow($purchase->months)->format('j F Y').'.');
+    }
+
+    /** Active plans for the user's audience that can be bought: a yearly price, or Featured Property period prices. */
     private function availablePlans(Request $request)
     {
         $audience = $request->user()->role?->value === 'agent' ? 'agent' : 'owner';
 
         return Plan::where('is_active', true)
             ->where('audience', $audience)
-            ->where(fn ($q) => $q->whereNotNull('price_month_cents')->orWhereNotNull('price_year_cents'))
             ->orderBy('search_boost')
-            ->get();
+            ->get()
+            ->filter(fn (Plan $p) => $p->isSoldByPeriod() ? $p->periodPrices() !== [] : $p->price_year_cents !== null)
+            ->values();
     }
 }

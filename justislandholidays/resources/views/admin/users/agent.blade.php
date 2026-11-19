@@ -4,7 +4,12 @@
     <p><a href="{{ route('admin.agents.index') }}" class="inline-flex min-h-11 items-center underline">Back to agents</a></p>
     <h1 class="text-2xl font-semibold">{{ $user->name }}</h1>
     <p class="mt-1">Agent{{ $user->agency ? ' at '.$user->agency->name : '' }} · {{ $user->email }} · {{ $plan->name }} plan · {{ $user->isDeactivated() ? 'Deactivated' : 'Active' }}</p>
-    <p class="mt-2"><a href="{{ route('admin.users.show', $user) }}" class="inline-flex min-h-11 items-center underline">Account details{{ auth()->user()->isSuperAdmin() ? ' and role' : '' }}</a></p>
+    <p class="mt-2 flex flex-wrap items-center gap-4">
+        <a href="{{ route('admin.users.show', $user) }}" class="inline-flex min-h-11 items-center underline">Account details{{ auth()->user()->isSuperAdmin() ? ' and role' : '' }}</a>
+        @unless ($user->isDeactivated())
+            <a href="{{ route('admin.listings.create', ['lister' => $user->email]) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add a property for them</a>
+        @endunless
+    </p>
 
     <section class="mt-6 rounded-lg bg-white p-5 shadow-sm" aria-labelledby="props-heading">
         <h2 id="props-heading" class="text-lg font-semibold">Properties ({{ $listings->count() }})</h2>

@@ -15,10 +15,10 @@ class PlanSeeder extends Seeder
     public function run(): void
     {
         $plans = [
-            ['code' => 'free',       'name' => 'Free',       'audience' => 'owner', 'max_listings' => 1,  'is_featured' => false, 'search_boost' => 0,  'show_direct_contact' => false],
-            ['code' => 'standard',   'name' => 'Standard',   'audience' => 'owner', 'max_listings' => 1,  'is_featured' => false, 'search_boost' => 10, 'show_direct_contact' => true],
-            ['code' => 'featured',   'name' => 'Featured',   'audience' => 'owner', 'max_listings' => 1,  'is_featured' => true,  'search_boost' => 20, 'show_direct_contact' => true],
-            ['code' => 'agent_plus', 'name' => 'Agent Plus', 'audience' => 'agent', 'max_listings' => 25, 'is_featured' => false, 'search_boost' => 10, 'show_direct_contact' => true],
+            ['code' => 'free',       'name' => 'Free',              'audience' => 'owner', 'max_listings' => 1,  'is_featured' => false, 'search_boost' => 0,  'show_direct_contact' => false, 'max_photos' => 3],
+            ['code' => 'standard',   'name' => 'Owners',            'audience' => 'owner', 'max_listings' => 1,  'is_featured' => false, 'search_boost' => 10, 'show_direct_contact' => true,  'max_photos' => 12],
+            ['code' => 'featured',   'name' => 'Featured Property', 'audience' => 'owner', 'max_listings' => 1,  'is_featured' => true,  'search_boost' => 20, 'show_direct_contact' => true,  'max_photos' => 12],
+            ['code' => 'agent_plus', 'name' => 'Agent Plus',        'audience' => 'agent', 'max_listings' => 25, 'is_featured' => false, 'search_boost' => 10, 'show_direct_contact' => true,  'max_photos' => 12],
         ];
 
         foreach ($plans as $plan) {

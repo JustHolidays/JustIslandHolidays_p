@@ -53,6 +53,58 @@ class PayPalClient
         ];
     }
 
+    /**
+     * A one-off payment (Featured Property periods). The payer approves it on PayPal, then
+     * we capture it when they come back.
+     *
+     * @return array{id: string, approve_url: ?string}
+     */
+    public function createOrder(int $amountCents, string $currency, string $customId, string $description, string $returnUrl, string $cancelUrl): array
+    {
+        $body = $this->request()
+            ->withHeaders(['PayPal-Request-Id' => 'jih-order-'.$customId])   // safe to retry
+            ->post('/v2/checkout/orders', [
+                'intent' => 'CAPTURE',
+                'purchase_units' => [[
+                    'custom_id' => $customId,
+                    'description' => mb_substr($description, 0, 127),
+                    'amount' => ['currency_code' => $currency, 'value' => number_format($amountCents / 100, 2, '.', '')],
+                ]],
+                'application_context' => [
+                    'brand_name' => config('services.paypal.brand_name'),
+                    'shipping_preference' => 'NO_SHIPPING',
+                    'user_action' => 'PAY_NOW',
+                    'return_url' => $returnUrl,
+                    'cancel_url' => $cancelUrl,
+                ],
+            ])
+            ->throw(fn (Response $r) => throw new PayPalException('PayPal could not start the payment: '.$r->status()))
+            ->json();
+
+        return [
+            'id' => $body['id'],
+            'approve_url' => collect($body['links'] ?? [])->firstWhere('rel', 'approve')['href'] ?? null,
+        ];
+    }
+
+    /** Takes the approved payment. Returns PayPal's status, 'COMPLETED' when the money is taken. */
+    public function captureOrder(string $orderId): string
+    {
+        $response = $this->request()
+            ->withHeaders(['PayPal-Request-Id' => 'jih-capture-'.$orderId])
+            ->post("/v2/checkout/orders/{$orderId}/capture", (object) []);
+
+        // Already captured (a refresh, or a second tab) is fine: ask for the order's status.
+        if ($response->status() === 422 && str_contains((string) $response->body(), 'ORDER_ALREADY_CAPTURED')) {
+            return (string) $this->request()->get("/v2/checkout/orders/{$orderId}")->json('status', 'COMPLETED');
+        }
+        if (! $response->successful()) {
+            throw new PayPalException('PayPal could not take the payment: '.$response->status());
+        }
+
+        return (string) $response->json('status');
+    }
+
     /** Switch an active subscription to another plan. Returns the approval link if PayPal needs one. */
     public function revisePlan(string $subscriptionId, string $planId, string $returnUrl, string $cancelUrl): ?string
     {

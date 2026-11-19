@@ -97,6 +97,7 @@ class EnforceRetention extends Command
                 'affiliate_data' => null,
                 'affiliate_logo_path' => null,
                 'affiliate_logo_alt' => null,
+                'affiliate_website_url' => null,
                 'marketing_consent' => false,
                 'consented_at' => null,
             ])->saveQuietly();

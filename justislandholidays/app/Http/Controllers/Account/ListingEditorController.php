@@ -64,7 +64,7 @@ class ListingEditorController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $this->validateBasics($request);
+        $data = $this->validateBasics($request, null, $request->user()->isAffiliate());
         $user = $request->user();
         $island = Island::findOrFail($data['island_id']);
 
@@ -100,7 +100,7 @@ class ListingEditorController extends Controller
     public function updateBasics(Request $request, Listing $listing): RedirectResponse
     {
         $this->ensureEditable($listing);
-        $data = $this->validateBasics($request, $listing->property_type);
+        $data = $this->validateBasics($request, $listing->property_type, $listing->isAffiliateListing());
 
         DB::transaction(function () use ($listing, $data, $request) {
             $listing->fill($this->basicsAttributes($data));
@@ -127,6 +127,7 @@ class ListingEditorController extends Controller
             'contact_email' => ['required', 'email', 'max:190'],
             'contact_phone' => ['nullable', 'string', 'max:40', 'regex:/^[0-9 +()\-]{6,40}$/'],
             'website_url' => ['nullable', 'url:https', 'max:255'],
+            'show_phone' => ['nullable', 'boolean'],   // only asked of owners and agents; hidden unless they say yes
         ], [
             'website_url.url' => 'The website must start with https://',
             'contact_phone.regex' => 'Enter the phone number using digits, spaces and + only.',
@@ -181,6 +182,54 @@ class ListingEditorController extends Controller
         Audit::record($request->user(), 'listing.update', $listing, null, ['step' => 'photo', 'new_photo' => $request->hasFile('photo')]);
 
         return $this->next($listing, 'link');
+    }
+
+    /** Another photo after the main one, up to the plan's limit (Free 3 in all, paid plans 12). Shows straight away. */
+    public function addPhoto(Request $request, Listing $listing): RedirectResponse
+    {
+        $this->ensureEditable($listing);
+        abort_if($listing->isAffiliateListing(), 404);   // affiliate listings have one photo
+
+        if (! $listing->image_path) {
+            return back()->withErrors(['extra_photo' => 'Add your main photo first.']);
+        }
+        $limit = $listing->photoLimit();
+        if ($listing->photos()->count() + 1 >= $limit) {
+            return back()->withErrors(['extra_photo' => "Your plan allows {$limit} photos, and you have them all. Remove one, or choose a plan with more photos."]);
+        }
+
+        $request->validate([
+            'extra_photo' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240', 'dimensions:min_width=800,min_height=500'],
+            'extra_alt' => ['required', 'string', 'max:160'],
+            'extra_permission' => ['accepted'],
+        ], [
+            'extra_photo.required' => 'Choose a photo.',
+            'extra_photo.dimensions' => 'The photo must be at least 800 pixels wide and 500 pixels tall.',
+            'extra_photo.max' => 'The photo must be 10 MB or smaller.',
+            'extra_alt.required' => 'Describe the photo in a few words, for people who cannot see it.',
+            'extra_permission.accepted' => 'Please confirm you own the photo or have permission to use it.',
+        ]);
+
+        $photo = new \App\Models\ListingPhoto(['alt' => trim((string) $request->input('extra_alt')), 'sort_order' => (int) $listing->photos()->max('sort_order') + 1]);
+        $photo->listing_id = $listing->id;
+        $photo->save();
+
+        $path = $request->file('extra_photo')->store("listing-originals/{$listing->id}", 'local');
+        ProcessListingImage::dispatch($listing->id, $path, $photo->id);
+        Audit::record($request->user(), 'listing.update', $listing, null, ['step' => 'photo', 'extra_photo_added' => $photo->id]);
+
+        return back()->with('status', 'Photo added. It may take a minute to appear.');
+    }
+
+    public function removePhoto(Request $request, Listing $listing, int $photo): RedirectResponse
+    {
+        $this->ensureEditable($listing);
+        $record = $listing->photos()->whereKey($photo)->firstOrFail();
+        $record->deleteFiles();
+        $record->delete();
+        Audit::record($request->user(), 'listing.update', $listing, null, ['step' => 'photo', 'extra_photo_removed' => $photo]);
+
+        return back()->with('status', 'Photo removed.');
     }
 
     public function updateLink(Request $request, Listing $listing): RedirectResponse
@@ -323,7 +372,7 @@ class ListingEditorController extends Controller
     }
 
     /** @param  string|null  $currentType  a switched-off type the listing already has stays allowed */
-    private function validateBasics(Request $request, ?string $currentType = null): array
+    private function validateBasics(Request $request, ?string $currentType = null, bool $isAffiliate = false): array
     {
         return $request->validate([
             'title' => ['required', 'string', 'max:160'],
@@ -337,10 +386,13 @@ class ListingEditorController extends Controller
             'has_private_pool' => ['nullable', 'boolean'],
             'pets' => ['required', Rule::in(['yes', 'no', 'not_stated'])],
             'distance_to_beach_m' => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'price' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            // Owners and agents must give a From price (19 Nov 2026); affiliates may leave it out.
+            'price' => [$isAffiliate ? 'nullable' : 'required', 'integer', 'min:1', 'max:1000000'],
             'currency' => ['required', Rule::in(['EUR', 'GBP'])],
         ], [
             'area_id.exists' => 'Choose a resort or town on the island you picked.',
+            'price.required' => 'Add your From price per week. Your listing cannot go live without one.',
+            'price.min' => 'The From price must be more than 0.',
         ]);
     }
 

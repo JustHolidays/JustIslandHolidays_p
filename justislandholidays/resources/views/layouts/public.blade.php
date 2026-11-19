@@ -75,6 +75,7 @@
                     @foreach (['about' => __('About us'), 'contact' => __('Contact'), 'terms' => __('Terms'), 'privacy' => __('Privacy'), 'accessibility' => __('Accessibility')] as $slug => $label)
                         <li><a href="{{ route('pages.show', $slug) }}" class="inline-flex min-h-11 items-center underline">{{ $label }}</a></li>
                     @endforeach
+                    <li><a href="{{ route('partners') }}" class="inline-flex min-h-11 items-center underline">{{ __('Our partners') }}</a></li>
                     <li><a href="{{ route('owners') }}" class="inline-flex min-h-11 items-center underline">{{ __('For owners') }}</a></li>
                     <li><a href="{{ route('login') }}" class="inline-flex min-h-11 items-center underline">{{ __('Owner sign in') }}</a></li>
                 </ul>

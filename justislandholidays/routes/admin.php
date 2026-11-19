@@ -36,6 +36,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/listings/import', [ImportController::class, 'create'])->name('import.create');
     Route::post('/listings/import/fetch', [ImportController::class, 'fetch'])->middleware('throttle:20,1')->name('import.fetch');
     Route::post('/listings/import', [ImportController::class, 'store'])->name('import.store');
+    // Add a property for an owner or agent (island admins for their own islands).
+    Route::get('/listings/add', [\App\Http\Controllers\Admin\PropertyCreateController::class, 'create'])->name('listings.create');
+    Route::post('/listings/add', [\App\Http\Controllers\Admin\PropertyCreateController::class, 'store'])->name('listings.store');
     Route::get('/listings/{listing}', [ListingController::class, 'show'])->middleware('can:view,listing')->name('listings.show');
     Route::put('/listings/{listing}', [ListingController::class, 'update'])->name('listings.update');
     Route::post('/listings/{listing}/approve', [ListingController::class, 'approve'])->name('listings.approve');
@@ -112,6 +115,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::get('/affiliates/{affiliate}/deeplinks', [DeeplinkController::class, 'affiliate'])->name('affiliates.deeplinks');
         Route::put('/affiliates/{affiliate}', [AffiliateController::class, 'update'])->name('affiliates.update');
         Route::post('/affiliates/{affiliate}/logo', [AffiliateController::class, 'updateLogo'])->name('affiliates.logo');
+        Route::post('/affiliates/{affiliate}/website', [AffiliateController::class, 'updateWebsite'])->name('affiliates.website');
         Route::post('/affiliates/{affiliate}/deactivate', [AffiliateController::class, 'deactivate'])->name('affiliates.deactivate');
         Route::post('/affiliates/{affiliate}/reactivate', [AffiliateController::class, 'reactivate'])->name('affiliates.reactivate');
         Route::post('/affiliates/{affiliate}/invite', [AffiliateController::class, 'invite'])->name('affiliates.invite');
@@ -173,6 +177,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
         Route::get('/plans/{plan}/edit', [PlanController::class, 'edit'])->name('plans.edit');
         Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('plans.update');
+        Route::post('/plans/{plan}/header', [PlanController::class, 'updateHeader'])->name('plans.header');
         Route::post('/plans/grant', [PlanController::class, 'grant'])->name('plans.grant');
         Route::get('/subscriptions/{subscription}', [PlanController::class, 'subscription'])->name('subscriptions.show');
         Route::post('/payments/{payment}/refunded', [PlanController::class, 'markRefunded'])->name('payments.refunded');

@@ -21,7 +21,8 @@ class ProcessListingImage implements ShouldQueue
 
     public const WIDTHS = [400, 800, 1600];
 
-    public function __construct(public int $listingId, public string $originalPath)
+    /** $photoId set: an extra photo (listing_photos); otherwise the listing's main photo. */
+    public function __construct(public int $listingId, public string $originalPath, public ?int $photoId = null)
     {
     }
 
@@ -41,8 +42,21 @@ class ProcessListingImage implements ShouldQueue
         }
         imagedestroy($source);
 
-        $old = $listing->image_path;
-        $listing->forceFill(['image_path' => "{$base}-1600.webp"])->save();
+        if ($this->photoId !== null) {
+            $photo = \App\Models\ListingPhoto::where('listing_id', $listing->id)->find($this->photoId);
+            if (! $photo) {   // deleted while it was being processed
+                foreach (self::WIDTHS as $width) {
+                    $public->delete("{$base}-{$width}.webp");
+                }
+
+                return;
+            }
+            $old = $photo->image_path;
+            $photo->forceFill(['image_path' => "{$base}-1600.webp"])->save();
+        } else {
+            $old = $listing->image_path;
+            $listing->forceFill(['image_path' => "{$base}-1600.webp"])->save();
+        }
 
         if ($old && preg_match('/^(listings\/\d+\/[0-9a-f-]+)-\d+\.webp$/', $old, $m)) {
             foreach (self::WIDTHS as $width) {

@@ -59,7 +59,8 @@ class BillingTest extends TestCase
         $this->actingAs(User::factory()->owner()->create())->get('/account/billing')->assertOk()
             ->assertSee('Your plan: Free')
             ->assertSee('Standard')
-            ->assertSee('€120 a year')
+            ->assertSee('€120 for 1 year')
+            ->assertDontSee('a month')
             ->assertDontSee('Agent Plus');
 
         $this->actingAs(User::factory()->agent()->create())->get('/account/billing')->assertOk()

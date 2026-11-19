@@ -111,7 +111,7 @@
                     <x-field name="distance_to_beach_m" label="Distance to the nearest beach, in metres (optional)" type="number" min="0" :value="$listing->distance_to_beach_m" />
 
                     <div class="grid grid-cols-[1fr_8rem] gap-4">
-                        <x-field name="price" label="Guide price per week, from (optional)" type="number" min="0" step="1" hint="Your lowest weekly price. You confirm the final price with guests." :value="$listing->min_price_week_cents !== null ? intdiv($listing->min_price_week_cents, 100) : null" />
+                        <x-field name="price" :label="$isAffiliate ? 'From price per week (optional)' : 'From price per week'" type="number" min="1" step="1" hint="Your lowest weekly price, shown as From Price. You confirm the final price with guests." :required="! $isAffiliate" :value="$listing->min_price_week_cents !== null ? intdiv($listing->min_price_week_cents, 100) : null" />
                         <div class="mb-4">
                             <label for="currency" class="mb-1 block font-medium">Currency</label>
                             <select id="currency" name="currency" class="{{ $input }}">
@@ -140,6 +140,17 @@
                     <h3 class="mb-2 mt-6 text-lg font-semibold">Where should enquiries go?</h3>
                     <x-field name="contact_email" label="Email for enquiries" type="email" :value="$private?->contact_email ?? auth()->user()->email" autocomplete="email" required />
                     <x-field name="contact_phone" label="Phone (optional)" type="tel" :value="$private?->contact_phone" autocomplete="tel" />
+                    @unless ($isAffiliate)
+                        @php
+                            $showPhone = (string) old('show_phone', $private?->show_phone ? '1' : '0');
+                        @endphp
+                        <fieldset class="mb-4" aria-describedby="show-phone-hint">
+                            <legend class="mb-1 font-medium">Show your phone number on your listing page?</legend>
+                            <p id="show-phone-hint" class="mb-2 text-sm text-slate-600">Paid plans can show your phone number to visitors. It is never shown on the Free plan. If you choose hidden, we keep it private.</p>
+                            <div class="flex min-h-11 items-center gap-2"><input id="show-phone-yes" type="radio" name="show_phone" value="1" class="h-5 w-5" @checked($showPhone === '1')><label for="show-phone-yes">Yes, show it publicly</label></div>
+                            <div class="flex min-h-11 items-center gap-2"><input id="show-phone-no" type="radio" name="show_phone" value="0" class="h-5 w-5" @checked($showPhone !== '1')><label for="show-phone-no">No, keep it hidden</label></div>
+                        </fieldset>
+                    @endunless
                     <x-field name="website_url" label="Your website (optional)" type="url" :value="$private?->website_url" hint="Must start with https://" />
 
                     <x-button>Save and continue</x-button>
@@ -149,8 +160,8 @@
             @case('photo')
                 <form method="POST" action="{{ route('account.listings.photo', $listing) }}" enctype="multipart/form-data">
                     @csrf @method('PUT')
-                    <h2 class="mb-2 text-xl font-semibold">Photo</h2>
-                    <p class="mb-4">Each listing has one photo. Choose your best one: bright, level and showing the home or the view.</p>
+                    <h2 class="mb-2 text-xl font-semibold">{{ $isAffiliate ? 'Photo' : 'Main photo' }}</h2>
+                    <p class="mb-4">{{ $isAffiliate ? 'Each partner listing has one photo.' : 'Your main photo shows first, on cards and at the top of your listing.' }} Choose your best one: bright, level and showing the home or the view.</p>
 
                     @if ($listing->imageUrl())
                         <img src="{{ $listing->imageUrl(800) }}" alt="{{ $listing->image_alt }}" class="mb-4 w-full max-w-md rounded" width="800" height="600">
@@ -174,6 +185,59 @@
 
                     <x-button>Save and continue</x-button>
                 </form>
+
+                {{-- More photos (owners and agents): up to the plan's limit, counting the main photo. --}}
+                @if (! $isAffiliate && $listing->exists)
+                    @php
+                        $photoLimit = $listing->photoLimit();
+                        $extras = $listing->photos;
+                        $room = max(0, $photoLimit - 1 - $extras->count());
+                    @endphp
+                    <section class="mt-8 border-t border-slate-200 pt-6" aria-labelledby="more-photos-heading">
+                        <h2 id="more-photos-heading" class="mb-2 text-xl font-semibold">More photos</h2>
+                        <p class="mb-4">Your plan allows {{ $photoLimit }} photos in all, including your main photo. You have {{ 1 + $extras->count() }} {{ $room > 0 ? "and can add {$room} more" : 'and have used them all' }}.</p>
+
+                        @if ($extras->isNotEmpty())
+                            <ul class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                @foreach ($extras as $extra)
+                                    <li class="rounded border border-slate-200 bg-white p-2" data-extra-photo>
+                                        @if ($extra->url(400))
+                                            <img src="{{ $extra->url(400) }}" alt="{{ $extra->alt }}" width="400" height="300" class="aspect-[4/3] w-full rounded object-cover">
+                                        @else
+                                            <p class="flex aspect-[4/3] items-center justify-center rounded bg-slate-100 p-2 text-center text-sm">Being prepared, it will appear in a minute.</p>
+                                        @endif
+                                        <p class="mt-1 text-sm">{{ $extra->alt }}</p>
+                                        <form method="POST" action="{{ route('account.listings.photos.destroy', [$listing, $extra->id]) }}" class="mt-1" onsubmit="return confirm('Remove this photo?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="min-h-11 text-sm text-red-800 underline">Remove<span class="sr-only"> photo: {{ $extra->alt }}</span></button>
+                                        </form>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        @if ($room > 0 && $listing->image_path)
+                            <form method="POST" action="{{ route('account.listings.photos.store', $listing) }}" enctype="multipart/form-data">
+                                @csrf
+                                <div class="mb-4">
+                                    <label for="extra_photo" class="mb-1 block font-medium">Add a photo</label>
+                                    <p id="extra-photo-hint" class="mb-1 text-sm text-slate-600">JPG, PNG or WebP, at least 800 pixels wide, up to 10 MB.</p>
+                                    <input id="extra_photo" name="extra_photo" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="extra-photo-hint" class="block min-h-11 w-full" required>
+                                    @error('extra_photo')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                                </div>
+                                <x-field name="extra_alt" label="Describe the photo" maxlength="160" hint="For example: Shaded terrace with a dining table." required />
+                                <div class="mb-4 flex items-start gap-2">
+                                    <input id="extra_permission" name="extra_permission" type="checkbox" value="1" class="mt-1 h-5 w-5 shrink-0" required>
+                                    <label for="extra_permission">I took this photo or have permission to use it, and I allow Just Island Holidays to show it on this listing.</label>
+                                </div>
+                                @error('extra_permission')<p class="mb-4 text-sm text-red-700">{{ $message }}</p>@enderror
+                                <x-button>Add photo</x-button>
+                            </form>
+                        @elseif (! $listing->image_path)
+                            <p class="text-sm">Save your main photo first, then you can add more.</p>
+                        @endif
+                    </section>
+                @endif
                 @break
 
             @case('link')

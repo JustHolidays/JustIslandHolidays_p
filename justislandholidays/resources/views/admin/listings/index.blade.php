@@ -9,7 +9,10 @@
 @section('content')
     <div class="flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-2xl font-semibold">Listing Search</h1>
-        <a href="{{ route('admin.import.create') }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add an affiliate listing from a web address</a>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.listings.create') }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add a property for an owner or agent</a>
+            <a href="{{ route('admin.import.create') }}" class="inline-flex min-h-11 items-center rounded border border-slate-900 bg-white px-4 font-medium">Add an affiliate listing from a web address</a>
+        </div>
     </div>
 
     @can('decide-recommendations')

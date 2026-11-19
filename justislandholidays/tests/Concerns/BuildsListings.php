@@ -32,7 +32,8 @@ trait BuildsListings
             $factory = $factory->onIsland($island);
         }
 
-        $listing = $factory->create($attributes + ['owner_id' => $owner->id, 'image_path' => 'listings/1/x-1600.webp', 'image_alt' => 'White villa']);
+        // A complete owner listing has a From price (required since 19 Nov 2026).
+        $listing = $factory->create($attributes + ['owner_id' => $owner->id, 'image_path' => 'listings/1/x-1600.webp', 'image_alt' => 'White villa', 'min_price_week_cents' => 100000]);
 
         if (! $owner->isAffiliate()) {
             $licence = new ListingLicence(['registration_number' => 'ETV/1234']);

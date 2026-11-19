@@ -22,7 +22,7 @@ use Illuminate\View\View;
  * Plans and subscriptions (super admins). Prices and limits live here, never in code.
  * Affiliates never appear: they are outside billing.
  *
- * "Grant a plan" gives an owner or agency a complimentary plan until a date (for example
+ * "Gift A Plan" gives an owner or agency a complimentary plan until a date (for example
  * free Featured placement for early owners). It is account-wide: an agency's grant covers
  * all its listings.
  */
@@ -49,39 +49,83 @@ class PlanController extends AdminController
 
     public function update(Request $request, Plan $plan): RedirectResponse
     {
-        $data = $request->validate([
+        // Yearly only (19 Nov 2026): monthly prices are no longer edited or offered; any
+        // stored monthly values are left alone so existing monthly subscriptions keep running.
+        $rules = [
             'name' => ['required', 'string', 'max:80'],
             'max_listings' => ['nullable', 'integer', 'min:1', 'max:10000'],
+            'max_photos' => ['required', 'integer', 'min:1', 'max:50'],
             'search_boost' => ['required', 'integer', 'min:0', 'max:1000'],
             'is_featured' => ['nullable', 'boolean'],
             'show_direct_contact' => ['nullable', 'boolean'],
+            'has_booking_calendar' => ['nullable', 'boolean'],
             'currency' => ['required', Rule::in(['EUR', 'GBP'])],
-            'price_month' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'price_year' => ['nullable', 'numeric', 'min:0', 'max:100000'],
-            'paypal_plan_id_month' => ['nullable', 'regex:/^P-[A-Z0-9]{10,40}$/'],
             'paypal_plan_id_year' => ['nullable', 'regex:/^P-[A-Z0-9]{10,40}$/'],
             'is_active' => ['nullable', 'boolean'],
-        ], ['paypal_plan_id_month.regex' => 'PayPal plan ids look like P-1AB23456CD789012E.', 'paypal_plan_id_year.regex' => 'PayPal plan ids look like P-1AB23456CD789012E.']);
+        ];
+        foreach (Plan::FEATURED_PERIODS as $months) {
+            $rules["price_{$months}m"] = ['nullable', 'numeric', 'min:0', 'max:100000'];
+        }
+        $data = $request->validate($rules, ['paypal_plan_id_year.regex' => 'PayPal plan ids look like P-1AB23456CD789012E.']);
 
+        $cents = fn ($v) => isset($v) && $v !== '' ? (int) round($v * 100) : null;
         $before = $plan->toArray();
-        $plan->fill([
+        $attributes = [
             'name' => $data['name'],
             'max_listings' => $data['max_listings'] ?? null,
+            'max_photos' => (int) $data['max_photos'],
             'search_boost' => $data['search_boost'],
             'is_featured' => (bool) ($data['is_featured'] ?? false),
             'show_direct_contact' => (bool) ($data['show_direct_contact'] ?? false),
+            'has_booking_calendar' => (bool) ($data['has_booking_calendar'] ?? false),
             'currency' => $data['currency'],
-            'price_month_cents' => isset($data['price_month']) ? (int) round($data['price_month'] * 100) : null,
-            'price_year_cents' => isset($data['price_year']) ? (int) round($data['price_year'] * 100) : null,
-            'paypal_plan_id_month' => $data['paypal_plan_id_month'] ?? null,
+            'price_year_cents' => $cents($data['price_year'] ?? null),
             'paypal_plan_id_year' => $data['paypal_plan_id_year'] ?? null,
             'is_active' => (bool) ($data['is_active'] ?? false),
-        ])->save();
+        ];
+        foreach (Plan::FEATURED_PERIODS as $months) {
+            $attributes["price_{$months}m_cents"] = $cents($data["price_{$months}m"] ?? null);
+        }
+        $plan->fill($attributes)->save();
         RankScore::flush();
 
         Audit::record($request->user(), 'plan.update', $plan, null, ['before' => $before, 'after' => $plan->fresh()->toArray()]);
 
         return redirect()->route('admin.plans.index')->with('status', "{$plan->name} saved. Ranking changes apply to listings at the next nightly update.");
+    }
+
+    /** Header image for the plan's card on the List your holiday home page. Audited. */
+    public function updateHeader(Request $request, Plan $plan): RedirectResponse
+    {
+        $before = $plan->only(['header_image_path', 'header_image_alt']);
+
+        if ($request->boolean('remove')) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete((string) $plan->header_image_path);
+            $plan->forceFill(['header_image_path' => null, 'header_image_alt' => null])->save();
+            Audit::record($request->user(), 'plan.header_remove', $plan, null, ['before' => $before]);
+
+            return back()->with('status', 'Card image removed. The card shows the placeholder.');
+        }
+
+        $request->validate([
+            'header_image' => [$plan->header_image_path ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width=800,min_height=300'],
+            'header_image_alt' => ['required', 'string', 'max:160'],
+        ], [
+            'header_image.required' => 'Choose an image.',
+            'header_image.dimensions' => 'The image must be at least 800 × 300 pixels.',
+            'header_image_alt.required' => 'Describe the image for people who cannot see it.',
+        ]);
+
+        $path = $plan->header_image_path;
+        if ($request->hasFile('header_image')) {
+            $path = \App\Support\PlanImage::store($request->file('header_image'));
+            \Illuminate\Support\Facades\Storage::disk('public')->delete((string) $plan->header_image_path);
+        }
+        $plan->forceFill(['header_image_path' => $path, 'header_image_alt' => trim((string) $request->input('header_image_alt'))])->save();
+        Audit::record($request->user(), 'plan.header_update', $plan, null, ['before' => $before, 'after' => $plan->only(['header_image_path', 'header_image_alt'])]);
+
+        return back()->with('status', 'Card image saved.');
     }
 
     /** A complimentary plan until a date, for one owner or agent's account. Goes through AccountPlan and is audited. */
@@ -120,7 +164,7 @@ class PlanController extends AdminController
             Audit::record($request->user(), 'plan.override', $sub, null, ['plan' => $plan->code, 'until' => $data['until'], 'reason' => $data['reason'], 'account' => $account->getTable().':'.$account->id]);
         });
 
-        return back()->with('status', "{$plan->name} granted until ".Carbon::parse($data['until'])->format('j F Y').'.');
+        return back()->with('status', "{$plan->name} gifted until ".Carbon::parse($data['until'])->format('j F Y').'.');
     }
 
     public function subscription(Subscription $subscription): View

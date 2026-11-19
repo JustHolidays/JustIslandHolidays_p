@@ -139,15 +139,16 @@ class PlatformTest extends TestCase
 
         $this->actingAs($this->super)->put("/admin/plans/{$plan->id}", [
             'name' => 'Standard', 'max_listings' => 2, 'search_boost' => 15, 'show_direct_contact' => 1, 'currency' => 'EUR',
-            'price_year' => '149.50', 'paypal_plan_id_year' => 'P-1AB23456CD789012E', 'is_active' => 1,
+            'price_year' => '149.50', 'paypal_plan_id_year' => 'P-1AB23456CD789012E', 'is_active' => 1, 'max_photos' => 12,
         ])->assertSessionHasNoErrors();
 
         $plan->refresh();
         $this->assertSame(14950, $plan->price_year_cents);
-        $this->assertNull($plan->price_month_cents);
+        // Yearly only: the old monthly price is left as it was, so existing monthly subscriptions keep running.
+        $this->assertSame(1200, $plan->price_month_cents);
         $this->assertSame(2, $plan->max_listings);
 
-        $this->actingAs($this->super)->put("/admin/plans/{$plan->id}", ['name' => 'S', 'search_boost' => 1, 'currency' => 'EUR', 'paypal_plan_id_year' => 'nonsense'])
+        $this->actingAs($this->super)->put("/admin/plans/{$plan->id}", ['name' => 'S', 'search_boost' => 1, 'currency' => 'EUR', 'max_photos' => 3, 'paypal_plan_id_year' => 'nonsense'])
             ->assertSessionHasErrors('paypal_plan_id_year');
     }
 

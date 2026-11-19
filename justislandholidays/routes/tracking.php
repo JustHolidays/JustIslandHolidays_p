@@ -20,6 +20,12 @@ Route::get('/api/map', \App\Http\Controllers\Public\MapController::class)
     ->middleware('throttle:60,1')
     ->name('api.map');
 
+// Our partners page: a logo click is counted per day, then on to the affiliate's home page.
+Route::get('/go/partner/{id}', [\App\Http\Controllers\Public\PartnerController::class, 'go'])
+    ->whereNumber('id')
+    ->middleware('throttle:60,1')
+    ->name('partners.go');
+
 // Advert clicks: counted per day, then on to the advertiser's page.
 Route::get('/api/ads/{ad}/click', \App\Http\Controllers\Public\AdClickController::class)
     ->whereNumber('ad')

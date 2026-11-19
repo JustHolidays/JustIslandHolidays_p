@@ -88,6 +88,20 @@
         @endif
     </section>
 
+    @php
+        $partnerClicks = \App\Support\Partners::clicks($affiliate);
+    @endphp
+    <section class="mt-6 max-w-3xl rounded-lg bg-white p-5 shadow-sm" aria-labelledby="website-heading">
+        <h2 id="website-heading" class="text-lg font-semibold">Our partners page</h2>
+        <p class="mt-1 text-sm">{{ $affiliate->name }} is listed on the public <a href="{{ route('partners', ['lang' => 'en']) }}" class="underline">Our partners</a> page with the logo above{{ $affiliate->isDeactivated() ? ' once they are active again' : '' }}. Add their home page so the logo links there. Clicks are counted.</p>
+        <form method="POST" action="{{ route('admin.affiliates.website', $affiliate) }}" class="mt-3 max-w-xl">
+            @csrf
+            <x-field name="website" label="Home page address" type="url" :value="$affiliate->affiliate_website_url" hint="Starting with https://. Leave empty for no link." />
+            <x-button>Save website</x-button>
+        </form>
+        <p class="mt-3 text-sm" data-partner-clicks>Logo clicks: {{ $partnerClicks['days30'] }} in the last 30 days, {{ $partnerClicks['all'] }} in total.</p>
+    </section>
+
     <section class="mt-6 flex flex-wrap items-start gap-3" aria-label="Account">
         <form method="POST" action="{{ route('admin.affiliates.invite', $affiliate) }}">@csrf<button class="min-h-11 rounded border border-slate-400 bg-white px-4">Send a new invitation</button></form>
         @if ($affiliate->isDeactivated())

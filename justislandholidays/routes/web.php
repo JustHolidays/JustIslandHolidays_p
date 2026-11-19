@@ -32,6 +32,7 @@ Route::prefix('{lang}')
         Route::get('/', HomeController::class)->name('home');
         Route::get('/search', SearchController::class)->name('search');
         Route::get('/owners', [PageController::class, 'owners'])->name('owners');
+        Route::get('/partners', [\App\Http\Controllers\Public\PartnerController::class, 'index'])->name('partners');
         Route::get('/p/{slug}', [PageController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('pages.show');
         Route::post('/enquiries', [EnquiryController::class, 'store'])->name('enquiries.store');
 
@@ -72,6 +73,8 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
                 Route::put('/listings/{listing}/basics', [ListingEditorController::class, 'updateBasics'])->name('listings.basics');
                 Route::put('/listings/{listing}/location', [ListingEditorController::class, 'updateLocation'])->name('listings.location');
                 Route::put('/listings/{listing}/photo', [ListingEditorController::class, 'updatePhoto'])->name('listings.photo');
+                Route::post('/listings/{listing}/photos', [ListingEditorController::class, 'addPhoto'])->name('listings.photos.store');
+                Route::delete('/listings/{listing}/photos/{photo}', [ListingEditorController::class, 'removePhoto'])->whereNumber('photo')->name('listings.photos.destroy');
                 Route::put('/listings/{listing}/link', [ListingEditorController::class, 'updateLink'])->name('listings.link');
                 Route::put('/listings/{listing}/licence', [ListingEditorController::class, 'updateLicence'])->name('listings.licence');
                 Route::get('/listings/{listing}/licence-document', [ListingEditorController::class, 'licenceDocument'])->name('listings.licence-document');
@@ -93,6 +96,8 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
             Route::get('/billing/return', [BillingController::class, 'returned'])->name('billing.return');
             Route::get('/billing/cancelled', [BillingController::class, 'abandoned'])->name('billing.abandoned');
             Route::post('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
+            Route::post('/billing/featured', [BillingController::class, 'featured'])->name('billing.featured');
+            Route::get('/billing/featured/return', [BillingController::class, 'featuredReturned'])->name('billing.featured.return');
         });
     });
 });

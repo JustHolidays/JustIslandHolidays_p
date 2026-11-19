@@ -195,7 +195,11 @@ class ListingController extends AdminController
             'has_private_pool' => ['nullable', 'boolean'],
             'pets' => ['required', Rule::in(['yes', 'no', 'not_stated'])],
             'image_alt' => ['nullable', 'string', 'max:160'],
-            'price' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            // Owners and agents must have a From price (19 Nov 2026); affiliates may leave it out.
+            'price' => [$listing->isAffiliateListing() ? 'nullable' : 'required', 'integer', 'min:1', 'max:1000000'],
+        ], [
+            'price.required' => 'Add the From price per week. An owner or agent property cannot go live without one.',
+            'price.min' => 'The From price must be more than 0.',
         ]);
 
         DB::transaction(function () use ($listing, $data, $request) {

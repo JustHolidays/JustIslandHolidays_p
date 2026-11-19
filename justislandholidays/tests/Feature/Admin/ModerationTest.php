@@ -159,7 +159,7 @@ class ModerationTest extends TestCase
 
         $this->actingAs($this->admin)->put("/admin/listings/{$listing->id}", [
             'title' => 'Corrected title', 'summary' => 'Fixed text', 'area_id' => $listing->area_id, 'property_type' => 'villa',
-            'bedrooms' => 4, 'bathrooms' => 2, 'sleeps' => 8, 'pets' => 'not_stated',
+            'bedrooms' => 4, 'bathrooms' => 2, 'sleeps' => 8, 'pets' => 'not_stated', 'price' => 1200,
         ])->assertSessionHasNoErrors();
 
         $this->assertSame('Corrected title', $listing->fresh()->title('en'));

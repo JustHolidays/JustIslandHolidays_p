@@ -22,7 +22,7 @@ class ListingController extends Controller
 
         $listing = Listing::withTrashed()
             ->where('public_ref', $ref)
-            ->with(['island', 'area', 'translations', 'amenities', 'licence', 'owner'])
+            ->with(['island', 'area', 'translations', 'amenities', 'licence', 'owner', 'photos'])
             ->first();
 
         abort_if($listing === null, 404);

@@ -142,6 +142,21 @@ class AffiliateController extends AdminController
         ]);
     }
 
+    /** Home page address for the Our partners page (their logo links there). Empty removes the link. Audited. */
+    public function updateWebsite(Request $request, User $affiliate): RedirectResponse
+    {
+        $this->ensureAffiliate($affiliate);
+        $data = $request->validate(['website' => ['nullable', 'url:https', 'max:500']], [
+            'website.url' => 'The address must be a full web address starting with https://',
+        ]);
+
+        $before = $affiliate->affiliate_website_url;
+        $affiliate->forceFill(['affiliate_website_url' => $data['website'] ?: null])->save();
+        Audit::record($request->user(), 'affiliate.website_update', $affiliate, null, ['before' => $before, 'after' => $affiliate->affiliate_website_url]);
+
+        return back()->with('status', $affiliate->affiliate_website_url ? 'Website saved. Their logo on the Our partners page links there.' : 'Website removed. Their logo on the Our partners page is no longer a link.');
+    }
+
     /** Logo for the banner above Check availability: add, replace, change its description or remove. Audited. */
     public function updateLogo(Request $request, User $affiliate): RedirectResponse
     {

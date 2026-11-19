@@ -16,7 +16,12 @@ class ListingPrivate extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['lat', 'lng', 'address_line', 'postcode', 'contact_email', 'contact_phone', 'website_url'];
+    protected $fillable = ['lat', 'lng', 'address_line', 'postcode', 'contact_email', 'contact_phone', 'website_url', 'show_phone'];
+
+    protected function casts(): array
+    {
+        return ['show_phone' => 'boolean'];
+    }
 
     public function listing(): BelongsTo
     {

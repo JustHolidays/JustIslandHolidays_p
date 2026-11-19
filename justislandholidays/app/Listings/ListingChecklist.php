@@ -36,8 +36,14 @@ final class ListingChecklist
             if (! $listing->deeplink_url) {
                 $missing[] = 'Add the booking link for the Check availability button.';
             }
-        } elseif (! $listing->licence || (blank($listing->licence->registration_number) && blank($listing->licence->national_registry_no))) {
-            $missing[] = 'Add your tourist licence number.';
+        } else {
+            if (! $listing->licence || (blank($listing->licence->registration_number) && blank($listing->licence->national_registry_no))) {
+                $missing[] = 'Add your tourist licence number.';
+            }
+            // Owners and agents must give a From price (19 Nov 2026), or the listing stays inactive.
+            if ($listing->min_price_week_cents === null || (int) $listing->min_price_week_cents <= 0) {
+                $missing[] = 'Add a From price per week.';
+            }
         }
 
         return $missing;

@@ -45,7 +45,7 @@ class AccessibilityTest extends TestCase
 
     public function test_public_pages(): void
     {
-        foreach (['/en', '/en/menorca', '/en/menorca/son-bou', '/en/search', '/en/search?type[]=villa&sleeps=4', '/en/owners',
+        foreach (['/en', '/en/menorca', '/en/menorca/son-bou', '/en/search', '/en/search?type[]=villa&sleeps=4', '/en/owners', '/en/partners',
             $this->listing->publicUrl('en'), ...array_map(fn ($s) => "/en/p/{$s}", LegalPagesSeeder::SLUGS)] as $url) {
             $this->check($url);
         }
@@ -83,7 +83,7 @@ class AccessibilityTest extends TestCase
         $agent = User::factory()->agent()->create();
         \App\Models\Listing::factory()->live()->onIsland($this->island)->titled('Agent villa')->create(['owner_id' => $agent->id]);
 
-        foreach (['/admin', '/admin/listings', '/admin/listings?status=live', "/admin/listings/{$this->listing->id}", '/admin/listings/import',
+        foreach (['/admin', '/admin/listings', '/admin/listings?status=live', "/admin/listings/{$this->listing->id}", '/admin/listings/add', '/admin/listings/import',
             '/admin/licences', '/admin/enquiries', "/admin/enquiries/{$enquiry->id}", '/admin/users',
             "/admin/users/{$this->listing->owner_id}", '/admin/agents', "/admin/agents/{$agent->id}", '/admin/affiliates', '/admin/affiliates/create', "/admin/affiliates/{$affiliate->id}", "/admin/affiliates/{$affiliate->id}/deeplinks",
             '/admin/staff', '/admin/staff/create', "/admin/staff/{$super->id}/edit", '/admin/clicks', '/admin/clicks/events',

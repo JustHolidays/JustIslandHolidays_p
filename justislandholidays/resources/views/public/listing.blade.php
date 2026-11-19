@@ -56,6 +56,24 @@
                     @endif
                 </div>
 
+                {{-- More photos, up to the plan's limit. Each opens the large copy. --}}
+                @php
+                    $morePhotos = $listing->visiblePhotos();
+                @endphp
+                @if ($morePhotos->isNotEmpty())
+                    <section class="mt-3" aria-label="{{ __('More photos') }}">
+                        <ul class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                            @foreach ($morePhotos as $extra)
+                                <li data-gallery-photo>
+                                    <a href="{{ $extra->url(1600) }}" target="_blank" rel="noopener" class="block overflow-hidden rounded">
+                                        <img src="{{ $extra->url(400) }}" alt="{{ __(':alt (opens the large photo)', ['alt' => $extra->alt]) }}" width="400" height="300" loading="lazy" class="aspect-[4/3] w-full object-cover hover:opacity-90">
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </section>
+                @endif
+
                 @if ($summary)
                     <p class="mt-6 text-lg">{{ $summary }}</p>
                 @endif
@@ -75,7 +93,7 @@
                             <div><dt class="text-sm text-slate-600">{{ __('To the beach') }}</dt><dd class="font-medium">{{ $distance >= 1000 ? __(':km km', ['km' => round($distance / 1000, 1)]) : __(':m m', ['m' => $distance]) }}</dd></div>
                         @endif
                         @if ($listing->guidePrice())
-                            <div><dt class="text-sm text-slate-600">{{ __('Guide price') }}</dt><dd class="font-medium">{{ __('From :price a week', ['price' => $listing->guidePrice()]) }}</dd></div>
+                            <div><dt class="text-sm text-slate-600">{{ __('From Price') }}</dt><dd class="font-medium">{{ __(':price a week', ['price' => $listing->guidePrice()]) }}</dd></div>
                         @endif
                     </dl>
                     @if ($listing->guidePrice())

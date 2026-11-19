@@ -32,8 +32,8 @@
     </div>
 
     <section class="mt-6 max-w-3xl rounded-lg bg-white p-5 shadow-sm" aria-labelledby="grant-heading">
-        <h2 id="grant-heading" class="text-lg font-semibold">Grant a plan</h2>
-        <p class="mt-1 text-sm">Gives an owner or agent a plan free of charge until a date, for example Featured for a year for early owners. For an agent in an agency it covers the whole agency.</p>
+        <h2 id="grant-heading" class="text-lg font-semibold">Gift A Plan</h2>
+        <p class="mt-1 text-sm">Gives an owner or agent a plan free of charge until a date, for example Featured Property for a year for early owners. For an agent in an agency it covers the whole agency.</p>
         <form method="POST" action="{{ route('admin.plans.grant') }}" class="mt-3 grid gap-3 sm:grid-cols-2">
             @csrf
             <x-field name="email" label="Their account email" type="email" required />
@@ -41,7 +41,7 @@
                 <select id="plan" name="plan" class="block min-h-11 w-full rounded border border-slate-400 bg-white px-3">@foreach ($plans->where('is_active', true)->where('code', '!=', 'free') as $p)<option value="{{ $p->code }}">{{ $p->name }} ({{ $p->audience }}s)</option>@endforeach</select></div>
             <x-field name="until" label="Until" type="date" :value="now()->addYear()->toDateString()" required />
             <x-field name="reason" label="Reason (kept in the audit log)" required />
-            <div><x-button>Grant</x-button></div>
+            <div><x-button>Gift plan</x-button></div>
         </form>
     </section>
 
