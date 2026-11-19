@@ -76,7 +76,7 @@ class ReportsContentTest extends TestCase
         $this->assertTrue($fresh->is_active);
 
         $this->actingAs($admin)->get("/admin/islands/{$this->other->id}/edit")->assertForbidden();
-        $this->actingAs($admin)->post('/admin/islands', ['slug' => 'ibiza', 'name_en' => 'Ibiza'])->assertForbidden();
+        $this->actingAs($admin)->post('/admin/islands', ['island_slug' => 'ibiza', 'island_name' => 'Ibiza'])->assertForbidden();
     }
 
     public function test_slug_is_locked_while_there_are_live_listings(): void
@@ -94,7 +94,7 @@ class ReportsContentTest extends TestCase
 
     public function test_super_admin_creates_an_island_switched_off(): void
     {
-        $this->actingAs($this->superAdmin())->post('/admin/islands', ['slug' => 'ibiza', 'name_en' => 'Ibiza'])->assertRedirect();
+        $this->actingAs($this->superAdmin())->post('/admin/islands', ['island_slug' => 'ibiza', 'island_name' => 'Ibiza'])->assertRedirect();
 
         $this->assertFalse(Island::where('slug', 'ibiza')->sole()->is_active);
     }

@@ -12,7 +12,8 @@
         ['admin.users.index', 'Owners and agents', null],
         ['admin.affiliates.index', 'Affiliates', 'manage-affiliates'],
         ['admin.clicks.index', 'Click reports', null],
-        ['admin.islands.index', 'Islands and resorts', null],
+        ['admin.islands.index', 'Islands and resorts', null],   // a dropdown of the admin's active islands
+        ['admin.locations.create', 'Add a location', 'manage-islands'],
         ['admin.pages.index', 'Content pages', null],
         ['admin.staff.index', 'Staff', 'manage-staff'],
         ['admin.appearance.edit', 'Appearance', 'manage-appearance'],
@@ -67,6 +68,41 @@
         <nav aria-label="Admin" class="lg:w-56 lg:shrink-0">
             <ul class="flex flex-wrap gap-1 lg:flex-col">
                 @foreach ($nav as [$route, $label, $ability])
+                    @if ($route === 'admin.islands.index')
+                        @php
+                            // Opens by itself on any island or resort page. A native disclosure: works by keyboard, no script.
+                            $inIslands = request()->routeIs('admin.islands.*', 'admin.areas.*');
+                            $currentIsland = request()->route('island');
+                            $currentIslandId = $currentIsland instanceof \App\Models\Island ? $currentIsland->id : (int) $currentIsland;
+                            if (request()->routeIs('admin.areas.*') && request()->route('area') instanceof \App\Models\Area) {
+                                $currentIslandId = request()->route('area')->island_id;
+                            }
+                        @endphp
+                        <li class="w-full lg:w-auto">
+                            <details @if ($inIslands) open @endif class="group">
+                                <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-white font-semibold shadow-sm' => $inIslands, 'hover:bg-white' => ! $inIslands])>
+                                    {{ $label }}
+                                    <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">▾</span>
+                                </summary>
+                                <ul class="mt-1 space-y-1 pl-3">
+                                    <li>
+                                        <a href="{{ route('admin.islands.index') }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => request()->routeIs('admin.islands.index'), 'hover:bg-white' => ! request()->routeIs('admin.islands.index')])
+                                           @if (request()->routeIs('admin.islands.index')) aria-current="page" @endif>All islands</a>
+                                    </li>
+                                    @foreach ($adminIslands->where('is_active', true) as $navIsland)
+                                        @php
+                                            $here = $inIslands && ! request()->routeIs('admin.islands.index') && $currentIslandId === $navIsland->id;
+                                        @endphp
+                                        <li>
+                                            <a href="{{ route('admin.islands.show', $navIsland) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => $here, 'hover:bg-white' => ! $here])
+                                               @if ($here && request()->routeIs('admin.islands.show')) aria-current="page" @endif>{{ $navIsland->translate('name', 'en') }}</a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </details>
+                        </li>
+                        @continue
+                    @endif
                     @if (! $ability || $admin->can($ability))
                         @php
                             $active = request()->routeIs($section($route).'*');

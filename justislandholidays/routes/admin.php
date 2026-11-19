@@ -80,6 +80,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 
     // Islands and resorts
     Route::get('/islands', [IslandController::class, 'index'])->name('islands.index');
+    Route::get('/islands/{island}', [IslandController::class, 'show'])->whereNumber('island')->name('islands.show');
+    Route::get('/locations/create', [IslandController::class, 'createLocation'])->middleware('can:manage-islands')->name('locations.create');
+    Route::post('/locations/resort', [IslandController::class, 'storeLocationArea'])->middleware('can:manage-islands')->name('locations.area');
     Route::post('/islands', [IslandController::class, 'storeIsland'])->middleware('can:manage-islands')->name('islands.store');
     Route::get('/islands/{island}/edit', [IslandController::class, 'editIsland'])->name('islands.edit');
     Route::put('/islands/{island}', [IslandController::class, 'updateIsland'])->name('islands.update');

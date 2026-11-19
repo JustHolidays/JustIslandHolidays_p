@@ -85,7 +85,7 @@ class AccessibilityTest extends TestCase
             '/admin/licences', '/admin/deeplinks', '/admin/enquiries', "/admin/enquiries/{$enquiry->id}", '/admin/users',
             "/admin/users/{$this->listing->owner_id}", '/admin/affiliates', '/admin/affiliates/create', "/admin/affiliates/{$affiliate->id}",
             '/admin/staff', '/admin/staff/create', "/admin/staff/{$super->id}/edit", '/admin/clicks', '/admin/clicks/events',
-            '/admin/islands', "/admin/islands/{$this->island->id}/edit", '/admin/pages', '/admin/pages/create', "/admin/pages/{$page->id}/edit",
+            '/admin/islands', "/admin/islands/{$this->island->id}", '/admin/locations/create', "/admin/islands/{$this->island->id}/edit", '/admin/pages', '/admin/pages/create', "/admin/pages/{$page->id}/edit",
             '/admin/appearance', '/admin/plans', "/admin/plans/{$plan->id}/edit", '/admin/audit'] as $url) {
             $this->check($url, $super);
         }
