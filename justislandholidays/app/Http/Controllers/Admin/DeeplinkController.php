@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Role;
 use App\Listings\DeeplinkChecker;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use App\Listings\ListingWorkflow;
 use App\Listings\ListingWorkflowException;
 use App\Models\Listing;
@@ -14,15 +17,35 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-/** Deeplink monitor: most-used broken links first. */
+/**
+ * Deeplink monitor, most-used broken links first, in two views:
+ * - each affiliate's links, from the Affiliates menu (super admins);
+ * - owner and agent links, for every admin within their islands.
+ */
 class DeeplinkController extends AdminController
 {
+    /** Owner and agent links (everything not added for an affiliate). */
     public function index(Request $request): View
+    {
+        $query = $this->ctx()->scope(Listing::query())
+            ->whereHas('owner', fn (Builder $q) => $q->where('role', '!=', Role::Affiliate->value));
+
+        return $this->monitor($request, $query, null);
+    }
+
+    /** One affiliate's links (super admins, through can:manage-affiliates). */
+    public function affiliate(Request $request, User $affiliate): View
+    {
+        abort_unless($affiliate->isAffiliate(), 404);
+
+        return $this->monitor($request, Listing::where('owner_id', $affiliate->id), $affiliate);
+    }
+
+    private function monitor(Request $request, Builder $query, ?User $affiliate): View
     {
         $since = now()->subDays(7);
 
-        $query = $this->ctx()->scope(Listing::query())
-            ->whereNotNull('deeplink_url')
+        $query->whereNotNull('deeplink_url')
             ->with(['island', 'owner', 'translations'])
             ->withCount(['clicks as clicks_7' => fn ($q) => $q->where('is_bot', false)->where('clicked_at', '>=', $since)]);
 
@@ -36,6 +59,7 @@ class DeeplinkController extends AdminController
         return view('admin.deeplinks.index', [
             'listings' => $query->paginate(self::PER_PAGE)->withQueryString(),
             'allowedHosts' => DeeplinkChecker::allowedHosts(),
+            'affiliate' => $affiliate,
         ]);
     }
 

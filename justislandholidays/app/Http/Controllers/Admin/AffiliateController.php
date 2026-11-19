@@ -28,6 +28,7 @@ class AffiliateController extends AdminController
             ->withCount([
                 'listings',
                 'listings as live_count' => fn ($q) => $q->where('status', ListingStatus::Live),
+                'listings as broken_links' => fn ($q) => $q->whereNotNull('deeplink_url')->where('deeplink_status', 'broken'),
             ])
             ->addSelect(['clicks_30' => DeeplinkClick::selectRaw('COUNT(*)')
                 ->whereColumn('affiliate_id', 'users.id')->where('is_bot', false)->where('clicked_at', '>=', $since)]);

@@ -7,10 +7,11 @@
         ['admin.dashboard', 'Dashboard', null],
         ['admin.listings.index', 'Listings', null],
         ['admin.licences.index', 'Licence checks', null],
-        ['admin.deeplinks.index', 'Deeplinks', null],
+        ['admin.deeplinks.index', 'Owner and agent links', null],   // affiliates' links are under each affiliate
         ['admin.enquiries.index', 'Enquiries', null],
-        ['admin.users.index', 'Owners and agents', null],
-        ['admin.affiliates.index', 'Affiliates', 'manage-affiliates'],
+        ['admin.users.index', 'Owners', null],
+        ['admin.agents.index', 'Agents', null],   // a dropdown of agents, each with a page of their properties
+        ['admin.affiliates.index', 'Affiliates', 'manage-affiliates'],   // a dropdown of active affiliates
         ['admin.clicks.index', 'Click reports', null],
         ['admin.islands.index', 'Islands and resorts', null],   // a dropdown of the admin's active islands
         ['admin.locations.create', 'Add a location', 'manage-islands'],
@@ -67,7 +68,96 @@
     <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row">
         <nav aria-label="Admin" class="lg:w-56 lg:shrink-0">
             <ul class="flex flex-wrap gap-1 lg:flex-col">
+                @php
+                    // An agent's account page (users.show) belongs under Agents, not Owners.
+                    $routeUser = request()->route('user');
+                    $viewingAgent = $routeUser instanceof \App\Models\User && $routeUser->role === \App\Enums\Role::Agent;
+                @endphp
                 @foreach ($nav as [$route, $label, $ability])
+                    @if ($route === 'admin.users.index')
+                        @php
+                            $onOwners = request()->routeIs('admin.users.*') && ! $viewingAgent;
+                        @endphp
+                        <li>
+                            <a href="{{ route($route) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold shadow-sm' => $onOwners, 'hover:bg-white' => ! $onOwners])
+                               @if ($onOwners) aria-current="page" @endif>{{ $label }}</a>
+                        </li>
+                        @continue
+                    @endif
+                    @if ($route === 'admin.agents.index')
+                        @php
+                            $inAgents = request()->routeIs('admin.agents.*') || $viewingAgent;
+                            $currentAgentId = $viewingAgent ? $routeUser->id : null;
+                            $navAgents = \App\Http\Controllers\Admin\UserController::peopleQuery($ctx, \App\Enums\Role::Agent)
+                                ->whereNull('deactivated_at')->with('agency:id,name')->orderBy('name')->get(['id', 'name', 'agency_id']);
+                            $agentLink = fn ($on) => ['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => $on, 'hover:bg-white' => ! $on];
+                        @endphp
+                        <li class="w-full lg:w-auto">
+                            <details @if ($inAgents) open @endif class="group">
+                                <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-white font-semibold shadow-sm' => $inAgents, 'hover:bg-white' => ! $inAgents])>
+                                    {{ $label }}
+                                    <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">▾</span>
+                                </summary>
+                                <ul class="mt-1 space-y-1 pl-3">
+                                    <li><a href="{{ route('admin.agents.index') }}" @class($agentLink(request()->routeIs('admin.agents.index'))) @if (request()->routeIs('admin.agents.index')) aria-current="page" @endif>All agents</a></li>
+                                    @forelse ($navAgents as $navAgent)
+                                        @php
+                                            $agentHere = $currentAgentId === $navAgent->id && request()->routeIs('admin.agents.show');
+                                        @endphp
+                                        <li>
+                                            <a href="{{ route('admin.agents.show', $navAgent) }}" @class($agentLink($agentHere || $currentAgentId === $navAgent->id)) @if ($agentHere) aria-current="page" @endif>
+                                                <span>{{ $navAgent->name }}@if ($navAgent->agency)<span class="block text-xs font-normal text-slate-600">{{ $navAgent->agency->name }}</span>@endif</span>
+                                            </a>
+                                        </li>
+                                    @empty
+                                        <li class="px-3 py-2 text-sm text-slate-600">No agents yet</li>
+                                    @endforelse
+                                </ul>
+                            </details>
+                        </li>
+                        @continue
+                    @endif
+                    @if ($route === 'admin.affiliates.index')
+                        @if ($admin->can($ability))
+                            @php
+                                $inAffiliates = request()->routeIs('admin.affiliates.*');
+                                $routeAffiliate = request()->route('affiliate');
+                                $currentAffiliateId = $routeAffiliate instanceof \App\Models\User ? $routeAffiliate->id : (int) $routeAffiliate;
+                                $navAffiliates = \App\Models\User::where('role', \App\Enums\Role::Affiliate->value)->whereNull('deactivated_at')->orderBy('name')->get(['id', 'name']);
+                                $sub = fn ($on) => ['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => $on, 'hover:bg-white' => ! $on];
+                            @endphp
+                            <li class="w-full lg:w-auto">
+                                <details @if ($inAffiliates) open @endif class="group">
+                                    <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-white font-semibold shadow-sm' => $inAffiliates, 'hover:bg-white' => ! $inAffiliates])>
+                                        {{ $label }}
+                                        <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">▾</span>
+                                    </summary>
+                                    <ul class="mt-1 space-y-1 pl-3">
+                                        @php
+                                            $onAll = request()->routeIs('admin.affiliates.index', 'admin.affiliates.create');
+                                        @endphp
+                                        <li><a href="{{ route('admin.affiliates.index') }}" @class($sub($onAll)) @if (request()->routeIs('admin.affiliates.index')) aria-current="page" @endif>All affiliates</a></li>
+                                        @foreach ($navAffiliates as $navAffiliate)
+                                            @php
+                                                $thisOne = $inAffiliates && $currentAffiliateId === $navAffiliate->id;
+                                            @endphp
+                                            <li>
+                                                <a href="{{ route('admin.affiliates.show', $navAffiliate) }}" @class($sub($thisOne && request()->routeIs('admin.affiliates.show')))
+                                                   @if ($thisOne && request()->routeIs('admin.affiliates.show')) aria-current="page" @endif>{{ $navAffiliate->name }}</a>
+                                                @if ($thisOne)
+                                                    <ul class="mt-1 pl-3">
+                                                        <li><a href="{{ route('admin.affiliates.deeplinks', $navAffiliate) }}" @class($sub(request()->routeIs('admin.affiliates.deeplinks')))
+                                                               @if (request()->routeIs('admin.affiliates.deeplinks')) aria-current="page" @endif>Deeplinks</a></li>
+                                                    </ul>
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </details>
+                            </li>
+                        @endif
+                        @continue
+                    @endif
                     @if ($route === 'admin.islands.index')
                         @php
                             // Opens by itself on any island or resort page. A native disclosure: works by keyboard, no script.

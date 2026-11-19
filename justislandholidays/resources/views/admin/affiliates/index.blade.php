@@ -15,7 +15,7 @@
         <table class="w-full text-left text-sm">
             <caption class="sr-only">Affiliates</caption>
             <thead class="border-b border-slate-300"><tr>
-                <x-admin.sort key="name" label="Name" default="name" /><th scope="col" class="p-2">Email</th><x-admin.sort key="listings" label="Listings" /><th scope="col" class="p-2">Live</th>
+                <x-admin.sort key="name" label="Name" default="name" /><th scope="col" class="p-2">Email</th><x-admin.sort key="listings" label="Listings" /><th scope="col" class="p-2">Live</th><th scope="col" class="p-2">Broken links</th>
                 <x-admin.sort key="clicks" label="Clicks, 30 days" /><th scope="col" class="p-2">Commission pending</th><th scope="col" class="p-2">Account</th>
             </tr></thead>
             <tbody>
@@ -25,6 +25,7 @@
                         <td class="p-2">{{ $a->email }}</td>
                         <td class="p-2">{{ $a->listings_count }}</td>
                         <td class="p-2">{{ $a->live_count }}</td>
+                        <td class="p-2"><a href="{{ route('admin.affiliates.deeplinks', $a) }}" @class(['underline', 'font-semibold text-red-800' => $a->broken_links > 0])>{{ $a->broken_links }}<span class="sr-only"> broken links for {{ $a->name }}</span></a></td>
                         <td class="p-2">{{ (int) $a->clicks_30 }}</td>
                         <td class="p-2">
                             @forelse ($pending[$a->id] ?? [] as $row){{ $row->currency === 'GBP' ? '£' : '€' }}{{ number_format($row->total / 100, 2) }} @empty – @endforelse
@@ -32,7 +33,7 @@
                         <td class="p-2">{{ $a->isDeactivated() ? 'Deactivated' : 'Active' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="p-4">No affiliates yet.</td></tr>
+                    <tr><td colspan="8" class="p-4">No affiliates yet.</td></tr>
                 @endforelse
             </tbody>
         </table>

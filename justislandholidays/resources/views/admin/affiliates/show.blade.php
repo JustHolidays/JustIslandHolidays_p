@@ -4,6 +4,10 @@
     <p><a href="{{ route('admin.affiliates.index') }}" class="inline-flex min-h-11 items-center underline">Back to affiliates</a></p>
     <h1 class="text-2xl font-semibold">{{ $affiliate->name }}</h1>
     <p class="mt-1">{{ $affiliate->email }} · {{ $affiliate->isDeactivated() ? 'Deactivated' : 'Active' }} · last sign-in {{ $affiliate->last_login_at?->format('j M Y') ?? 'never' }}</p>
+    @php
+        $brokenLinks = $listings->whereNotNull('deeplink_url')->where('deeplink_status', 'broken')->count();
+    @endphp
+    <p class="mt-3"><a href="{{ route('admin.affiliates.deeplinks', $affiliate) }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 bg-white px-4 font-medium">Deeplinks{{ $brokenLinks ? " ({$brokenLinks} broken)" : '' }}</a></p>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
         <section class="rounded-lg bg-white p-5 shadow-sm" aria-labelledby="l-heading">

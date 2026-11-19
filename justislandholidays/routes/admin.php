@@ -66,7 +66,10 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/enquiries/{enquiry}/spam', [EnquiryController::class, 'markSpam'])->name('enquiries.spam');
 
     // Owners and agents
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    // Owners and agents are listed apart; changing a person's role on their page moves them.
+    Route::get('/users', [UserController::class, 'index'])->defaults('role', 'owner')->name('users.index');
+    Route::get('/agents', [UserController::class, 'index'])->defaults('role', 'agent')->name('agents.index');
+    Route::get('/agents/{user}', [UserController::class, 'agent'])->middleware('can:view,user')->name('agents.show');
     Route::get('/users/{user}', [UserController::class, 'show'])->middleware('can:view,user')->name('users.show');
     Route::put('/users/{user}', [UserController::class, 'update'])->middleware('can:update,user')->name('users.update');
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
@@ -104,6 +107,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::get('/affiliates/create', [AffiliateController::class, 'create'])->name('affiliates.create');
         Route::post('/affiliates', [AffiliateController::class, 'store'])->name('affiliates.store');
         Route::get('/affiliates/{affiliate}', [AffiliateController::class, 'show'])->name('affiliates.show');
+        Route::get('/affiliates/{affiliate}/deeplinks', [DeeplinkController::class, 'affiliate'])->name('affiliates.deeplinks');
         Route::put('/affiliates/{affiliate}', [AffiliateController::class, 'update'])->name('affiliates.update');
         Route::post('/affiliates/{affiliate}/deactivate', [AffiliateController::class, 'deactivate'])->name('affiliates.deactivate');
         Route::post('/affiliates/{affiliate}/reactivate', [AffiliateController::class, 'reactivate'])->name('affiliates.reactivate');

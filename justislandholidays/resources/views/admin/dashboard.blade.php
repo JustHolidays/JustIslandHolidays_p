@@ -21,10 +21,18 @@
         </li>
         <li>
             <a href="{{ route('admin.deeplinks.index', ['status' => 'broken']) }}" class="block rounded-lg bg-white p-5 shadow-sm hover:ring-2 hover:ring-slate-400">
-                <p class="text-sm text-slate-600">Broken booking links on live listings</p>
+                <p class="text-sm text-slate-600">Broken owner and agent links on live listings</p>
                 <p @class(['text-3xl font-semibold', 'text-red-800' => $broken > 0])>{{ $broken }}</p>
             </a>
         </li>
+        @if ($brokenAffiliate !== null)
+            <li>
+                <a href="{{ route('admin.affiliates.index') }}" class="block rounded-lg bg-white p-5 shadow-sm hover:ring-2 hover:ring-slate-400">
+                    <p class="text-sm text-slate-600">Broken affiliate links on live listings</p>
+                    <p @class(['text-3xl font-semibold', 'text-red-800' => $brokenAffiliate > 0])>{{ $brokenAffiliate }}</p>
+                </a>
+            </li>
+        @endif
         <li>
             <a href="{{ route('admin.clicks.index', ['from' => now()->subDays(7)->toDateString()]) }}" class="block rounded-lg bg-white p-5 shadow-sm hover:ring-2 hover:ring-slate-400">
                 <p class="text-sm text-slate-600">Check availability clicks, last 7 days</p>

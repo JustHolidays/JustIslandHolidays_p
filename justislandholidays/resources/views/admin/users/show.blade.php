@@ -5,7 +5,11 @@
 @endphp
 
 @section('content')
-    <p><a href="{{ route('admin.users.index') }}" class="inline-flex min-h-11 items-center underline">Back to owners and agents</a></p>
+    @if ($user->role === \App\Enums\Role::Agent)
+        <p class="flex flex-wrap gap-4"><a href="{{ route('admin.agents.index') }}" class="inline-flex min-h-11 items-center underline">Back to agents</a> <a href="{{ route('admin.agents.show', $user) }}" class="inline-flex min-h-11 items-center underline">See their properties</a></p>
+    @else
+        <p><a href="{{ route('admin.users.index') }}" class="inline-flex min-h-11 items-center underline">Back to owners</a></p>
+    @endif
     <h1 class="text-2xl font-semibold">{{ $user->name }}</h1>
     <p class="mt-1">{{ $user->role->label() }} · {{ $user->email }} · {{ $plan->name }} plan · {{ $user->isDeactivated() ? 'Deactivated '.$user->deactivated_at->format('j M Y') : 'Active' }} · last sign-in {{ $user->last_login_at?->format('j M Y') ?? 'never' }}</p>
 

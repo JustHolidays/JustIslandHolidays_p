@@ -23,23 +23,12 @@ use Illuminate\View\View;
  */
 class UserController extends AdminController
 {
+    /** Owners (/admin/users) or agents (/admin/agents): the route sets which. */
     public function index(Request $request, AccountPlan $plans): View
     {
-        $ctx = $this->ctx();
+        $role = $request->route('role') === 'agent' ? Role::Agent : Role::Owner;
 
-        $query = User::query()
-            ->whereIn('role', [Role::Owner, Role::Agent])
-            ->with('agency')
-            ->withCount('listings');
-
-        // Island admins (or a selected island): only people with listings on those islands.
-        if (! $ctx->admin()->isSuperAdmin() || $ctx->selectedIslandId()) {
-            $query->whereHas('listings', fn (Builder $q) => $ctx->scope($q));
-        }
-
-        if (in_array($role = $request->query('role'), ['owner', 'agent'], true)) {
-            $query->where('role', $role);
-        }
+        $query = self::peopleQuery($this->ctx(), $role)->with('agency')->withCount('listings');
         if ($request->query('state') === 'deactivated') {
             $query->whereNotNull('deactivated_at');
         }
@@ -53,7 +42,41 @@ class UserController extends AdminController
         $users = $query->paginate(self::PER_PAGE)->withQueryString();
         $planNames = $users->getCollection()->mapWithKeys(fn (User $u) => [$u->id => $plans->planFor($plans->accountFor($u))->name]);
 
-        return view('admin.users.index', ['users' => $users, 'planNames' => $planNames]);
+        return view('admin.users.index', ['users' => $users, 'planNames' => $planNames, 'role' => $role]);
+    }
+
+    /**
+     * Owners or agents this admin may see. Island admins (or a selected island): only people
+     * with listings on those islands. Also used for the Agents menu.
+     */
+    public static function peopleQuery(\App\Admin\AdminContext $ctx, Role $role): Builder
+    {
+        $query = User::query()->where('role', $role->value);
+
+        if (! $ctx->admin()->isSuperAdmin() || $ctx->selectedIslandId()) {
+            $query->whereHas('listings', fn (Builder $q) => $ctx->scope($q));
+        }
+
+        return $query;
+    }
+
+    /** An agent's properties, from the Agents menu. */
+    public function agent(User $user, AccountPlan $plans): View
+    {
+        abort_unless($user->role === Role::Agent, 404);
+
+        $since = now()->subDays(30);
+        $listings = $this->ctx()->scope($user->listings()->getQuery())
+            ->with(['island', 'area', 'translations'])
+            ->withCount(['clicks as clicks_30' => fn ($q) => $q->where('is_bot', false)->where('clicked_at', '>=', $since)])
+            ->orderBy('status')->orderByDesc('updated_at')
+            ->get();
+
+        return view('admin.users.agent', [
+            'user' => $user->load('agency'),
+            'listings' => $listings,
+            'plan' => $plans->planFor($plans->accountFor($user)),
+        ]);
     }
 
     public function show(User $user, AccountPlan $plans): View

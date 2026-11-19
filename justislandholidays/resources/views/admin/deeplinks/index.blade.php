@@ -1,13 +1,25 @@
-@extends('layouts.admin', ['title' => 'Deeplink monitor'])
+@php
+    $pageTitle = $affiliate ? $affiliate->name.': deeplinks' : 'Owner and agent links';
+    $filterUrl = fn ($status) => $affiliate
+        ? route('admin.affiliates.deeplinks', array_filter(['affiliate' => $affiliate->id, 'status' => $status]))
+        : route('admin.deeplinks.index', array_filter(['status' => $status]));
+@endphp
+
+@extends('layouts.admin', ['title' => $pageTitle])
 
 @section('content')
-    <h1 class="text-2xl font-semibold">Deeplink monitor</h1>
-    <p class="mt-1">Every listing with a Check availability link. Broken links come first, then the most clicked.</p>
+    <h1 class="text-2xl font-semibold">{{ $pageTitle }}</h1>
+    @if ($affiliate)
+        <p class="mt-1">Every listing {{ $affiliate->name }} has with a Check availability link. Broken links come first, then the most clicked.
+            <a href="{{ route('admin.affiliates.show', $affiliate) }}" class="inline-flex min-h-11 items-center underline">Back to {{ $affiliate->name }}</a></p>
+    @else
+        <p class="mt-1">Check availability links that owners and agents have added to their own listings. Broken links come first, then the most clicked. Affiliates' links are under each affiliate in the Affiliates menu.</p>
+    @endif
 
     <nav aria-label="Filter by status" class="mt-4">
         <ul class="flex flex-wrap gap-2">
             @foreach (['' => 'All', 'broken' => 'Broken', 'unchecked' => 'Not checked', 'ok' => 'Working'] as $v => $l)
-                <li><a href="{{ route('admin.deeplinks.index', array_filter(['status' => $v])) }}" @class(['inline-flex min-h-11 items-center rounded-full border px-4', 'border-slate-900 bg-white font-semibold' => request('status', '') === $v, 'border-slate-300' => request('status', '') !== $v])>{{ $l }}</a></li>
+                <li><a href="{{ $filterUrl($v) }}" @class(['inline-flex min-h-11 items-center rounded-full border px-4', 'border-slate-900 bg-white font-semibold' => request('status', '') === $v, 'border-slate-300' => request('status', '') !== $v])>{{ $l }}</a></li>
             @endforeach
         </ul>
     </nav>
