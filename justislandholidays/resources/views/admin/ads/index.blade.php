@@ -5,7 +5,7 @@
         <h1 class="text-2xl font-semibold">Affiliate Adverts</h1>
         <a href="{{ route('admin.ads.create', array_filter(['island' => $chosen?->id])) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add an advert</a>
     </div>
-    <p class="mt-1 max-w-3xl">Each island page has four advert columns below its introduction. Every advert belongs to one island and one column, and links to the advertiser's website. A column with no running advert shows an "Advertise here" placeholder. If two adverts share a column, they take turns.</p>
+    <p class="mt-1 max-w-3xl">Every advert belongs to one island and links to the advertiser's website. It shows in the <strong>Menu Advert Section</strong> (4 banners below the introduction on the island page and its resort pages, picked at random when there are more than 4, with "Advertise here" placeholders in any empty space), the <strong>Sidebar Section</strong> (property pages on the island, below Check availability, every advert shown), or both.</p>
 
     <nav aria-label="Filter by island" class="mt-4">
         <ul class="flex flex-wrap gap-2">
@@ -20,7 +20,7 @@
         <table class="w-full text-left text-sm">
             <caption class="sr-only">Adverts</caption>
             <thead class="border-b border-slate-300">
-                <tr><th scope="col" class="p-2">Advert</th><th scope="col" class="p-2">Island</th><th scope="col" class="p-2">Column</th><th scope="col" class="p-2">Links to</th>
+                <tr><th scope="col" class="p-2">Advert</th><th scope="col" class="p-2">Island</th><th scope="col" class="p-2">Section</th><th scope="col" class="p-2">Links to</th>
                     <th scope="col" class="p-2">Dates</th><th scope="col" class="p-2">Status</th><th scope="col" class="p-2 text-right">Clicks</th><th scope="col" class="p-2"><span class="sr-only">Actions</span></th></tr>
             </thead>
             <tbody>
@@ -36,7 +36,7 @@
                             </div>
                         </td>
                         <td class="p-2">{{ $ad->island->translate('name', 'en') }}</td>
-                        <td class="p-2">{{ $positions[$ad->slot_id] }}</td>
+                        <td class="p-2">{{ $sections[$ad->slot_id] }}</td>
                         <td class="p-2 break-all">{{ parse_url($ad->target_url, PHP_URL_HOST) }}</td>
                         <td class="p-2">{{ $ad->starts_at->format('j M Y') }} to {{ $ad->ends_at->format('j M Y') }}</td>
                         <td class="p-2">
@@ -50,7 +50,7 @@
                         <td class="p-2"><a href="{{ route('admin.ads.edit', $ad) }}" class="inline-flex min-h-11 items-center underline">Edit<span class="sr-only"> advert for {{ $ad->advertiser->name }}</span></a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="p-4">No adverts yet{{ $chosen ? ' for '.$chosen->translate('name', 'en') : '' }}. Every column shows the placeholder.</td></tr>
+                    <tr><td colspan="8" class="p-4">No adverts yet{{ $chosen ? ' for '.$chosen->translate('name', 'en') : '' }}. The Menu Advert Section shows placeholders.</td></tr>
                 @endforelse
             </tbody>
         </table>

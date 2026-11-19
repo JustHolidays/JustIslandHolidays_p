@@ -111,6 +111,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::get('/affiliates/{affiliate}', [AffiliateController::class, 'show'])->name('affiliates.show');
         Route::get('/affiliates/{affiliate}/deeplinks', [DeeplinkController::class, 'affiliate'])->name('affiliates.deeplinks');
         Route::put('/affiliates/{affiliate}', [AffiliateController::class, 'update'])->name('affiliates.update');
+        Route::post('/affiliates/{affiliate}/logo', [AffiliateController::class, 'updateLogo'])->name('affiliates.logo');
         Route::post('/affiliates/{affiliate}/deactivate', [AffiliateController::class, 'deactivate'])->name('affiliates.deactivate');
         Route::post('/affiliates/{affiliate}/reactivate', [AffiliateController::class, 'reactivate'])->name('affiliates.reactivate');
         Route::post('/affiliates/{affiliate}/invite', [AffiliateController::class, 'invite'])->name('affiliates.invite');

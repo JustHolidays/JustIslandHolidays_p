@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\ListingStatus;
 use App\Models\AdminRecommendation;
-use App\Models\AffiliateCommission;
 use App\Models\AuditLog;
 use App\Models\DeeplinkClick;
 use App\Models\Listing;
@@ -37,15 +36,12 @@ class DashboardController extends AdminController
             'clicksPrev7' => $clicks(now()->subDays(14), now()->subDays(7)),
             'target' => $target,
             'recommendations' => null,
-            'commission' => collect(),
             'audit' => collect(),
         ];
 
         if ($admin->isSuperAdmin()) {
             $data['brokenAffiliate'] = $brokenAffiliateLinks();
             $data['recommendations'] = $ctx->scope(AdminRecommendation::query())->where('status', 'open')->count();
-            $data['commission'] = $ctx->scopeVia(AffiliateCommission::query(), 'listing')->where('status', 'pending')
-                ->selectRaw('currency, SUM(commission_cents) as total')->groupBy('currency')->pluck('total', 'currency');
             $data['audit'] = AuditLog::with('actor')->latest('id')->limit(8)->get();
         }
 

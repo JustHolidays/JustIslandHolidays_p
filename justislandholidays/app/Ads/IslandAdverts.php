@@ -13,60 +13,95 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * The four advert columns below the introduction on island pages. Every advert belongs
- * to one island (no "all islands", decided 19 Nov 2026), and only super admins manage
- * them. A column with no running advert shows the placeholder.
- *
- * Several adverts may share a column on the same island: one is picked at random,
- * weighted by `weight`, as the spec describes.
+ * Affiliate adverts (decided 19 Nov 2026). Every advert belongs to one island and is shown in
+ * one or both sections, chosen by super admins:
+ *  - Menu Advert Section: 4 banners below the introduction on the island page and on every
+ *    resort page of that island. With more than 4 running, 4 are picked at random (weighted
+ *    by `weight`) on each page view; with fewer, the rest are placeholders.
+ *  - Sidebar Section: on property pages on that island, below Check availability. Every
+ *    running advert is shown, in random order.
+ *  - Both: the advert appears in both sections.
+ * Each section is an ad slot (ad_slots.code), so no extra column is needed.
  */
 final class IslandAdverts
 {
-    /** Column number => ad_slots.code */
-    public const SLOTS = [1 => 'island_intro_1', 2 => 'island_intro_2', 3 => 'island_intro_3', 4 => 'island_intro_4'];
+    /** Section => ad_slots.code */
+    public const SECTIONS = ['menu' => 'menu_section', 'sidebar' => 'sidebar_section', 'both' => 'both_sections'];
 
-    /** Shown 75 pixels tall (decided 19 Nov 2026) across a quarter of the page: a 4 to 1 banner. */
+    public const SECTION_LABELS = [
+        'menu' => 'Menu Advert Section',
+        'sidebar' => 'Sidebar Section',
+        'both' => 'Both',
+    ];
+
+    /** Banners in the Menu Advert Section. */
+    public const MENU_COUNT = 4;
+
+    /** Shown 75 pixels tall (decided 19 Nov 2026): a 4 to 1 banner. */
     public const WIDTH = 300;
 
     public const HEIGHT = 75;
 
-    /** @return array<int, Ad|null> column number => advert to show, or null for the placeholder */
-    public static function for(Island $island): array
+    /** @return list<Ad|null> four banners for the island and resort pages; null shows the placeholder */
+    public static function menuFor(Island $island): array
     {
-        $slots = AdSlot::whereIn('code', self::SLOTS)->pluck('id', 'code');
+        $ads = self::pickWeighted(self::running($island, ['menu', 'both'])->all(), self::MENU_COUNT);
 
-        $running = Ad::where('island_id', $island->id)
-            ->whereIn('slot_id', $slots->values())
+        return array_pad($ads, self::MENU_COUNT, null);
+    }
+
+    /** @return list<Ad> every running sidebar advert for property pages on this island, in random order */
+    public static function sidebarFor(Island $island): array
+    {
+        return self::running($island, ['sidebar', 'both'])->shuffle()->values()->all();
+    }
+
+    /** Which section an advert is in, from its slot. */
+    public static function sectionOf(Ad $ad): ?string
+    {
+        $code = $ad->slot?->code;
+
+        return $code ? (array_search($code, self::SECTIONS, true) ?: null) : null;
+    }
+
+    /** @param  list<string>  $sections */
+    private static function running(Island $island, array $sections)
+    {
+        $slotIds = AdSlot::whereIn('code', array_map(fn ($s) => self::SECTIONS[$s], $sections))->pluck('id');
+
+        return Ad::where('island_id', $island->id)
+            ->whereIn('slot_id', $slotIds)
             ->where('status', 'active')
             ->where('starts_at', '<=', now())
             ->where('ends_at', '>', now())
-            ->get()
-            ->groupBy('slot_id');
-
-        $columns = [];
-        foreach (self::SLOTS as $position => $code) {
-            $columns[$position] = self::pickWeighted($running->get($slots[$code] ?? 0, collect())->all());
-        }
-
-        return $columns;
+            ->get();
     }
 
-    /** @param  list<Ad>  $ads */
-    private static function pickWeighted(array $ads): ?Ad
+    /**
+     * Up to $count adverts picked at random without repeats, each draw weighted by `weight`,
+     * so an advert with weight 2 is twice as likely to be picked as one with weight 1.
+     *
+     * @param  list<Ad>  $ads
+     * @return list<Ad>
+     */
+    private static function pickWeighted(array $ads, int $count): array
     {
-        if ($ads === []) {
-            return null;
-        }
-        $total = array_sum(array_map(fn (Ad $a) => max(1, (int) $a->weight), $ads));
-        $roll = random_int(1, $total);
-        foreach ($ads as $ad) {
-            $roll -= max(1, (int) $ad->weight);
-            if ($roll <= 0) {
-                return $ad;
+        $picked = [];
+        while ($ads !== [] && count($picked) < $count) {
+            $total = array_sum(array_map(fn (Ad $a) => max(1, (int) $a->weight), $ads));
+            $roll = random_int(1, $total);
+            foreach ($ads as $i => $ad) {
+                $roll -= max(1, (int) $ad->weight);
+                if ($roll <= 0) {
+                    $picked[] = $ad;
+                    unset($ads[$i]);
+                    $ads = array_values($ads);
+                    break;
+                }
             }
         }
 
-        return $ads[0];
+        return $picked;
     }
 
     public static function isRunning(Ad $ad): bool

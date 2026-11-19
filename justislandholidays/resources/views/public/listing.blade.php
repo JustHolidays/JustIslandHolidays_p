@@ -123,9 +123,28 @@
             <aside class="space-y-6" aria-label="{{ __('Contact and availability') }}">
                 @if ($listing->showsCheckAvailability())
                     <div class="rounded-lg border-2 border-[var(--colour-brand)] bg-white p-5">
+                        @if ($isAffiliate)
+                            {{-- The affiliate's logo, 100 pixels tall and fitted inside; a placeholder until one is uploaded. Not a link. --}}
+                            @php
+                                $partnerLogo = \App\Support\AffiliateLogo::url($listing->owner);
+                            @endphp
+                            <div class="mb-4 flex h-[100px] items-center justify-center" data-partner-logo="{{ $partnerLogo ? 'logo' : 'placeholder' }}">
+                                @if ($partnerLogo)
+                                    <img src="{{ $partnerLogo }}" alt="{{ $listing->owner->affiliate_logo_alt ?: $listing->owner->name }}" height="100" class="max-h-full max-w-full object-contain">
+                                @else
+                                    <img src="{{ \App\Support\AffiliateLogo::placeholderUrl() }}" alt="" width="352" height="100" class="max-h-full max-w-full object-contain">
+                                @endif
+                            </div>
+                        @endif
                         <a href="{{ $listing->goUrl('listing') }}" rel="sponsored nofollow" class="flex min-h-11 w-full items-center justify-center rounded bg-[var(--colour-button)] px-5 text-lg font-semibold text-white">{{ __('Check availability') }}</a>
                         <p class="mt-3 text-sm text-slate-700">{{ __('Opens the booking site for this home. We may earn a commission if you book, at no extra cost to you.') }}</p>
                     </div>
+                @endif
+
+                {{-- Sidebar Section, directly below Check availability. Homes without a Check
+                     availability button show it at the end of the sidebar instead (see below). --}}
+                @if ($listing->showsCheckAvailability())
+                    @include('public.partials.sidebar-adverts')
                 @endif
 
                 @if ($directContact)
@@ -146,6 +165,10 @@
 
                 @unless ($isAffiliate)
                     @include('public.partials.enquiry-form')
+                @endunless
+
+                @unless ($listing->showsCheckAvailability())
+                    @include('public.partials.sidebar-adverts')
                 @endunless
             </aside>
         </div>

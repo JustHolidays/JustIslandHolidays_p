@@ -42,14 +42,6 @@
                     <p class="text-3xl font-semibold">{{ $recommendations }}</p>
                 </a>
             </li>
-            <li class="rounded-lg bg-white p-5 shadow-sm">
-                <p class="text-sm text-slate-600">Commission pending</p>
-                @forelse ($commission as $currency => $total)
-                    <p class="text-2xl font-semibold">{{ $currency === 'GBP' ? '£' : '€' }}{{ number_format($total / 100, 2) }}</p>
-                @empty
-                    <p class="text-2xl font-semibold">None</p>
-                @endforelse
-            </li>
         @endif
     </ul>
 

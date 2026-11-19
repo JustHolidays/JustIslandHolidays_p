@@ -2,7 +2,7 @@
 
 @php
     $input = 'block min-h-11 w-full rounded border border-slate-400 bg-white px-3';
-    $chosenPosition = (int) old('position', $position);
+    $chosenSection = (string) old('section', $section);
     $chosenIsland = (int) old('island_id', $ad->island_id);
 @endphp
 
@@ -28,15 +28,20 @@
                         </select>
                         @error('island_id')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                     </div>
-                    <fieldset>
-                        <legend class="mb-1 font-medium">Column on the island page</legend>
-                        <div class="flex flex-wrap gap-4">
-                            @foreach (array_keys(\App\Ads\IslandAdverts::SLOTS) as $p)
-                                <div class="flex min-h-11 items-center gap-2"><input id="position-{{ $p }}" type="radio" name="position" value="{{ $p }}" class="h-5 w-5" @checked($chosenPosition === $p)><label for="position-{{ $p }}">{{ $p }}</label></div>
+                    <div>
+                        <label for="section" class="mb-1 block font-medium">Section on the page</label>
+                        <select id="section" name="section" required aria-describedby="section-hint" class="{{ $input }}">
+                            @foreach (\App\Ads\IslandAdverts::SECTION_LABELS as $value => $label)
+                                <option value="{{ $value }}" @selected($chosenSection === $value)>{{ $label }}</option>
                             @endforeach
-                        </div>
-                        <p class="text-sm text-slate-600">1 is on the left. On phones the columns stack in this order.</p>
-                    </fieldset>
+                        </select>
+                        <p id="section-hint" class="mt-1 text-sm text-slate-600">
+                            <strong>Menu Advert Section:</strong> 4 banners below the introduction on the island page and its resort pages. With more than 4, 4 are picked at random on each visit.
+                            <strong>Sidebar Section:</strong> property pages on the island, below Check availability. Every advert shows.
+                            <strong>Both:</strong> in both sections.
+                        </p>
+                        @error('section')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                    </div>
                 </div>
             </section>
 
@@ -72,7 +77,7 @@
                             <option value="paused" @selected(old('status', $ad->status) === 'paused')>Paused (hidden)</option>
                         </select>
                     </div>
-                    <x-field name="weight" label="Share when columns are shared" type="number" min="1" max="100" :value="$ad->weight" hint="Only matters if two adverts share a column: one with 2 shows twice as often as one with 1." required />
+                    <x-field name="weight" label="How often it is picked" type="number" min="1" max="100" :value="$ad->weight" hint="Only matters when the Menu Advert Section has more than 4 adverts: one with 2 is picked twice as often as one with 1." required />
                 </div>
             </section>
 
@@ -85,11 +90,11 @@
                 <img src="{{ \App\Ads\IslandAdverts::imageUrl($ad) }}" alt="{{ $ad->alt }}" width="300" height="75" class="h-[75px] w-full rounded object-cover shadow-sm">
             @else
                 <img src="{{ \App\Ads\IslandAdverts::placeholderUrl() }}" alt="The Advertise here placeholder" width="300" height="75" class="h-[75px] w-full rounded object-cover shadow-sm">
-                <p class="mt-2 text-sm">The column shows this placeholder until an advert is running.</p>
+                <p class="mt-2 text-sm">The Menu Advert Section shows this placeholder in any space without a running advert.</p>
             @endif
 
             @if ($ad->exists)
-                <form method="POST" action="{{ route('admin.ads.destroy', $ad) }}" class="mt-6" onsubmit="return confirm('Delete this advert for good? The column goes back to the placeholder.')">
+                <form method="POST" action="{{ route('admin.ads.destroy', $ad) }}" class="mt-6" onsubmit="return confirm('Delete this advert for good?')">
                     @csrf @method('DELETE')
                     <button type="submit" class="min-h-11 rounded border border-red-800 px-4 text-red-800">Delete advert</button>
                 </form>

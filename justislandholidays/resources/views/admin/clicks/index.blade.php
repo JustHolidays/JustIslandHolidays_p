@@ -22,11 +22,9 @@
         <button class="min-h-11 rounded bg-slate-900 px-4 font-medium text-white">Show</button>
     </form>
 
-    <ul class="mt-4 grid gap-4 sm:grid-cols-3">
+    <ul class="mt-4 grid gap-4 sm:grid-cols-2">
         <li class="rounded-lg bg-white p-5 shadow-sm"><p class="text-sm text-slate-600">Clicks</p><p class="text-3xl font-semibold">{{ (int) ($summary->clicks ?? 0) }}</p></li>
         <li class="rounded-lg bg-white p-5 shadow-sm"><p class="text-sm text-slate-600">Different visitors (unique clicks)</p><p class="text-3xl font-semibold">{{ $uniques }}</p></li>
-        <li class="rounded-lg bg-white p-5 shadow-sm"><p class="text-sm text-slate-600">Bookings matched to a click</p><p class="text-3xl font-semibold">{{ $matched }}</p>
-            <p class="text-sm">{{ $uniques > 0 ? number_format(100 * $matched / $uniques, 1).'% of unique clicks' : 'No unique clicks yet' }}</p></li>
     </ul>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">

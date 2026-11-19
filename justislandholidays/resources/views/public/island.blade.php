@@ -86,7 +86,7 @@
             <div class="prose {{ $area ? 'mt-4' : '' }} max-w-none" data-intro>{!! \Illuminate\Support\Str::markdown($intro, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
         @endif
 
-        @if (! $area && isset($adverts))
+        @if (isset($adverts))
             @include('public.partials.island-adverts')
         @endif
 

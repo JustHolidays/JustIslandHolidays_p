@@ -6,16 +6,16 @@ use App\Ads\IslandAdverts;
 use App\Models\AdSlot;
 use Illuminate\Database\Seeder;
 
-/** The four advert spaces below the introduction on island pages (300 × 75: banners shown 75 pixels tall). */
+/** The advert sections: Menu Advert Section, Sidebar Section, and Both (banners 300 × 75). */
 class AdSlotSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (IslandAdverts::SLOTS as $position => $code) {
+        foreach (IslandAdverts::SECTIONS as $section => $code) {
             AdSlot::updateOrCreate(['code' => $code], [
                 'width' => IslandAdverts::WIDTH,
                 'height' => IslandAdverts::HEIGHT,
-                'description' => "Island page, below the introduction, column {$position} of 4",
+                'description' => IslandAdverts::SECTION_LABELS[$section],
             ]);
         }
     }

@@ -29,7 +29,7 @@ class IslandController extends Controller
             'filters' => $filters,
             'result' => $search->run($filters),
             'amenities' => $this->filterAmenities(),
-            'adverts' => \App\Ads\IslandAdverts::for($island),   // four columns below the intro (island pages only)
+            'adverts' => \App\Ads\IslandAdverts::menuFor($island),   // Menu Advert Section
         ]);
     }
 
@@ -47,6 +47,7 @@ class IslandController extends Controller
             'filters' => $filters,
             'result' => $search->run($filters),
             'amenities' => $this->filterAmenities(),
+            'adverts' => \App\Ads\IslandAdverts::menuFor($island),   // Menu Advert Section: the resort's island
         ]);
     }
 

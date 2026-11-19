@@ -49,6 +49,7 @@ class ListingController extends Controller
             'similar' => $similar,
             'isAffiliate' => $listing->isAffiliateListing(),
             'directContact' => \App\Listings\DirectContact::for($listing),
+            'sidebarAdverts' => \App\Ads\IslandAdverts::sidebarFor($listing->island),   // Sidebar Section
             'canonical' => $canonical,
             'alternates' => collect(config('site.enabled_languages'))
                 ->mapWithKeys(fn ($l) => [$l => $listing->publicUrl($l)])->all(),

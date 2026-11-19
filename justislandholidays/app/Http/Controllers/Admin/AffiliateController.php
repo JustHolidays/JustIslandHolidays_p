@@ -6,7 +6,6 @@ use App\Admin\AccountStatus;
 use App\Admin\Invitations;
 use App\Enums\ListingStatus;
 use App\Enums\Role;
-use App\Models\AffiliateCommission;
 use App\Models\DeeplinkClick;
 use App\Models\User;
 use App\Support\Audit;
@@ -39,14 +38,8 @@ class AffiliateController extends AdminController
         }
         $this->sort($query, $request, ['name' => 'name', 'clicks' => 'clicks_30', 'listings' => 'listings_count'], 'name', 'asc');
 
-        $affiliates = $query->paginate(self::PER_PAGE)->withQueryString();
-
-        $pending = AffiliateCommission::whereIn('affiliate_id', $affiliates->getCollection()->pluck('id'))
-            ->where('status', 'pending')
-            ->selectRaw('affiliate_id, currency, SUM(commission_cents) AS total')
-            ->groupBy('affiliate_id', 'currency')->get()->groupBy('affiliate_id');
-
-        return view('admin.affiliates.index', ['affiliates' => $affiliates, 'pending' => $pending]);
+        // No commission reports (not needed, 19 Nov 2026): affiliates earn through their own programmes.
+        return view('admin.affiliates.index', ['affiliates' => $query->paginate(self::PER_PAGE)->withQueryString()]);
     }
 
     public function create(): View
@@ -73,19 +66,21 @@ class AffiliateController extends AdminController
         return redirect()->route('admin.affiliates.show', $affiliate)->with('status', 'Affiliate created. An invitation to set a password has been emailed.');
     }
 
-    public function show(User $affiliate): View
+    /** Click periods offered on the affiliate page: value => label. */
+    public const CLICK_PERIODS = ['30' => 'Last 30 days', '60' => 'Last 60 days', '365' => 'Last 365 days', 'all' => 'All time'];
+
+    public function show(Request $request, User $affiliate): View
     {
         $this->ensureAffiliate($affiliate);
-        $since = now()->subDays(30);
+
+        $period = (string) $request->query('clicks', '30');
+        $period = array_key_exists($period, self::CLICK_PERIODS) ? $period : '30';
 
         return view('admin.affiliates.show', [
             'affiliate' => $affiliate,
-            'listings' => $affiliate->listings()->with(['island', 'translations'])
-                ->withCount(['clicks as clicks_30' => fn ($q) => $q->where('is_bot', false)->where('clicked_at', '>=', $since)])
-                ->get(),
-            'commission' => AffiliateCommission::where('affiliate_id', $affiliate->id)
-                ->selectRaw('status, currency, COUNT(*) AS n, SUM(commission_cents) AS total')
-                ->groupBy('status', 'currency')->get(),
+            'listings' => $this->withClicks($affiliate->listings()->with(['island', 'translations'])->getQuery(), $period)->get(),
+            'period' => $period,
+            'periods' => self::CLICK_PERIODS,
         ]);
     }
 
@@ -145,6 +140,68 @@ class AffiliateController extends AdminController
             'phone' => ['nullable', 'string', 'max:40'],
             'affiliate_data' => ['nullable', 'string', 'max:10000'],
         ]);
+    }
+
+    /** Logo for the banner above Check availability: add, replace, change its description or remove. Audited. */
+    public function updateLogo(Request $request, User $affiliate): RedirectResponse
+    {
+        $this->ensureAffiliate($affiliate);
+        $before = $affiliate->only(['affiliate_logo_path', 'affiliate_logo_alt']);
+
+        if ($request->boolean('remove')) {
+            \App\Support\AffiliateLogo::delete($affiliate->affiliate_logo_path);
+            $affiliate->forceFill(['affiliate_logo_path' => null, 'affiliate_logo_alt' => null])->save();
+            Audit::record($request->user(), 'affiliate.logo_remove', $affiliate, null, ['before' => $before]);
+
+            return back()->with('status', 'Logo removed. Their property pages show the placeholder.');
+        }
+
+        $request->validate([
+            'logo' => [$affiliate->affiliate_logo_path ? 'nullable' : 'required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:2048', 'dimensions:min_height='.\App\Support\AffiliateLogo::MIN_HEIGHT],
+            'logo_alt' => ['required', 'string', 'max:160'],
+        ], [
+            'logo.required' => 'Choose a logo file.',
+            'logo.mimes' => 'The logo must be a PNG, JPG or WebP file.',
+            'logo.max' => 'The logo must be 2 MB or smaller.',
+            'logo.dimensions' => 'The logo must be at least '.\App\Support\AffiliateLogo::MIN_HEIGHT.' pixels tall.',
+            'logo_alt.required' => 'Describe the logo for people who cannot see it, usually the company name.',
+        ]);
+
+        $path = $affiliate->affiliate_logo_path;
+        if ($request->hasFile('logo')) {
+            $path = \App\Support\AffiliateLogo::store($request->file('logo'));
+            \App\Support\AffiliateLogo::delete($affiliate->affiliate_logo_path);
+        }
+        $affiliate->forceFill(['affiliate_logo_path' => $path, 'affiliate_logo_alt' => trim((string) $request->input('logo_alt'))])->save();
+        Audit::record($request->user(), 'affiliate.logo_update', $affiliate, null, ['before' => $before, 'after' => $affiliate->only(['affiliate_logo_path', 'affiliate_logo_alt'])]);
+
+        return back()->with('status', $request->hasFile('logo') ? 'Logo saved. It shows on their property pages now.' : 'Logo description saved.');
+    }
+
+    /**
+     * Adds `clicks` (real visitors, no bots) for the period to each listing. Raw click events
+     * are kept for 13 months, but daily totals for good, so older days come from
+     * deeplink_clicks_daily and the last few days (which the nightly rollup may not have
+     * reached yet) from the raw events. That keeps "All time" and 365 days complete.
+     */
+    private function withClicks(\Illuminate\Database\Eloquent\Builder $query, string $period): \Illuminate\Database\Eloquent\Builder
+    {
+        $recentFrom = now()->startOfDay()->subDays(max(1, (int) config('site.clicks.rollup_days')) - 1);
+        $from = $period === 'all' ? null : now()->startOfDay()->subDays((int) $period - 1);
+
+        $daily = DB::table('deeplink_clicks_daily')->selectRaw('COALESCE(SUM(clicks), 0)')
+            ->whereColumn('deeplink_clicks_daily.listing_id', 'listings.id')
+            ->where('day', '<', $recentFrom->toDateString())
+            ->when($from, fn ($q) => $q->where('day', '>=', $from->toDateString()));
+
+        $raw = DeeplinkClick::selectRaw('COUNT(*)')
+            ->whereColumn('deeplink_clicks.listing_id', 'listings.id')
+            ->where('is_bot', false)
+            ->where('clicked_at', '>=', $from && $from->gt($recentFrom) ? $from : $recentFrom);
+
+        return $query->select('listings.*')
+            ->selectSub($daily, 'clicks_daily')
+            ->selectSub($raw, 'clicks_recent');
     }
 
     private function ensureAffiliate(User $user): void

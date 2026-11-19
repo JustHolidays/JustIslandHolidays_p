@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\AffiliateCommission;
 use App\Models\DeeplinkClick;
 use App\Models\Listing;
 use App\Models\User;
@@ -37,13 +36,9 @@ class ClickController extends AdminController
 
         $group = array_key_exists($request->query('group'), self::GROUPS) ? $request->query('group') : 'listing';
         $grouped = $this->grouped(clone $base, $group);
-
-        $matched = $this->scopedCommissions()->whereNotNull('click_id')
-            ->whereIn('click_id', (clone $base)->where('is_unique', true)->select('click_id'))->count();
-
         return view('admin.clicks.index', [
             'from' => $from, 'to' => $to, 'summary' => $summary, 'byPeriod' => $byPeriod, 'period' => $period,
-            'group' => $group, 'groups' => self::GROUPS, 'grouped' => $grouped, 'matched' => $matched,
+            'group' => $group, 'groups' => self::GROUPS, 'grouped' => $grouped,
             'islands' => $this->ctx()->islands(),
             'affiliates' => User::whereIn('id', $this->ctx()->scope(Listing::query())->select('owner_id'))->orderBy('name')->get(['id', 'name']),
             'includeBots' => $request->boolean('bots'),
@@ -128,10 +123,6 @@ class ClickController extends AdminController
         return $rows->map(fn ($r) => ['label' => $labels[$r->k] ?? ucfirst((string) $r->k), 'clicks' => (int) $r->clicks, 'uniques' => (int) $r->uniques]);
     }
 
-    private function scopedCommissions(): Builder
-    {
-        return $this->ctx()->scopeVia(AffiliateCommission::query(), 'listing');
-    }
 
     private function periodExpression(string $period): string
     {

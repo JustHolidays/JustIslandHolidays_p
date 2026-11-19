@@ -16,16 +16,16 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * Adverts (/admin/ads), super admins only (can:manage-ads). Each advert belongs to one
- * island and one of the four columns below the island page introduction. Every change
- * is audited.
+ * Affiliate Adverts (/admin/ads), super admins only (can:manage-ads). Each advert belongs to
+ * one island and is shown in the Menu Advert Section, the Sidebar Section or both (see
+ * App\Ads\IslandAdverts). Every change is audited.
  */
 class AdController extends AdminController
 {
     public function index(Request $request): View
     {
         $islands = Island::orderBy('sort_order')->get();
-        $slots = AdSlot::whereIn('code', IslandAdverts::SLOTS)->get()->keyBy('id');
+        $slots = AdSlot::whereIn('code', IslandAdverts::SECTIONS)->get()->keyBy('id');
 
         $query = Ad::with(['advertiser', 'island'])->whereIn('slot_id', $slots->keys())
             ->addSelect(['clicks' => DB::table('ad_stats_daily')->selectRaw('COALESCE(SUM(clicks), 0)')->whereColumn('ad_id', 'ads.id')]);
@@ -37,7 +37,7 @@ class AdController extends AdminController
             'islands' => $islands,
             'chosen' => $chosen,
             'ads' => $query->orderBy('island_id')->orderBy('slot_id')->orderByDesc('id')->get(),
-            'positions' => $slots->mapWithKeys(fn ($s) => [$s->id => array_search($s->code, IslandAdverts::SLOTS, true)]),
+            'sections' => $slots->mapWithKeys(fn ($s) => [$s->id => IslandAdverts::SECTION_LABELS[array_search($s->code, IslandAdverts::SECTIONS, true)]]),
         ]);
     }
 
@@ -49,7 +49,7 @@ class AdController extends AdminController
             'weight' => 1,
             'starts_at' => now()->startOfDay(),
             'ends_at' => now()->addYear()->startOfDay(),
-        ]), (int) $request->query('position') ?: 1);
+        ]), (string) $request->query('section', 'menu'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -58,14 +58,14 @@ class AdController extends AdminController
         $this->save($request, $ad);
         Audit::record($request->user(), 'ad.create', $ad, null, ['after' => $this->snapshot($ad)]);
 
-        return redirect()->route('admin.ads.index', ['island' => $ad->island_id])->with('status', 'Advert added. It shows on the island page while it is active and within its dates.');
+        return redirect()->route('admin.ads.index', ['island' => $ad->island_id])->with('status', 'Advert added. It shows on the island’s pages while it is active and within its dates.');
     }
 
     public function edit(Ad $ad): View
     {
         $this->ensureIslandAdvert($ad);
 
-        return $this->form($ad->load('advertiser'), array_search($ad->slot?->code, IslandAdverts::SLOTS, true) ?: 1);
+        return $this->form($ad->load('advertiser'), IslandAdverts::sectionOf($ad) ?? 'menu');
     }
 
     public function update(Request $request, Ad $ad): RedirectResponse
@@ -87,14 +87,14 @@ class AdController extends AdminController
         $ad->delete();
         Audit::record($request->user(), 'ad.delete', 'ad', (string) $before['id'], ['before' => $before]);
 
-        return redirect()->route('admin.ads.index', ['island' => $island])->with('status', 'Advert deleted. The column shows the placeholder until another advert is added.');
+        return redirect()->route('admin.ads.index', ['island' => $island])->with('status', 'Advert deleted.');
     }
 
-    private function form(Ad $ad, int $position): View
+    private function form(Ad $ad, string $section): View
     {
         return view('admin.ads.form', [
             'ad' => $ad,
-            'position' => $position,
+            'section' => array_key_exists($section, IslandAdverts::SECTIONS) ? $section : 'menu',
             'islands' => Island::orderBy('sort_order')->get(),
             'advertisers' => Advertiser::orderBy('name')->pluck('name'),
         ]);
@@ -104,7 +104,7 @@ class AdController extends AdminController
     {
         $data = $request->validate([
             'island_id' => ['required', 'integer', 'exists:islands,id'],
-            'position' => ['required', 'integer', Rule::in(array_keys(IslandAdverts::SLOTS))],
+            'section' => ['required', Rule::in(array_keys(IslandAdverts::SECTIONS))],
             'advertiser' => ['required', 'string', 'max:160'],
             'image' => [$ad->exists ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width='.IslandAdverts::WIDTH.',min_height='.IslandAdverts::HEIGHT],
             'alt' => ['required', 'string', 'max:190'],
@@ -123,7 +123,7 @@ class AdController extends AdminController
             'ends_at.after' => 'The end date must be after the start date.',
         ]);
 
-        $slot = AdSlot::where('code', IslandAdverts::SLOTS[(int) $data['position']])->firstOrFail();
+        $slot = AdSlot::where('code', IslandAdverts::SECTIONS[$data['section']])->firstOrFail();
         $advertiser = Advertiser::firstOrCreate(['name' => trim($data['advertiser'])]);
 
         if ($request->hasFile('image')) {
@@ -145,10 +145,10 @@ class AdController extends AdminController
         ])->save();
     }
 
-    /** Only adverts in the island page columns are managed here, and always with an island. */
+    /** Only adverts in the sections are managed here, and always with an island. */
     private function ensureIslandAdvert(Ad $ad): void
     {
-        abort_unless($ad->island_id && in_array($ad->slot?->code, IslandAdverts::SLOTS, true), 404);
+        abort_unless($ad->island_id && in_array($ad->slot?->code, IslandAdverts::SECTIONS, true), 404);
     }
 
     private function snapshot(Ad $ad): array

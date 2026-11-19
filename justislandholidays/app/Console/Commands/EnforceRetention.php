@@ -83,6 +83,7 @@ class EnforceRetention extends Command
 
             DB::table('sessions')->where('user_id', $user->id)->delete();
             DB::table('island_admins')->where('user_id', $user->id)->delete();
+            \App\Support\AffiliateLogo::delete($user->affiliate_logo_path);
 
             $user->forceFill([
                 'name' => 'Deleted account',
@@ -94,6 +95,8 @@ class EnforceRetention extends Command
                 'two_factor_confirmed_at' => null,
                 'remember_token' => null,
                 'affiliate_data' => null,
+                'affiliate_logo_path' => null,
+                'affiliate_logo_alt' => null,
                 'marketing_consent' => false,
                 'consented_at' => null,
             ])->saveQuietly();
