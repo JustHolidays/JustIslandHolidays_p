@@ -1,4 +1,4 @@
-@extends('layouts.admin', ['title' => 'Listings'])
+@extends('layouts.admin', ['title' => 'Listing Search'])
 
 @php
     $select = 'min-h-11 rounded border border-slate-400 bg-white px-2';
@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <h1 class="text-2xl font-semibold">Listings</h1>
+        <h1 class="text-2xl font-semibold">Listing Search</h1>
         <a href="{{ route('admin.import.create') }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add an affiliate listing from a web address</a>
     </div>
 

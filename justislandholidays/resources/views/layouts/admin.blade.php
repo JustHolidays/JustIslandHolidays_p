@@ -5,7 +5,7 @@
     $selectedIsland = $ctx->selectedIslandId();
     $nav = [
         ['admin.dashboard', 'Dashboard', null],
-        ['admin.listings.index', 'Listings', null],
+        ['admin.listings.index', 'Listing Search', null],
         ['admin.licences.index', 'Licence checks', null],
         ['admin.enquiries.index', 'Enquiries', null],
         ['admin.users.index', 'Owners', null],
