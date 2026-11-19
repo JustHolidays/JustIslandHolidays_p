@@ -1,7 +1,7 @@
-@extends('layouts.admin', ['title' => 'Appearance'])
+@extends('layouts.admin', ['title' => 'Frontend Styler'])
 
 @section('content')
-    <h1 class="text-2xl font-semibold">Appearance</h1>
+    <h1 class="text-2xl font-semibold">Frontend Styler</h1>
     <p class="mt-1 max-w-3xl">Changes are saved as a draft. <a href="{{ route('home', ['lang' => 'en', 'preview' => 'draft']) }}" target="_blank" rel="noopener" class="underline">Preview the draft on the home page</a> (new tab), then publish. Every publish is recorded and the last one can be undone.</p>
 
     <section class="mt-4 flex flex-wrap items-center gap-3 rounded-lg bg-white p-4 shadow-sm" aria-label="Publish">

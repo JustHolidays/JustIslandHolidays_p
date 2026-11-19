@@ -75,19 +75,8 @@
     <div class="mx-auto max-w-6xl px-4 py-8">
         @if ($area)
             {{-- Resort pages keep their breadcrumb and plain heading. --}}
-            <nav aria-label="{{ __('Breadcrumb') }}" class="mb-4 text-sm">
-                <ol class="flex flex-wrap gap-2">
-                    @foreach ($breadcrumbs as $crumb)
-                        <li>
-                            @if (! $loop->last)
-                                <a href="{{ $crumb['url'] }}" class="inline-flex min-h-11 items-center underline">{{ $crumb['name'] }}</a> <span aria-hidden="true">/</span>
-                            @else
-                                <span aria-current="page">{{ $crumb['name'] }}</span>
-                            @endif
-                        </li>
-                    @endforeach
-                </ol>
-            </nav>
+            {{-- Visible trail starts at "Home"; the search engine data keeps the full site name. --}}
+            <x-breadcrumb :items="array_replace($breadcrumbs, [0 => ['name' => __('Home'), 'url' => $breadcrumbs[0]['url']]])" />
 
             <h1 class="text-3xl font-semibold">{{ $heading }}</h1>
         @endif

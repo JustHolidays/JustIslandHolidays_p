@@ -143,6 +143,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::post('/undo', [AppearanceController::class, 'undo'])->name('undo');
     });
 
+    // Admin area colours (super admins only, with the other look-and-feel settings).
+    Route::middleware('can:manage-appearance')->group(function () {
+        Route::get('/admin-colours', [\App\Http\Controllers\Admin\AdminColoursController::class, 'edit'])->name('admin-colours.edit');
+        Route::put('/admin-colours', [\App\Http\Controllers\Admin\AdminColoursController::class, 'update'])->name('admin-colours.update');
+    });
+
     // Property types (super admins only).
     Route::middleware('can:manage-property-types')->prefix('property-types')->name('property-types.')->group(function () {
         Route::get('/', [PropertyTypeController::class, 'index'])->name('index');

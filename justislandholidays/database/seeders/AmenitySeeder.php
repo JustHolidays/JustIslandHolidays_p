@@ -36,7 +36,6 @@ class AmenitySeeder extends Seeder
 
             ['cleaning', 'services', 'Cleaning included', 'Limpieza incluida', 'Reinigung inklusive', false],
             ['linen', 'services', 'Bed linen and towels', 'Ropa de cama y toallas', 'Bettwäsche und Handtücher', false],
-            ['ev_charging', 'services', 'Electric car charging', 'Carga para coche eléctrico', 'E-Auto-Ladestation', true],
 
             ['sea_view', 'view', 'Sea view', 'Vistas al mar', 'Meerblick', true],
             ['mountain_view', 'view', 'Mountain view', 'Vistas a la montaña', 'Bergblick', false],

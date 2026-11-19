@@ -27,8 +27,9 @@
             {{ trans_choice(':count bedroom|:count bedrooms', $listing->bedrooms) }} ·
             {{ __('sleeps :count', ['count' => $listing->sleeps]) }}
         </p>
-        @if ($listing->guidePrice())
-            <p class="mt-auto pt-3 font-semibold">{{ __('From :price a week', ['price' => $listing->guidePrice()]) }}</p>
-        @endif
     </div>
+    {{-- Guide price as an orange bar across the foot of the card (white on orange-700 is 5.2 to 1). --}}
+    @if ($listing->guidePrice())
+        <p class="bg-orange-700 px-4 py-2 font-semibold text-white" data-card-price>{{ __('From :price a week', ['price' => $listing->guidePrice()]) }}</p>
+    @endif
 </article>

@@ -72,13 +72,28 @@ final class SearchFilters
             bedrooms: $int('bedrooms', 1, 20),
             priceMin: $int('price_min', 0, 100000),
             priceMax: $int('price_max', 0, 100000),
-            amenities: array_slice(array_values(array_filter($list('amenity'), fn ($c) => preg_match('/^[a-z_]{2,50}$/', $c))), 0, 10),
+            // Only facilities that still exist: an old link with a removed one (such as
+            // ev_charging) should not empty the results.
+            amenities: self::knownAmenities(array_slice(array_values(array_filter($list('amenity'), fn ($c) => preg_match('/^[a-z_]{2,50}$/', $c))), 0, 10)),
             pets: $request->boolean('pets'),
             pool: $request->boolean('pool'),
             text: $text === '' ? null : $text,
             sort: in_array($sort, self::SORTS, true) ? $sort : 'recommended',
             page: max(1, (int) $request->query('page', 1)),
         );
+    }
+
+    /**
+     * @param  list<string>  $codes
+     * @return list<string>
+     */
+    private static function knownAmenities(array $codes): array
+    {
+        if ($codes === []) {
+            return [];
+        }
+
+        return array_values(array_intersect($codes, \App\Models\Amenity::whereIn('code', $codes)->pluck('code')->all()));
     }
 
     /**

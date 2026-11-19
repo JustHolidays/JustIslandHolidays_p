@@ -7,7 +7,7 @@
 @endphp
 
 @section('content')
-    <p><a href="{{ route('admin.ads.index', array_filter(['island' => $ad->island_id])) }}" class="inline-flex min-h-11 items-center underline">Back to adverts</a></p>
+    <p><a href="{{ route('admin.ads.index', array_filter(['island' => $ad->island_id])) }}" class="inline-flex min-h-11 items-center underline">Back to Affiliate Adverts</a></p>
     <h1 class="text-2xl font-semibold">{{ $ad->exists ? 'Edit advert' : 'Add an advert' }}</h1>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_18rem]">

@@ -3,25 +3,32 @@
     $admin = $ctx->admin();
     $adminIslands = $ctx->islands();
     $selectedIsland = $ctx->selectedIslandId();
+    // Menu order (set 19 Nov 2026). [route, label, ability]; a null route is a heading.
     $nav = [
         ['admin.dashboard', 'Dashboard', null],
+        ['admin.plans.index', 'Plans', 'manage-plans'],
         ['admin.listings.index', 'Listing Search', null],
         ['admin.licences.index', 'Licence checks', null],
         ['admin.enquiries.index', 'Enquiries', null],
         ['admin.users.index', 'Owners', null],
         ['admin.agents.index', 'Agents', null],   // a dropdown of agents, each with a page of their properties
         ['admin.affiliates.index', 'Affiliates', 'manage-affiliates'],   // a dropdown of active affiliates
+        ['admin.ads.index', 'Affiliate Adverts', 'manage-ads'],
         ['admin.clicks.index', 'Click reports', null],
+        [null, 'Locations', null],
         ['admin.islands.index', 'Islands and resorts', null],   // a dropdown of the admin's active islands
         ['admin.locations.create', 'Add a location', 'manage-islands'],
-        ['admin.pages.index', 'Content pages', null],
+        [null, 'Settings', null],
         ['admin.staff.index', 'Staff', 'manage-staff'],
+        ['admin.pages.index', 'Content pages', null],
         ['admin.property-types.index', 'Property types', 'manage-property-types'],
-        ['admin.ads.index', 'Adverts', 'manage-ads'],
-        ['admin.appearance.edit', 'Appearance', 'manage-appearance'],
-        ['admin.plans.index', 'Plans', 'manage-plans'],
+        ['admin.appearance.edit', 'Frontend Styler', 'manage-appearance'],
+        ['admin.admin-colours.edit', 'Admin Styler', 'manage-appearance'],
         ['admin.audit.index', 'Audit log', 'view-audit-log'],
     ];
+    // Leave out what this admin cannot open, then any heading with nothing left under it.
+    $nav = array_values(array_filter($nav, fn ($item) => ! $item[2] || $admin->can($item[2])));
+    $nav = array_values(array_filter($nav, fn ($item, $i) => $item[0] !== null || (isset($nav[$i + 1]) && $nav[$i + 1][0] !== null), ARRAY_FILTER_USE_BOTH));
     $section = fn ($route) => preg_replace('/\.(index|edit|show)$/', '', $route);
 @endphp
 <!DOCTYPE html>
@@ -32,12 +39,14 @@
     <meta name="robots" content="noindex, nofollow">
     <title>{{ $title ?? 'Admin' }} · Admin · Just Island Holidays</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- Admin colours (super admins set them on the Admin Styler page). --}}
+    <style>{!! \App\Support\AdminTheme::css() !!}</style>
     @stack('head')
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
+<body class="min-h-screen bg-[var(--admin-page)] text-slate-900 antialiased">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2">Skip to content</a>
 
-    <header class="bg-slate-900 text-white">
+    <header class="bg-[var(--admin-header)] text-[var(--admin-header-text)]">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2">
             <a href="{{ route('admin.dashboard') }}" class="inline-flex min-h-11 items-center text-lg font-semibold">Just Island Holidays · Admin</a>
             <div class="flex flex-wrap items-center gap-3">
@@ -75,12 +84,17 @@
                     $viewingAgent = $routeUser instanceof \App\Models\User && $routeUser->role === \App\Enums\Role::Agent;
                 @endphp
                 @foreach ($nav as [$route, $label, $ability])
+                    @if ($route === null)
+                        {{-- Menu heading (not a link). Full width so it starts its own row on small screens. --}}
+                        <li class="w-full px-3 pb-1 pt-4 text-xs font-semibold uppercase tracking-wide" data-menu-heading>{{ $label }}</li>
+                        @continue
+                    @endif
                     @if ($route === 'admin.users.index')
                         @php
                             $onOwners = request()->routeIs('admin.users.*') && ! $viewingAgent;
                         @endphp
                         <li>
-                            <a href="{{ route($route) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold shadow-sm' => $onOwners, 'hover:bg-white' => ! $onOwners])
+                            <a href="{{ route($route) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-[var(--admin-highlight)] font-semibold shadow-sm' => $onOwners, 'hover:bg-[var(--admin-highlight)]' => ! $onOwners])
                                @if ($onOwners) aria-current="page" @endif>{{ $label }}</a>
                         </li>
                         @continue
@@ -91,11 +105,11 @@
                             $currentAgentId = $viewingAgent ? $routeUser->id : null;
                             $navAgents = \App\Http\Controllers\Admin\UserController::peopleQuery($ctx, \App\Enums\Role::Agent)
                                 ->whereNull('deactivated_at')->with('agency:id,name')->orderBy('name')->get(['id', 'name', 'agency_id']);
-                            $agentLink = fn ($on) => ['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => $on, 'hover:bg-white' => ! $on];
+                            $agentLink = fn ($on) => ['flex min-h-11 items-center rounded px-3', 'bg-[var(--admin-highlight)] font-semibold' => $on, 'hover:bg-[var(--admin-highlight)]' => ! $on];
                         @endphp
                         <li class="w-full lg:w-auto">
                             <details @if ($inAgents) open @endif class="group">
-                                <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-white font-semibold shadow-sm' => $inAgents, 'hover:bg-white' => ! $inAgents])>
+                                <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-[var(--admin-highlight)] font-semibold shadow-sm' => $inAgents, 'hover:bg-[var(--admin-highlight)]' => ! $inAgents])>
                                     {{ $label }}
                                     <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">▾</span>
                                 </summary>
@@ -125,11 +139,11 @@
                                 $routeAffiliate = request()->route('affiliate');
                                 $currentAffiliateId = $routeAffiliate instanceof \App\Models\User ? $routeAffiliate->id : (int) $routeAffiliate;
                                 $navAffiliates = \App\Models\User::where('role', \App\Enums\Role::Affiliate->value)->whereNull('deactivated_at')->orderBy('name')->get(['id', 'name']);
-                                $sub = fn ($on) => ['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => $on, 'hover:bg-white' => ! $on];
+                                $sub = fn ($on) => ['flex min-h-11 items-center rounded px-3', 'bg-[var(--admin-highlight)] font-semibold' => $on, 'hover:bg-[var(--admin-highlight)]' => ! $on];
                             @endphp
                             <li class="w-full lg:w-auto">
                                 <details @if ($inAffiliates) open @endif class="group">
-                                    <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-white font-semibold shadow-sm' => $inAffiliates, 'hover:bg-white' => ! $inAffiliates])>
+                                    <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-[var(--admin-highlight)] font-semibold shadow-sm' => $inAffiliates, 'hover:bg-[var(--admin-highlight)]' => ! $inAffiliates])>
                                         {{ $label }}
                                         <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">▾</span>
                                     </summary>
@@ -171,13 +185,13 @@
                         @endphp
                         <li class="w-full lg:w-auto">
                             <details @if ($inIslands) open @endif class="group">
-                                <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-white font-semibold shadow-sm' => $inIslands, 'hover:bg-white' => ! $inIslands])>
+                                <summary @class(['flex min-h-11 cursor-pointer list-none items-center justify-between rounded px-3 [&::-webkit-details-marker]:hidden', 'bg-[var(--admin-highlight)] font-semibold shadow-sm' => $inIslands, 'hover:bg-[var(--admin-highlight)]' => ! $inIslands])>
                                     {{ $label }}
                                     <span aria-hidden="true" class="ml-2 transition-transform group-open:rotate-180">▾</span>
                                 </summary>
                                 <ul class="mt-1 space-y-1 pl-3">
                                     <li>
-                                        <a href="{{ route('admin.islands.index') }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => request()->routeIs('admin.islands.index'), 'hover:bg-white' => ! request()->routeIs('admin.islands.index')])
+                                        <a href="{{ route('admin.islands.index') }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-[var(--admin-highlight)] font-semibold' => request()->routeIs('admin.islands.index'), 'hover:bg-[var(--admin-highlight)]' => ! request()->routeIs('admin.islands.index')])
                                            @if (request()->routeIs('admin.islands.index')) aria-current="page" @endif>All islands</a>
                                     </li>
                                     @foreach ($adminIslands->where('is_active', true) as $navIsland)
@@ -185,7 +199,7 @@
                                             $here = $inIslands && ! request()->routeIs('admin.islands.index') && $currentIslandId === $navIsland->id;
                                         @endphp
                                         <li>
-                                            <a href="{{ route('admin.islands.show', $navIsland) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold' => $here, 'hover:bg-white' => ! $here])
+                                            <a href="{{ route('admin.islands.show', $navIsland) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-[var(--admin-highlight)] font-semibold' => $here, 'hover:bg-[var(--admin-highlight)]' => ! $here])
                                                @if ($here && request()->routeIs('admin.islands.show')) aria-current="page" @endif>{{ $navIsland->translate('name', 'en') }}</a>
                                         </li>
                                     @endforeach
@@ -199,7 +213,7 @@
                             $active = request()->routeIs($section($route).'*');
                         @endphp
                         <li>
-                            <a href="{{ route($route) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-white font-semibold shadow-sm' => $active, 'hover:bg-white' => ! $active])
+                            <a href="{{ route($route) }}" @class(['flex min-h-11 items-center rounded px-3', 'bg-[var(--admin-highlight)] font-semibold shadow-sm' => $active, 'hover:bg-[var(--admin-highlight)]' => ! $active])
                                @if ($active) aria-current="page" @endif>{{ $label }}</a>
                         </li>
                     @endif

@@ -32,13 +32,12 @@
 
 @section('content')
     <div class="mx-auto max-w-6xl px-4 py-8">
-        <nav aria-label="{{ __('Breadcrumb') }}" class="mb-4 text-sm">
-            <ol class="flex flex-wrap gap-2">
-                <li><a href="{{ route('islands.show', $listing->island->slug) }}" class="inline-flex min-h-11 items-center underline">{{ $listing->island->translate('name') }}</a> <span aria-hidden="true">/</span></li>
-                <li><a href="{{ route('areas.show', [$listing->island->slug, $listing->area->slug]) }}" class="inline-flex min-h-11 items-center underline">{{ $listing->area->translate('name') }}</a> <span aria-hidden="true">/</span></li>
-                <li class="inline-flex min-h-11 items-center"><span aria-current="page">{{ $title }}</span></li>
-            </ol>
-        </nav>
+        <x-breadcrumb :items="[
+            ['name' => __('Home'), 'url' => route('home')],
+            ['name' => $listing->island->translate('name'), 'url' => route('islands.show', $listing->island->slug)],
+            ['name' => $listing->area->translate('name'), 'url' => route('areas.show', [$listing->island->slug, $listing->area->slug])],
+            ['name' => $title, 'url' => null],
+        ]" />
 
         <h1 class="text-3xl font-semibold">{{ $title }}</h1>
         <p class="mt-1 text-lg">{{ $place }}</p>

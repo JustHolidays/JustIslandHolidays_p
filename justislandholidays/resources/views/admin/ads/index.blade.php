@@ -1,8 +1,8 @@
-@extends('layouts.admin', ['title' => 'Adverts'])
+@extends('layouts.admin', ['title' => 'Affiliate Adverts'])
 
 @section('content')
     <div class="flex flex-wrap items-center justify-between gap-3">
-        <h1 class="text-2xl font-semibold">Adverts</h1>
+        <h1 class="text-2xl font-semibold">Affiliate Adverts</h1>
         <a href="{{ route('admin.ads.create', array_filter(['island' => $chosen?->id])) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add an advert</a>
     </div>
     <p class="mt-1 max-w-3xl">Each island page has four advert columns below its introduction. Every advert belongs to one island and one column, and links to the advertiser's website. A column with no running advert shows an "Advertise here" placeholder. If two adverts share a column, they take turns.</p>

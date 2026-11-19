@@ -163,7 +163,7 @@ class IslandAdvertsTest extends TestCase
     {
         $admin = $this->superAdmin();
 
-        $this->actingAs($admin)->get('/admin')->assertSee('>Adverts</a>', false);
+        $this->actingAs($admin)->get('/admin')->assertSee('>Affiliate Adverts</a>', false);
         $this->actingAs($admin)->get(route('admin.ads.create', ['island' => $this->menorca->id, 'position' => 2]))->assertOk()
             ->assertSee('images/placeholders/advert-300.webp');
 
@@ -228,7 +228,7 @@ class IslandAdvertsTest extends TestCase
         $ad = $this->ad($this->menorca, 1);
         $islandAdmin = $this->islandAdmin($this->menorca);
 
-        $this->assertStringNotContainsString('>Adverts</a>', $this->actingAs($islandAdmin)->get('/admin')->getContent());
+        $this->assertStringNotContainsString('>Affiliate Adverts</a>', $this->actingAs($islandAdmin)->get('/admin')->getContent());
         $this->actingAs($islandAdmin)->get(route('admin.ads.index'))->assertForbidden();
         $this->actingAs($islandAdmin)->get(route('admin.ads.create'))->assertForbidden();
         $this->actingAs($islandAdmin)->post(route('admin.ads.store'), $this->form())->assertForbidden();
