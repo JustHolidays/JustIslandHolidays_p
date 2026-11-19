@@ -14,9 +14,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             IslandSeeder::class,
+            IslandIntroSeeder::class,   // first-draft island intros; never overwrites edited text
             AreaSeeder::class,
             AmenitySeeder::class,
             PlanSeeder::class,
+            AdSlotSeeder::class,       // the four island page advert spaces
             LegalPagesSeeder::class,   // drafts; never overwrites pages edited in the admin
         ]);
     }

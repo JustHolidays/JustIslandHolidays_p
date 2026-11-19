@@ -29,6 +29,7 @@ class IslandController extends Controller
             'filters' => $filters,
             'result' => $search->run($filters),
             'amenities' => $this->filterAmenities(),
+            'adverts' => \App\Ads\IslandAdverts::for($island),   // four columns below the intro (island pages only)
         ]);
     }
 

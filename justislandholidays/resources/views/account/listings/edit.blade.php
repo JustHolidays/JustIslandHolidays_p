@@ -80,8 +80,8 @@
                     <div class="mb-4">
                         <label for="property_type" class="mb-1 block font-medium">Type of property</label>
                         <select id="property_type" name="property_type" class="{{ $input }}" required>
-                            @foreach (\App\Search\SearchFilters::TYPES as $type)
-                                <option value="{{ $type }}" @selected(old('property_type', $listing->property_type) === $type)>{{ ucfirst($type) }}</option>
+                            @foreach (\App\Models\PropertyType::allowedFor($listing->property_type) as $type)
+                                <option value="{{ $type }}" @selected(old('property_type', $listing->property_type) === $type)>{{ \App\Models\PropertyType::label($type) }}</option>
                             @endforeach
                         </select>
                     </div>

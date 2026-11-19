@@ -17,7 +17,7 @@ use App\Models\Listing;
 use App\Models\ListingLicence;
 use App\Models\ListingPrivate;
 use App\Models\ListingTranslation;
-use App\Search\SearchFilters;
+use App\Models\PropertyType;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -100,7 +100,7 @@ class ListingEditorController extends Controller
     public function updateBasics(Request $request, Listing $listing): RedirectResponse
     {
         $this->ensureEditable($listing);
-        $data = $this->validateBasics($request);
+        $data = $this->validateBasics($request, $listing->property_type);
 
         DB::transaction(function () use ($listing, $data, $request) {
             $listing->fill($this->basicsAttributes($data));
@@ -322,14 +322,15 @@ class ListingEditorController extends Controller
         }
     }
 
-    private function validateBasics(Request $request): array
+    /** @param  string|null  $currentType  a switched-off type the listing already has stays allowed */
+    private function validateBasics(Request $request, ?string $currentType = null): array
     {
         return $request->validate([
             'title' => ['required', 'string', 'max:160'],
             'summary' => ['required', 'string', 'max:500'],
             'island_id' => ['required', 'integer', Rule::exists('islands', 'id')->where('is_active', true)],
             'area_id' => ['required', 'integer', Rule::exists('areas', 'id')->where('island_id', $request->integer('island_id'))],
-            'property_type' => ['required', Rule::in(SearchFilters::TYPES)],
+            'property_type' => ['required', Rule::in(\App\Models\PropertyType::allowedFor($currentType))],
             'bedrooms' => ['required', 'integer', 'min:0', 'max:30'],
             'bathrooms' => ['required', 'integer', 'min:0', 'max:30'],
             'sleeps' => ['required', 'integer', 'min:1', 'max:40'],

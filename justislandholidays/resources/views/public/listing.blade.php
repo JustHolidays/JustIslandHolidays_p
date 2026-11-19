@@ -64,7 +64,7 @@
                 <section class="mt-8" aria-labelledby="facts-heading">
                     <h2 id="facts-heading" class="text-xl font-semibold">{{ __('Key facts') }}</h2>
                     <dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-                        <div><dt class="text-sm text-slate-600">{{ __('Type') }}</dt><dd class="font-medium">{{ __(ucfirst($listing->property_type)) }}</dd></div>
+                        <div><dt class="text-sm text-slate-600">{{ __('Type') }}</dt><dd class="font-medium">{{ \App\Models\PropertyType::label($listing->property_type) }}</dd></div>
                         <div><dt class="text-sm text-slate-600">{{ __('Sleeps') }}</dt><dd class="font-medium">{{ $listing->sleeps }}</dd></div>
                         <div><dt class="text-sm text-slate-600">{{ __('Bedrooms') }}</dt><dd class="font-medium">{{ $listing->bedrooms }}</dd></div>
                         <div><dt class="text-sm text-slate-600">{{ __('Bathrooms') }}</dt><dd class="font-medium">{{ $listing->bathrooms }}</dd></div>

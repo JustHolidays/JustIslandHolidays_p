@@ -34,7 +34,7 @@
             <h3 class="mt-4 text-xl font-semibold">{{ $en?->title }}</h3>
             <p class="mt-2">{{ $en?->summary }}</p>
             <dl class="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-                <div><dt class="text-slate-600">Type</dt><dd>{{ ucfirst($listing->property_type) }}</dd></div>
+                <div><dt class="text-slate-600">Type</dt><dd>{{ \App\Models\PropertyType::label($listing->property_type, 'en') }}</dd></div>
                 <div><dt class="text-slate-600">Sleeps</dt><dd>{{ $listing->sleeps }}</dd></div>
                 <div><dt class="text-slate-600">Bedrooms</dt><dd>{{ $listing->bedrooms }}</dd></div>
                 <div><dt class="text-slate-600">Bathrooms</dt><dd>{{ $listing->bathrooms }}</dd></div>
@@ -163,7 +163,7 @@
                 <div class="md:col-span-2"><x-field name="title" label="Title" :value="$en?->title" maxlength="160" required /></div>
                 <div class="md:col-span-2"><label for="summary" class="mb-1 block font-medium">Short description</label><textarea id="summary" name="summary" rows="3" maxlength="500" class="block w-full rounded border border-slate-400 px-3 py-2" required>{{ old('summary', $en?->summary) }}</textarea></div>
                 <div><label for="area_id" class="mb-1 block font-medium">Resort</label><select id="area_id" name="area_id" class="{{ $input }}">@foreach ($areas as $a)<option value="{{ $a->id }}" @selected($listing->area_id === $a->id)>{{ $a->translate('name', 'en') }}</option>@endforeach</select></div>
-                <div><label for="property_type" class="mb-1 block font-medium">Type</label><select id="property_type" name="property_type" class="{{ $input }}">@foreach (\App\Search\SearchFilters::TYPES as $t)<option value="{{ $t }}" @selected($listing->property_type === $t)>{{ ucfirst($t) }}</option>@endforeach</select></div>
+                <div><label for="property_type" class="mb-1 block font-medium">Type</label><select id="property_type" name="property_type" class="{{ $input }}">@foreach (\App\Models\PropertyType::allowedFor($listing->property_type) as $t)<option value="{{ $t }}" @selected($listing->property_type === $t)>{{ \App\Models\PropertyType::label($t, 'en') }}</option>@endforeach</select></div>
                 <x-field name="bedrooms" label="Bedrooms" type="number" min="0" :value="$listing->bedrooms" />
                 <x-field name="bathrooms" label="Bathrooms" type="number" min="0" :value="$listing->bathrooms" />
                 <x-field name="sleeps" label="Sleeps" type="number" min="1" max="40" :value="$listing->sleeps" />

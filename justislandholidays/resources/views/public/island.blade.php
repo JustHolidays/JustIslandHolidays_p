@@ -36,7 +36,7 @@
     @unless ($area)
         {{-- Island pages: the heading and the resorts sit over the header image, with no breadcrumb.
              At least 400 pixels tall from tablet width up (240 on phones), growing if there are many
-             resorts. The dark layer keeps white text readable on any photo. Until an admin adds a
+             resorts. A dark layer behind the text keeps it readable on any photo. Until an admin adds a
              photo, a plain placeholder (no alt text: it shows nothing real). --}}
         <div class="relative isolate w-full overflow-hidden bg-slate-700" data-header-image="{{ $island->header_image_path ? 'photo' : 'placeholder' }}">
             @if ($island->header_image_path)
@@ -48,7 +48,8 @@
                      alt="" width="2400" height="400" fetchpriority="high"
                      class="absolute inset-0 -z-10 h-full w-full object-cover">
             @endif
-            <div class="absolute inset-0 -z-10 bg-black/55" aria-hidden="true"></div>
+            {{-- Lighter at the top so more of the photo shows; darker only behind the text at the bottom. --}}
+            <div class="absolute inset-0 -z-10 bg-linear-to-t from-black/65 via-black/25 to-black/0" aria-hidden="true"></div>
 
             <div class="mx-auto flex min-h-60 max-w-6xl flex-col justify-end px-4 py-8 text-white sm:min-h-[400px]">
                 <h1 class="text-3xl font-semibold md:text-4xl">{{ $heading }}</h1>
@@ -59,8 +60,8 @@
                         <ul class="mt-3 flex flex-wrap gap-2">
                             @foreach ($areas as $a)
                                 <li>
-                                    <a href="{{ route('areas.show', [$island->slug, $a->slug]) }}" class="inline-flex min-h-11 items-center rounded-full border border-white bg-white px-4 text-[var(--colour-text)] hover:border-[var(--colour-brand)] hover:underline">
-                                        {{ $a->translate('name') }} <span class="ml-1 text-sm text-slate-600">({{ $a->listings_count }})</span>
+                                    <a href="{{ route('areas.show', [$island->slug, $a->slug]) }}" class="inline-flex min-h-11 items-center rounded-full border border-orange-700 bg-orange-700 px-4 font-medium text-white no-underline shadow-sm hover:bg-orange-800">
+                                        {{ $a->translate('name') }} <span class="ml-1 text-sm font-normal">({{ $a->listings_count }})</span>
                                     </a>
                                 </li>
                             @endforeach
@@ -92,7 +93,12 @@
         @endif
 
         @if ($intro)
-            <div class="prose {{ $area ? 'mt-4' : '' }} max-w-3xl">{!! \Illuminate\Support\Str::markdown($intro, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+            {{-- Full width of the page's content box (max-w-none lifts the text width limit). --}}
+            <div class="prose {{ $area ? 'mt-4' : '' }} max-w-none" data-intro>{!! \Illuminate\Support\Str::markdown($intro, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+        @endif
+
+        @if (! $area && isset($adverts))
+            @include('public.partials.island-adverts')
         @endif
 
         <section class="mt-8" aria-labelledby="map-heading">

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdController;
+use App\Http\Controllers\Admin\PropertyTypeController;
 use App\Http\Controllers\Admin\AffiliateController;
 use App\Http\Controllers\Admin\AppearanceController;
 use App\Http\Controllers\Admin\AuditController;
@@ -139,6 +141,25 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::post('/publish', [AppearanceController::class, 'publish'])->name('publish');
         Route::post('/discard', [AppearanceController::class, 'discard'])->name('discard');
         Route::post('/undo', [AppearanceController::class, 'undo'])->name('undo');
+    });
+
+    // Property types (super admins only).
+    Route::middleware('can:manage-property-types')->prefix('property-types')->name('property-types.')->group(function () {
+        Route::get('/', [PropertyTypeController::class, 'index'])->name('index');
+        Route::post('/', [PropertyTypeController::class, 'store'])->name('store');
+        Route::get('/{type}/edit', [PropertyTypeController::class, 'edit'])->name('edit');
+        Route::put('/{type}', [PropertyTypeController::class, 'update'])->name('update');
+        Route::delete('/{type}', [PropertyTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    // Island page adverts (super admins only).
+    Route::middleware('can:manage-ads')->prefix('ads')->name('ads.')->group(function () {
+        Route::get('/', [AdController::class, 'index'])->name('index');
+        Route::get('/create', [AdController::class, 'create'])->name('create');
+        Route::post('/', [AdController::class, 'store'])->name('store');
+        Route::get('/{ad}/edit', [AdController::class, 'edit'])->name('edit');
+        Route::put('/{ad}', [AdController::class, 'update'])->name('update');
+        Route::delete('/{ad}', [AdController::class, 'destroy'])->name('destroy');
     });
 
     Route::middleware('can:manage-plans')->group(function () {

@@ -16,6 +16,8 @@
         ['admin.locations.create', 'Add a location', 'manage-islands'],
         ['admin.pages.index', 'Content pages', null],
         ['admin.staff.index', 'Staff', 'manage-staff'],
+        ['admin.property-types.index', 'Property types', 'manage-property-types'],
+        ['admin.ads.index', 'Adverts', 'manage-ads'],
         ['admin.appearance.edit', 'Appearance', 'manage-appearance'],
         ['admin.plans.index', 'Plans', 'manage-plans'],
         ['admin.audit.index', 'Audit log', 'view-audit-log'],

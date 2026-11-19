@@ -13,6 +13,8 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->withoutVite();
+        // Property types are cached per request; each test starts with a fresh database.
+        \App\Models\PropertyType::forgetCache();
     }
 
     /**

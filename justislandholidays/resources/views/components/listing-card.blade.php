@@ -23,7 +23,7 @@
         </{{ $tag }}>
         <p class="text-sm text-slate-700">{{ $listing->area->translate('name') }}, {{ $listing->island->translate('name') }}</p>
         <p class="mt-2 text-sm">
-            {{ __(ucfirst($listing->property_type)) }} ·
+            {{ \App\Models\PropertyType::label($listing->property_type) }} ·
             {{ trans_choice(':count bedroom|:count bedrooms', $listing->bedrooms) }} ·
             {{ __('sleeps :count', ['count' => $listing->sleeps]) }}
         </p>

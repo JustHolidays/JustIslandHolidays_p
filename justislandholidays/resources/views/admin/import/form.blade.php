@@ -49,7 +49,7 @@
                                 @foreach ($islands as $island)<optgroup label="{{ $island->translate('name', 'en') }}">@foreach ($island->areas as $a)<option value="{{ $a->id }}" @selected((int) $d('area_id') === $a->id)>{{ $a->translate('name', 'en') }}, {{ $island->translate('name', 'en') }}</option>@endforeach</optgroup>@endforeach
                             </select></div>
                         <div class="mb-4"><label for="property_type" class="mb-1 block font-medium">Type</label>
-                            <select id="property_type" name="property_type" class="{{ $field }}" data-preview="type">@foreach (\App\Search\SearchFilters::TYPES as $t)<option value="{{ $t }}" @selected($d('property_type', 'villa') === $t)>{{ ucfirst($t) }}</option>@endforeach</select></div>
+                            <select id="property_type" name="property_type" class="{{ $field }}" data-preview="type">@foreach (\App\Models\PropertyType::activeCodes() as $t)<option value="{{ $t }}" @selected($d('property_type', 'villa') === $t)>{{ \App\Models\PropertyType::label($t, 'en') }}</option>@endforeach</select></div>
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <x-field name="bedrooms" :label="'Bedrooms'.($needs('bedrooms') ? ' (needs input)' : '')" type="number" min="0" :value="$d('bedrooms')" required data-preview="bedrooms" />

@@ -16,6 +16,9 @@ class MySqlFullTextTest extends TestCase
 {
     use DatabaseTruncation;
 
+    /** Reference rows that migrations add (the six property types) must survive for later tests. */
+    protected $exceptTables = ['migrations', 'property_types'];
+
     protected function setUp(): void
     {
         parent::setUp();

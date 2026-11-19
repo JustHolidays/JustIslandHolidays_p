@@ -24,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
         'handle-data-requests',  // /admin/privacy
         'import-commissions',    // /admin/commissions import and edit
         'decide-recommendations',
+        'manage-ads',            // /admin/ads: island page adverts (super admins only, decided 19 Nov 2026)
+        'manage-property-types', // /admin/property-types (super admins only, decided 19 Nov 2026)
     ];
 
     public function register(): void

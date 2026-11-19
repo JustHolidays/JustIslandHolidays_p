@@ -19,10 +19,10 @@
 
     <fieldset class="mb-4">
         <legend class="mb-1 font-medium">{{ __('Property type') }}</legend>
-        @foreach (\App\Search\SearchFilters::TYPES as $type)
+        @foreach (\App\Models\PropertyType::activeCodes() as $type)
             <div class="flex min-h-11 items-center gap-2">
                 <input id="f-type-{{ $type }}" type="checkbox" name="type[]" value="{{ $type }}" class="h-5 w-5" @checked(in_array($type, $filters->types, true))>
-                <label for="f-type-{{ $type }}">{{ __(ucfirst($type)) }} <span class="text-sm text-slate-600">({{ $result->typeCounts[$type] ?? 0 }})</span></label>
+                <label for="f-type-{{ $type }}">{{ \App\Models\PropertyType::label($type) }} <span class="text-sm text-slate-600">({{ $result->typeCounts[$type] ?? 0 }})</span></label>
             </div>
         @endforeach
     </fieldset>

@@ -68,7 +68,7 @@ class HeaderImageTest extends TestCase
         $html = $this->islandPage();
         $this->assertStringContainsString('data-header-image="photo"', $html);
         $this->assertStringContainsString('sm:min-h-[400px]', $html);
-        $this->assertStringNotContainsString('images/placeholders/', $html);
+        $this->assertStringNotContainsString('images/placeholders/header-', $html);
         $this->assertStringContainsString('alt="Turquoise water at Cala Macarella"', $html);
         $this->assertStringContainsString('-800.webp 800w', $html);
         // Below the menu.
@@ -89,7 +89,10 @@ class HeaderImageTest extends TestCase
         $this->assertStringContainsString('Holiday homes in', $header);
         $this->assertStringContainsString('Resorts and towns', $header);
         $this->assertStringContainsString('Cala Galdana', $header);
-        $this->assertStringContainsString('bg-black/55', $header, 'A dark layer keeps the white text readable.');
+        $this->assertStringContainsString('from-black/65', $header, 'A dark layer behind the text keeps it readable.');
+        // Orange resort buttons with white text (orange-700 on white text is 5.2 to 1).
+        $this->assertStringContainsString('bg-orange-700', $header);
+        $this->assertStringContainsString('text-white', $header);
         $this->assertSame(1, substr_count($html, '<h1'));
         $this->assertStringNotContainsString('aria-label="Breadcrumb"', $html);
         // The breadcrumb stays in the search engine data.
@@ -109,7 +112,7 @@ class HeaderImageTest extends TestCase
         $html = $this->islandPage($this->area);
         $this->assertStringNotContainsString('data-header-image', $html);
         $this->assertStringNotContainsString('alt="Island view"', $html);
-        $this->assertStringNotContainsString('images/placeholders/', $html);
+        $this->assertStringNotContainsString('images/placeholders/header-', $html);
 
         // And nothing to edit for a resort.
         $this->actingAs($admin)->get(route('admin.areas.edit', $this->area))->assertOk()->assertDontSee('Page header image');

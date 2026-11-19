@@ -14,7 +14,7 @@ use App\Models\Listing;
 use App\Models\ListingPrivate;
 use App\Models\ListingTranslation;
 use App\Models\User;
-use App\Search\SearchFilters;
+use App\Models\PropertyType;
 use App\Support\Audit;
 use App\Support\Fetch\FetchException;
 use App\Support\Fetch\SafeFetcher;
@@ -80,7 +80,7 @@ class ImportController extends AdminController
             'title' => ['required', 'string', 'max:160'],
             'summary' => ['required', 'string', 'max:500'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
-            'property_type' => ['required', Rule::in(SearchFilters::TYPES)],
+            'property_type' => ['required', Rule::in(PropertyType::activeCodes())],
             'bedrooms' => ['required', 'integer', 'min:0', 'max:30'],
             'bathrooms' => ['required', 'integer', 'min:0', 'max:30'],
             'sleeps' => ['required', 'integer', 'min:1', 'max:40'],

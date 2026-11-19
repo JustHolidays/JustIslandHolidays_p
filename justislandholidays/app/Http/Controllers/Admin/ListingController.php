@@ -13,7 +13,7 @@ use App\Models\Area;
 use App\Models\AuditLog;
 use App\Models\Listing;
 use App\Models\ListingTranslation;
-use App\Search\SearchFilters;
+use App\Models\PropertyType;
 use App\Support\Audit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -51,7 +51,7 @@ class ListingController extends AdminController
         if (in_array($role = $request->query('role'), ['owner', 'agent', 'affiliate'], true)) {
             $query->whereHas('owner', fn (Builder $q) => $q->where('role', $role));
         }
-        if (in_array($type = $request->query('type'), SearchFilters::TYPES, true)) {
+        if (in_array($type = $request->query('type'), PropertyType::cached()->keys()->all(), true)) {
             $query->where('property_type', $type);
         }
         if (in_array($licence = $request->query('licence'), ['pending', 'verified', 'rejected', 'not_provided'], true)) {
@@ -188,7 +188,7 @@ class ListingController extends AdminController
             'title' => ['required', 'string', 'max:160'],
             'summary' => ['required', 'string', 'max:500'],
             'area_id' => ['required', 'integer', Rule::exists('areas', 'id')->where('island_id', $listing->island_id)],
-            'property_type' => ['required', Rule::in(SearchFilters::TYPES)],
+            'property_type' => ['required', Rule::in(PropertyType::allowedFor($listing->property_type))],
             'bedrooms' => ['required', 'integer', 'min:0', 'max:30'],
             'bathrooms' => ['required', 'integer', 'min:0', 'max:30'],
             'sleeps' => ['required', 'integer', 'min:1', 'max:40'],

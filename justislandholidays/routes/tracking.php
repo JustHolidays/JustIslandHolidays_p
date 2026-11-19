@@ -20,6 +20,12 @@ Route::get('/api/map', \App\Http\Controllers\Public\MapController::class)
     ->middleware('throttle:60,1')
     ->name('api.map');
 
+// Advert clicks: counted per day, then on to the advertiser's page.
+Route::get('/api/ads/{ad}/click', \App\Http\Controllers\Public\AdClickController::class)
+    ->whereNumber('ad')
+    ->middleware('throttle:60,1')
+    ->name('ads.click');
+
 // PayPal webhooks: authenticated by PayPal's signature, not a session.
 Route::post('/api/webhooks/paypal', PayPalWebhookController::class)
     ->middleware('throttle:120,1')

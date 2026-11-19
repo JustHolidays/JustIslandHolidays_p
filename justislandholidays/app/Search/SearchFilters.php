@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 /** Validated search filters, read from the query string so a search can be bookmarked. */
 final class SearchFilters
 {
-    public const TYPES = ['villa', 'apartment', 'townhouse', 'finca', 'bungalow', 'studio'];
+    // Property types are editable by super admins: see App\Models\PropertyType.
 
     public const SORTS = ['recommended', 'price_asc', 'price_desc', 'newest', 'sleeps'];
 
@@ -67,7 +67,7 @@ final class SearchFilters
         return new self(
             island: $island,
             area: $area,
-            types: array_values(array_intersect($list('type'), self::TYPES)),
+            types: array_values(array_intersect($list('type'), \App\Models\PropertyType::activeCodes())),
             sleeps: $int('sleeps', 1, 40),
             bedrooms: $int('bedrooms', 1, 20),
             priceMin: $int('price_min', 0, 100000),

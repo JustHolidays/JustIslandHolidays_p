@@ -31,7 +31,7 @@
         <div><label for="f-role" class="block text-sm font-medium">Lister</label>
             <select id="f-role" name="role" class="{{ $select }}"><option value="">Any</option>@foreach (['owner' => 'Owner', 'agent' => 'Agent', 'affiliate' => 'Affiliate'] as $v => $l)<option value="{{ $v }}" @selected(request('role') === $v)>{{ $l }}</option>@endforeach</select></div>
         <div><label for="f-type" class="block text-sm font-medium">Type</label>
-            <select id="f-type" name="type" class="{{ $select }}"><option value="">Any</option>@foreach (\App\Search\SearchFilters::TYPES as $t)<option value="{{ $t }}" @selected(request('type') === $t)>{{ ucfirst($t) }}</option>@endforeach</select></div>
+            <select id="f-type" name="type" class="{{ $select }}"><option value="">Any</option>@foreach (\App\Models\PropertyType::cached()->keys() as $t)<option value="{{ $t }}" @selected(request('type') === $t)>{{ \App\Models\PropertyType::label($t, 'en') }}</option>@endforeach</select></div>
         <div><label for="f-licence" class="block text-sm font-medium">Licence</label>
             <select id="f-licence" name="licence" class="{{ $select }}"><option value="">Any</option>@foreach ($licenceLabels as $v => $l)<option value="{{ $v }}" @selected(request('licence') === $v)>{{ $l }}</option>@endforeach</select></div>
         <div><label for="f-deeplink" class="block text-sm font-medium">Booking link</label>
@@ -72,7 +72,7 @@
                             <td class="p-2"><a href="{{ route('admin.listings.show', $listing) }}" class="font-medium underline">{{ $listing->title('en') }}</a></td>
                             <td class="p-2">{{ $listing->island->translate('name', 'en') }}, {{ $listing->area->translate('name', 'en') }}</td>
                             <td class="p-2">{{ $listing->owner->name }}<br><span class="text-slate-600">{{ $listing->owner->role->label() }}</span></td>
-                            <td class="p-2">{{ ucfirst($listing->property_type) }}</td>
+                            <td class="p-2">{{ \App\Models\PropertyType::label($listing->property_type, 'en') }}</td>
                             <td class="p-2">{{ $submitted?->format('j M Y H:i') ?? '–' }} @if ($late)<span class="block font-semibold text-red-800">Over {{ config('site.review_target_hours') }} hours</span>@endif</td>
                             <td class="p-2">{{ $listing->owner->isAffiliate() ? 'Not needed' : ($listing->licence ? $licenceLabels[$listing->licence->status] : 'Not added') }}</td>
                             <td class="p-2">{{ $listing->deeplinkStatusLabel() }}</td>

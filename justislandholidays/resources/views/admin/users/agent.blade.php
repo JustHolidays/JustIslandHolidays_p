@@ -24,7 +24,7 @@
                         <tr class="border-b border-slate-100 align-top">
                             <td class="p-2"><a href="{{ route('admin.listings.show', $l) }}" class="font-medium underline">{{ $l->title('en') }}</a></td>
                             <td class="p-2">{{ $l->area->translate('name', 'en') }}, {{ $l->island->translate('name', 'en') }}</td>
-                            <td class="p-2">{{ ucfirst($l->property_type) }}</td>
+                            <td class="p-2">{{ \App\Models\PropertyType::label($l->property_type, 'en') }}</td>
                             <td class="p-2">{{ $l->sleeps }}</td>
                             <td class="p-2">{{ $l->guidePrice() ? $l->guidePrice().' a week' : '–' }}</td>
                             <td class="p-2">{{ $l->status->label() }}</td>
