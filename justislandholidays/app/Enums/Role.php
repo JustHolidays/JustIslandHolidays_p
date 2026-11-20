@@ -9,6 +9,8 @@ enum Role: string
     case Affiliate = 'affiliate';
     case IslandAdmin = 'island_admin';
     case SuperAdmin = 'super_admin';
+    /** Someone looking for a holiday home: saves favourites. No plan, listings or admin (20 Nov 2026). */
+    case Visitor = 'visitor';
 
     public function isAdmin(): bool
     {
@@ -35,6 +37,7 @@ enum Role: string
             self::Affiliate => 'Affiliate',
             self::IslandAdmin => 'Island admin',
             self::SuperAdmin => 'Super admin',
+            self::Visitor => 'Visitor',
         };
     }
 }

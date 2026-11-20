@@ -25,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
         'decide-recommendations',
         'manage-ads',            // /admin/ads: island page adverts (super admins only, decided 19 Nov 2026)
         'manage-property-types', // /admin/property-types (super admins only, decided 19 Nov 2026)
+        'manage-paypal-settings', // /admin/paypal-settings: PayPal details (super admins only, 20 Nov 2026)
+        'manage-account-closures', // /admin/account-closures: "Close my account" requests (super admins only, 20 Nov 2026)
     ];
 
     public function register(): void
@@ -34,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // PayPal details saved on PayPal Settings take the place of the .env ones.
+        \App\Support\PayPalSettings::apply();
+
         if (filled($proxies = config('site.trusted_proxies'))) {
             \Illuminate\Http\Middleware\TrustProxies::at($proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
         }
@@ -50,6 +55,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, function (Login $event) {
             if ($event->user instanceof User) {
                 $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
+                // A heart pressed before signing in (or creating an account) is saved now.
+                if (app()->bound('session') && request()->hasSession()) {
+                    \App\Listings\Favourites::savePending($event->user);
+                }
             }
         });
 

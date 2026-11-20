@@ -467,7 +467,7 @@
                             @foreach ($ownBookings as $own)
                                 @php($bag = $errors->getBag('booking'.$own->id))
                                 <li class="py-4" data-booking="{{ $own->id }}">
-                                    <p class="font-medium">{{ $own->check_in->format('D j M Y') }} to {{ $own->check_out->format('D j M Y') }} <span class="font-normal text-slate-600">({{ trans_choice(':count night|:count nights', $own->check_in->diffInDays($own->check_out)) }})</span></p>
+                                    <p class="font-medium">{{ $own->check_in->format('D j M Y') }} to {{ $own->check_out->format('D j M Y') }} <span class="font-normal text-slate-600">({{ trans_choice(':count night|:count nights', $own->check_in->diffInDays($own->check_out)) }})</span>@if ($own->enquiry) <span class="block text-sm font-normal">Guest: {{ $own->enquiry->guest_name }}, enquiry @can('view', $own->enquiry) <a href="{{ route($asAdmin ? 'admin.enquiries.show' : 'account.enquiries.show', $own->enquiry) }}" class="underline">{{ $own->enquiry->reference() }}</a> @else {{ $own->enquiry->reference() }} @endcan</span> @elseif ($own->guest_ref) <span class="block text-sm font-normal">Guest: {{ $own->guest_ref }}</span> @endif</p>
                                     <form data-keep-scroll method="POST" action="{{ route($r.'calendar.bookings.update', [$listing, $own->id]) }}" class="mt-2 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
                                         @csrf @method('PUT')
                                         <div>

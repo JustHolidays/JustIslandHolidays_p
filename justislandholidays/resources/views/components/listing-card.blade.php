@@ -16,6 +16,7 @@
         @if ($featured)
             <span class="absolute left-2 top-2 rounded bg-white px-2 py-1 text-xs font-semibold text-[var(--colour-brand)]">{{ __('Featured') }}</span>
         @endif
+        <x-favourite-heart :listing="$listing" class="absolute right-2 top-2" />
     </div>
     <div class="flex flex-1 flex-col p-4">
         <{{ $tag }} class="text-lg font-semibold">

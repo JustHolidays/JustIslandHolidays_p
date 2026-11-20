@@ -24,6 +24,8 @@
         ['admin.property-types.index', 'Property types', 'manage-property-types'],
         ['admin.appearance.edit', 'Frontend Styler', 'manage-appearance'],
         ['admin.admin-colours.edit', 'Admin Styler', 'manage-appearance'],
+        ['admin.closures.index', 'Account closures', 'manage-account-closures'],
+        ['admin.paypal-settings.edit', 'PayPal Settings', 'manage-paypal-settings'],
         ['admin.audit.index', 'Audit log', 'view-audit-log'],
     ];
     // Leave out what this admin cannot open, then any heading with nothing left under it.

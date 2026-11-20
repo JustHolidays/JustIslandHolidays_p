@@ -39,7 +39,55 @@ class BillingController extends Controller
             'plans' => $this->availablePlans($request),
             'paypalReady' => $this->paypal->isConfigured(),
             'isAgency' => $account instanceof Agency,
+            'requestable' => $this->requestablePlans($request),
         ]);
+    }
+
+    /**
+     * Ask for a plan upgrade (20 Nov 2026): emailed to every super admin, reply-to the person
+     * asking, and written to the audit log. Nothing changes until an admin acts on it.
+     */
+    public function requestUpgrade(Request $request): RedirectResponse
+    {
+        $choices = $this->requestablePlans($request)->pluck('code')->push('other')->all();
+        $data = $request->validate([
+            'wanted' => ['required', \Illuminate\Validation\Rule::in($choices)],
+            'note' => ['nullable', 'string', 'max:1000', 'required_if:wanted,other'],
+        ], [
+            'wanted.required' => 'Choose the plan you would like.',
+            'note.required_if' => 'Tell us what you need.',
+        ]);
+
+        $user = $request->user();
+        $account = $this->plans->accountFor($user);
+        $current = $this->plans->planFor($account)->name;
+        $wanted = $data['wanted'] === 'other' ? 'something else' : Plan::where('code', $data['wanted'])->value('name');
+        $note = trim((string) ($data['note'] ?? '')) ?: null;
+
+        $admins = \App\Models\User::where('role', \App\Enums\Role::SuperAdmin)
+            ->whereNull('deactivated_at')->whereNotNull('email_verified_at')->pluck('email');
+        foreach ($admins as $email) {
+            \Illuminate\Support\Facades\Mail::to($email)->queue(
+                new \App\Mail\PlanUpgradeRequested($user, $current, $wanted, $note, $this->plans->listingsHeldBy($user))
+            );
+        }
+        \App\Support\Audit::record($user, 'plan.upgrade_request', 'user', $user->id, [
+            'current' => $current, 'wanted' => $data['wanted'], 'note' => $note !== null, 'sent_to' => $admins->count(),
+        ]);
+
+        return redirect()->to(route('account.billing').'#upgrade')->with('upgrade_sent', true);
+    }
+
+    /** Plans someone can ask for: active plans for their kind of account, other than Free and their own. */
+    private function requestablePlans(Request $request)
+    {
+        $audience = $request->user()->role?->value === 'agent' ? 'agent' : 'owner';
+        $current = $this->plans->planFor($this->plans->accountFor($request->user()))->code;
+
+        return Plan::where('is_active', true)->where('audience', $audience)
+            ->whereNotIn('code', ['free', $current])
+            ->orderBy('search_boost')->orderBy('id')
+            ->get();
     }
 
     public function checkout(Request $request): RedirectResponse

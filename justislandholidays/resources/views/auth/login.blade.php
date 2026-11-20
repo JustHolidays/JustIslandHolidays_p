@@ -2,6 +2,9 @@
 
 @section('content')
     <h1 class="mb-6 text-2xl font-semibold">Sign in</h1>
+    @if (session()->has(\App\Listings\Favourites::PENDING))
+        <p role="status" class="mb-6 max-w-md rounded border border-sky-300 bg-sky-50 p-3">Sign in to save this home to your favourites. No account yet? <a class="font-medium underline" href="{{ route('register', ['as' => 'visitor']) }}">Create a free account</a> and it will be saved as you join.</p>
+    @endif
 
     <form method="POST" action="{{ route('login') }}" class="max-w-md">
         @csrf
@@ -17,5 +20,6 @@
     </form>
 
     <p class="mt-6"><a class="underline" href="{{ route('password.request') }}">Forgotten your password?</a></p>
+    <p class="mt-2"><a class="underline" href="{{ route('register', ['as' => 'visitor']) }}">Looking for a holiday home? Create a free account to save favourites</a></p>
     <p class="mt-2"><a class="underline" href="{{ route('register') }}">List your property: create an account</a></p>
 @endsection

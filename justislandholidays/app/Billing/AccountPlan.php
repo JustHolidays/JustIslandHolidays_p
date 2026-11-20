@@ -56,6 +56,31 @@ final class AccountPlan
     }
 
     /** All listings that count against the same account as this listing. */
+    /**
+     * Listings the user's account holds against its plan: every one that is not archived
+     * (drafts and paused ones included, as they can go live again). Agents count their agency's.
+     */
+    public function listingsHeldBy(User $user): int
+    {
+        $account = $this->accountFor($user);
+        $query = $account instanceof Agency
+            ? Listing::where('agency_id', $account->id)
+            : Listing::where('owner_id', $account->id)->whereNull('agency_id');
+
+        return $query->where('status', '!=', ListingStatus::Archived)->count();
+    }
+
+    /** True when the account's plan has a listing limit and it is reached: no new listing (20 Nov 2026). */
+    public function atListingLimit(User $user): bool
+    {
+        if (! ($user->role?->canSubscribe() ?? false)) {
+            return false;   // affiliates have no plan
+        }
+        $plan = $this->planFor($this->accountFor($user));
+
+        return $plan->max_listings !== null && $this->listingsHeldBy($user) >= $plan->max_listings;
+    }
+
     public function listingsQueryFor(Listing $listing): Builder
     {
         return $listing->agency_id

@@ -181,6 +181,19 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::put('/admin-colours', [\App\Http\Controllers\Admin\AdminColoursController::class, 'update'])->name('admin-colours.update');
     });
 
+    // Account closures: "Close my account" requests (super admins only, 20 Nov 2026).
+    Route::middleware('can:manage-account-closures')->prefix('account-closures')->name('closures.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AccountClosureController::class, 'index'])->name('index');
+        Route::post('/{user}/close', [\App\Http\Controllers\Admin\AccountClosureController::class, 'close'])->name('close');
+        Route::post('/{user}/decline', [\App\Http\Controllers\Admin\AccountClosureController::class, 'decline'])->name('decline');
+    });
+
+    // PayPal Settings: Just Island Holidays' PayPal details (super admins only, 20 Nov 2026).
+    Route::middleware('can:manage-paypal-settings')->group(function () {
+        Route::get('/paypal-settings', [\App\Http\Controllers\Admin\PayPalSettingsController::class, 'edit'])->name('paypal-settings.edit');
+        Route::put('/paypal-settings', [\App\Http\Controllers\Admin\PayPalSettingsController::class, 'update'])->middleware('throttle:10,1')->name('paypal-settings.update');
+    });
+
     // Property types (super admins only).
     Route::middleware('can:manage-property-types')->prefix('property-types')->name('property-types.')->group(function () {
         Route::get('/', [PropertyTypeController::class, 'index'])->name('index');

@@ -113,7 +113,9 @@ class BookingCalendarTest extends TestCase
         $this->assertSame('https://www.airbnb.example/calendar/ical/123.ics', $feed->url, 'webcal:// is read over https.');
         $this->assertSame('ok', $feed->last_status);
         $this->assertSame(1, CalendarBooking::where('feed_id', $feed->id)->count());
-        $this->assertSame(['check_in', 'check_out', 'created_at', 'feed_id', 'id', 'listing_id'], collect(\Illuminate\Support\Facades\Schema::getColumnListing('calendar_bookings'))->sort()->values()->all(), 'No guest details are stored.');
+        // Nothing from the feed beyond dates. enquiry_id only links a stay booked with Confirm Booking to
+        // its enquiry; guest_ref is the owner's own note on stays they marked (cleared after 24 months).
+        $this->assertSame(['check_in', 'check_out', 'created_at', 'enquiry_id', 'feed_id', 'guest_ref', 'id', 'listing_id'], collect(\Illuminate\Support\Facades\Schema::getColumnListing('calendar_bookings'))->sort()->values()->all(), 'No guest details are stored.');
     }
 
     public function test_a_failed_sync_keeps_the_last_good_dates(): void

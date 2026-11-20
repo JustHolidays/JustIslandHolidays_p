@@ -79,6 +79,14 @@ If you pay for a plan, payment is handled by PayPal. We receive your PayPal subs
 
 We keep a log of changes our staff make to listings and accounts, so decisions can be checked later.
 
+## If you have a free visitor account
+
+You can create a free account to save holiday homes as favourites. We hold your name, email address, your password (stored scrambled, we cannot read it), when you last signed in, and the list of homes you saved. Owners and agents cannot see who saved their home. Your favourites are deleted with your account.
+
+## Page views
+
+We count how many times each property page is viewed, as one total per property per day. We do not store anything about you to do this: to avoid counting the same visit twice, a scrambled code made from your connection and browser is kept for 30 minutes only, then deleted.
+
 ## Cookies
 
 We only use cookies that are needed for the site to work:

@@ -100,6 +100,12 @@ class ListingController extends AdminController
             'recommendations' => AdminRecommendation::with(['recommender', 'decider'])->where('listing_id', $listing->id)->latest('id')->get(),
             'areas' => Area::where('island_id', $listing->island_id)->orderBy('sort_order')->get(),
             'hostAllowed' => DeeplinkChecker::isAllowedHost($listing->deeplink_url),
+            // Page views (20 Nov 2026): last 30 days, last 365 days and all time.
+            'views' => [
+                'Last 30 days' => \App\Listings\PageViews::totals([$listing->id], now()->subDays(30)->toDateString())[$listing->id] ?? 0,
+                'Last 365 days' => \App\Listings\PageViews::totals([$listing->id], now()->subDays(365)->toDateString())[$listing->id] ?? 0,
+                'All time' => \App\Listings\PageViews::totals([$listing->id])[$listing->id] ?? 0,
+            ],
         ]);
     }
 

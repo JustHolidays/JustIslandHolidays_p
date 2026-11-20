@@ -22,28 +22,38 @@
                 <button type="submit" class="min-h-11 rounded px-3 text-sm underline">Sign out</button>
             </form>
         </div>
-        <nav aria-label="Your account" class="mx-auto max-w-6xl px-4">
-            <ul class="flex flex-wrap gap-1 text-sm">
+        {{-- The account menu as tabs on the header's bottom edge (20 Nov 2026); the current one is filled. --}}
+        <nav aria-label="Your account" class="mx-auto -mb-px max-w-6xl px-4">
+            <ul class="flex flex-wrap items-end gap-1 text-sm">
                 @php
                     $links = [['account.home', 'Overview']];
                     if ($user->role?->isLister()) {
                         $links[] = ['account.listings.index', 'Listings'];
                         $links[] = ['account.enquiries.index', 'Enquiries'];
-                        $links[] = ['account.clicks', 'Clicks'];
+                        if ($user->can('use-billing')) {
+                            $links[] = ['account.bookings', 'Bookings'];   // owners and agents
+                        }
+                        $links[] = ['account.clicks', 'Views and clicks'];
                     }
                     if ($user->can('use-billing')) {
                         $links[] = ['account.billing', 'Plan and billing'];
                     }
+                    $links[] = ['account.favourites', 'My favourites'];   // everyone can save homes (20 Nov 2026)
                     $links[] = ['account.security', 'Two-factor sign-in'];
                 @endphp
                 @foreach ($links as [$route, $label])
+                    @php($current = request()->routeIs($route.'*') || request()->routeIs(str_replace('.index', '.*', $route)))
                     <li>
-                        <a href="{{ route($route) }}" @class(['inline-flex min-h-11 items-center border-b-2 px-3', 'border-[var(--colour-brand)] font-semibold' => request()->routeIs($route.'*') || request()->routeIs(str_replace('.index', '.*', $route)), 'border-transparent' => ! (request()->routeIs($route.'*') || request()->routeIs(str_replace('.index', '.*', $route)))])
-                           @if (request()->routeIs($route)) aria-current="page" @endif>{{ $label }}</a>
+                        <a href="{{ route($route) }}" @if ($current) aria-current="page" @endif
+                           @class([
+                               'inline-flex min-h-11 items-center rounded-t-lg border border-b-0 px-4 font-medium no-underline',
+                               'border-[var(--colour-brand)] bg-[var(--colour-brand)] text-white' => $current,
+                               'border-slate-300 bg-slate-50 text-slate-900 hover:bg-white' => ! $current,
+                           ])>{{ $label }}</a>
                     </li>
                 @endforeach
                 @can('access-admin')
-                    <li><a href="{{ route('admin.dashboard') }}" class="inline-flex min-h-11 items-center border-b-2 border-transparent px-3">Admin area</a></li>
+                    <li><a href="{{ route('admin.dashboard') }}" class="inline-flex min-h-11 items-center rounded-t-lg border border-b-0 border-slate-300 bg-slate-50 px-4 font-medium text-slate-900 no-underline hover:bg-white">Admin area</a></li>
                 @endcan
             </ul>
         </nav>

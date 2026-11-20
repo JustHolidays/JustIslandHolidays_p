@@ -39,8 +39,14 @@
             ['name' => $title, 'url' => null],
         ]" />
 
-        <h1 class="text-3xl font-semibold">{{ $title }}</h1>
-        <p class="mt-1 text-lg">{{ $place }}</p>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <h1 class="text-3xl font-semibold">{{ $title }}</h1>
+                <p class="mt-1 text-lg">{{ $place }}</p>
+            </div>
+            {{-- Favourites heart (20 Nov 2026): red once saved. --}}
+            <x-favourite-heart :listing="$listing" size="page" />
+        </div>
 
         {{-- Bookmark menu for owner and agent properties (20 Nov 2026): links to the sections
              this home has. Affiliate homes have only the critical details, so no menu. --}}

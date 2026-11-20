@@ -48,6 +48,11 @@ class UserFactory extends Factory
         return $this->state(fn () => ['role' => Role::Agent]);
     }
 
+    public function visitor(): static
+    {
+        return $this->state(fn () => ['role' => Role::Visitor]);
+    }
+
     public function affiliate(): static
     {
         return $this->state(fn () => ['role' => Role::Affiliate]);

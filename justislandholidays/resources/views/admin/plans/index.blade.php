@@ -12,7 +12,7 @@
     <div class="mt-4 overflow-x-auto rounded-lg bg-white shadow-sm">
         <table class="w-full text-left text-sm">
             <caption class="sr-only">Plans</caption>
-            <thead class="border-b border-slate-300"><tr><th scope="col" class="p-2">Plan</th><th scope="col" class="p-2">For</th><th scope="col" class="p-2">Listings</th><th scope="col" class="p-2">Boost</th><th scope="col" class="p-2">Featured</th><th scope="col" class="p-2">Phone and website</th><th scope="col" class="p-2">Monthly</th><th scope="col" class="p-2">Yearly</th><th scope="col" class="p-2">On sale</th></tr></thead>
+            <thead class="border-b border-slate-300"><tr><th scope="col" class="p-2">Plan</th><th scope="col" class="p-2">For</th><th scope="col" class="p-2">Listings</th><th scope="col" class="p-2">Boost</th><th scope="col" class="p-2">Featured</th><th scope="col" class="p-2">Phone and website</th><th scope="col" class="p-2">Price for 1 year</th><th scope="col" class="p-2">On sale</th></tr></thead>
             <tbody>
                 @foreach ($plans as $p)
                     <tr class="border-b border-slate-200">
@@ -22,8 +22,18 @@
                         <td class="p-2">{{ $p->search_boost }}</td>
                         <td class="p-2">{{ $p->is_featured ? 'Yes' : 'No' }}</td>
                         <td class="p-2">{{ $p->show_direct_contact ? 'Shown' : 'Hidden' }}</td>
-                        <td class="p-2">{{ $money($p->price_month_cents, $p->currency) }} @if ($p->price_month_cents !== null && ! $p->paypal_plan_id_month)<span class="block text-amber-800">no PayPal id</span>@endif</td>
-                        <td class="p-2">{{ $money($p->price_year_cents, $p->currency) }} @if ($p->price_year_cents !== null && ! $p->paypal_plan_id_year)<span class="block text-amber-800">no PayPal id</span>@endif</td>
+                        <td class="p-2">
+                            @if ($p->isSoldByPeriod())
+                                {{-- Featured Plan: a one-off payment for 3, 6, 9 or 12 months. --}}
+                                @forelse ($p->periodPrices() as $months => $cents)
+                                    <span class="block whitespace-nowrap">{{ $months }} months: {{ $money($cents, $p->currency) }}</span>
+                                @empty
+                                    No prices yet
+                                @endforelse
+                            @else
+                                {{ $money($p->price_year_cents, $p->currency) }} @if ($p->price_year_cents !== null && ! $p->paypal_plan_id_year)<span class="block text-amber-800">no PayPal id</span>@endif
+                            @endif
+                        </td>
                         <td class="p-2">{{ $p->is_active ? 'Yes' : 'No' }}</td>
                     </tr>
                 @endforeach
@@ -60,7 +70,7 @@
                     @forelse ($subscriptions as $s)
                         <tr class="border-b border-slate-200">
                             <td class="p-2"><a href="{{ route('admin.subscriptions.show', $s) }}" class="underline">{{ $s->agency?->name ?? $s->user?->name }}</a></td>
-                            <td class="p-2">{{ $s->plan->name }} ({{ $s->billing_interval === 'year' ? 'yearly' : 'monthly' }})</td>
+                            <td class="p-2">{{ $s->plan->name }} ({{ ['year' => 'yearly', 'month' => 'monthly, started before yearly-only billing', 'one_off' => 'one-off payment'][$s->billing_interval] ?? $s->billing_interval }})</td>
                             <td class="p-2">{{ str_replace('_', ' ', ucfirst($s->status)) }} @unless ($s->paypal_subscription_id)<span class="block text-slate-600">Granted free</span>@endunless</td>
                             <td class="p-2">{{ $s->next_billing_at?->format('j M Y') ?? '–' }}</td>
                             <td class="p-2">{{ $s->ends_at?->format('j M Y') ?? '–' }}</td>

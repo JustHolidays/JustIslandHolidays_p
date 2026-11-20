@@ -34,6 +34,9 @@ class ListingController extends Controller
             return redirect()->to($canonical, 301);
         }
 
+        // A visitor's view, counted per day with nothing about the visitor (20 Nov 2026).
+        \App\Listings\PageViews::record($listing, request());
+
         $similar = Listing::live()
             ->where('island_id', $listing->island_id)
             ->whereKeyNot($listing->id)

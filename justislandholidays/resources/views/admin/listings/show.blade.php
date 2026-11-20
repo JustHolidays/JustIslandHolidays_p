@@ -64,6 +64,20 @@
             @if ($status === 'live')
                 <p class="mt-3"><a href="{{ $listing->publicUrl('en') }}" class="inline-flex min-h-11 items-center underline">Open the public page</a></p>
             @endif
+
+            {{-- Page views (20 Nov 2026): bots, the lister and admins are not counted. --}}
+            <div class="mt-4" data-page-views>
+                <h3 class="font-semibold">Page views</h3>
+                <dl class="mt-2 grid max-w-md grid-cols-3 gap-2 text-center">
+                    @foreach ($views as $label => $count)
+                        <div class="rounded border border-slate-200 p-2">
+                            <dt class="text-xs text-slate-600">{{ $label }}</dt>
+                            <dd class="text-lg font-semibold">{{ number_format($count) }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+                <p class="mt-1 text-xs text-slate-600">Bots, the lister and admins are not counted. A visitor counts once in any 30 minutes.</p>
+            </div>
         </section>
 
         {{-- Review panel --}}

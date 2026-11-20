@@ -48,6 +48,32 @@ class FooterTest extends TestCase
         $this->assertStringNotContainsString('items-center underline', $footer);
     }
 
+    public function test_header_menu_is_tabs_without_islands(): void
+    {
+        $island = \App\Models\Island::factory()->create(['is_active' => true]);
+        $html = $this->get('/en/search')->assertOk()->getContent();
+        $nav = substr($html, strpos($html, '<nav aria-label="Main"'), 2500);
+        $nav = substr($nav, 0, strpos($nav, '</nav>'));
+
+        $this->assertStringNotContainsString(route('islands.show', ['en', $island->slug]), $nav, 'Islands are not in the menu.');
+        $this->assertStringContainsString('rounded-t-lg', $nav);
+        $this->assertMatchesRegularExpression('#<a href="[^"]*/en/search"\s+aria-current="page"#', $nav, 'The current page tab is marked.');
+        $this->assertStringContainsString('List your property', $nav);
+        $this->assertStringContainsString('Sign in', $nav);
+    }
+
+    public function test_owner_and_agent_account_menu_is_tabs(): void
+    {
+        $owner = User::factory()->owner()->create();
+        $html = $this->actingAs($owner)->get(route('account.enquiries.index'))->assertOk()->getContent();
+        $nav = substr($html, strpos($html, '<nav aria-label="Your account"'));
+        $nav = substr($nav, 0, strpos($nav, '</nav>'));
+
+        $this->assertSame(substr_count($nav, '<a '), substr_count($nav, 'rounded-t-lg'), 'Every menu link is a tab.');
+        $this->assertMatchesRegularExpression('#href="[^"]*/account/enquiries"\s+aria-current="page"#', $nav);
+        $this->assertStringContainsString('bg-[var(--colour-brand)] text-white', $nav);
+    }
+
     public function test_public_pages_have_a_back_to_top_button(): void
     {
         foreach (['/en', '/en/partners'] as $url) {

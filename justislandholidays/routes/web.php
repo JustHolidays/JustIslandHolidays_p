@@ -55,8 +55,19 @@ Route::middleware(['auth'])->prefix('account/verify-sign-in')->name('second-fact
     Route::post('/resend', [\App\Http\Controllers\SecondFactorController::class, 'resend'])->middleware('throttle:5,1')->name('resend');
 });
 
+// Favourites (20 Nov 2026): the heart on property pages and cards.
+Route::post('/favourites/{ref}', [\App\Http\Controllers\FavouriteController::class, 'toggle'])
+    ->where('ref', '[a-z2-9]{8}')->middleware(['auth', 'throttle:60,1'])->name('favourites.toggle');
+Route::get('/favourites/{ref}/sign-in', [\App\Http\Controllers\FavouriteController::class, 'signIn'])
+    ->where('ref', '[a-z2-9]{8}')->middleware('throttle:30,1')->name('favourites.sign-in');
+
 Route::middleware(['auth'])->prefix('account')->name('account.')->group(function () {
     Route::get('/security', [AccountController::class, 'security'])->name('security');
+    Route::get('/favourites', [\App\Http\Controllers\FavouriteController::class, 'index'])->name('favourites');
+    // Close my account: a request for the super admins (20 Nov 2026).
+    Route::post('/close', [\App\Http\Controllers\Account\CloseAccountController::class, 'store'])->middleware('throttle:5,60')->name('close.store');
+    Route::delete('/close', [\App\Http\Controllers\Account\CloseAccountController::class, 'destroy'])->name('close.destroy');
+    Route::delete('/favourites/{listing}', [\App\Http\Controllers\FavouriteController::class, 'destroy'])->whereNumber('listing')->name('favourites.destroy');
 
     Route::middleware('verified')->group(function () {
         Route::get('/', [AccountController::class, 'home'])->name('home');
@@ -104,11 +115,17 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
 
         // Owners and agents only; affiliates and admins are outside billing.
         Route::middleware('can:use-billing')->group(function () {
+            // Bookings: every stay on the calendars of their properties (20 Nov 2026).
+            Route::get('/bookings', [\App\Http\Controllers\Account\BookingsController::class, 'index'])->name('bookings');
+            Route::get('/bookings/download', \App\Http\Controllers\Account\BookingsDownloadController::class)->middleware('throttle:20,1')->name('bookings.download');
+            Route::post('/bookings/{booking}/join', [\App\Http\Controllers\Account\BookingsController::class, 'join'])->whereNumber('booking')->name('bookings.join');
+            Route::put('/bookings/{booking}/reference', [\App\Http\Controllers\Account\BookingsController::class, 'reference'])->whereNumber('booking')->name('bookings.reference');
             Route::get('/billing', [BillingController::class, 'show'])->name('billing');
             Route::post('/billing/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');
             Route::get('/billing/return', [BillingController::class, 'returned'])->name('billing.return');
             Route::get('/billing/cancelled', [BillingController::class, 'abandoned'])->name('billing.abandoned');
             Route::post('/billing/cancel', [BillingController::class, 'cancel'])->name('billing.cancel');
+            Route::post('/billing/request-upgrade', [BillingController::class, 'requestUpgrade'])->middleware('throttle:3,60')->name('billing.request-upgrade');
             Route::post('/billing/featured', [BillingController::class, 'featured'])->name('billing.featured');
             Route::get('/billing/featured/return', [BillingController::class, 'featuredReturned'])->name('billing.featured.return');
         });

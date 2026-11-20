@@ -62,7 +62,7 @@ class AccountEnquiryController extends Controller
         $listing = $enquiry->listing;
         $statusBefore = $enquiry->status;
         \Illuminate\Support\Facades\DB::transaction(function () use ($listing, $enquiry) {
-            Availability::bookRange($listing, $enquiry->check_in->toImmutable(), $enquiry->check_out->toImmutable());
+            Availability::bookRange($listing, $enquiry->check_in->toImmutable(), $enquiry->check_out->toImmutable(), $enquiry->id);
             // A confirmed booking closes the enquiry (20 Nov 2026).
             $enquiry->forceFill(['status' => 'closed'])->save();
         });

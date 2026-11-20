@@ -84,6 +84,7 @@ class ListingEditorTest extends TestCase
 
     public function test_slug_is_unique_per_island(): void
     {
+        \App\Models\Plan::where('code', 'free')->update(['max_listings' => null]);   // room for two listings
         $first = $this->createListing();
         $second = $this->createListing();
 

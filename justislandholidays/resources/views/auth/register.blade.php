@@ -1,8 +1,9 @@
 @extends('layouts.app', ['title' => 'Create an account'])
 
 @section('content')
+    @php($wantsVisitor = session()->has(\App\Listings\Favourites::PENDING) || request('as') === 'visitor')
     <h1 class="mb-6 text-2xl font-semibold">Create an account</h1>
-    <p class="mb-6">List your holiday home on Just Island Holidays. You will confirm your email address before you publish.</p>
+    <p class="mb-6">A free account to save your favourite holiday homes, or to list your own holiday home on Just Island Holidays. You will confirm your email address afterwards.</p>
 
     <form method="POST" action="{{ route('register') }}" class="max-w-md">
         @csrf
@@ -12,7 +13,11 @@
         <fieldset class="mb-4">
             <legend class="mb-1 font-medium">I am</legend>
             <div class="flex min-h-11 items-center gap-2">
-                <input id="account_type_owner" name="account_type" type="radio" value="owner" class="h-5 w-5" @checked(old('account_type', 'owner') === 'owner')>
+                <input id="account_type_visitor" name="account_type" type="radio" value="visitor" class="h-5 w-5" @checked(old('account_type', $wantsVisitor ? 'visitor' : 'owner') === 'visitor')>
+                <label for="account_type_visitor">Looking for a holiday home (save favourites)</label>
+            </div>
+            <div class="flex min-h-11 items-center gap-2">
+                <input id="account_type_owner" name="account_type" type="radio" value="owner" class="h-5 w-5" @checked(old('account_type', $wantsVisitor ? 'visitor' : 'owner') === 'owner')>
                 <label for="account_type_owner">A property owner</label>
             </div>
             <div class="flex min-h-11 items-center gap-2">

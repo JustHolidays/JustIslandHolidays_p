@@ -91,4 +91,37 @@
             @endforeach
         </ul>
     </section>
+
+    {{-- Ask for a plan upgrade (20 Nov 2026): emailed to the super admins, who reply by email. --}}
+    <section id="upgrade" class="mt-8 max-w-2xl scroll-mt-4 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="upgrade-heading">
+        <h2 id="upgrade-heading" class="text-lg font-semibold">Ask us about a plan upgrade</h2>
+        @if (session('upgrade_sent'))
+            <p role="status" class="mt-3 rounded border border-green-300 bg-green-50 p-3">Thank you. Your request has been sent, and we will reply by email.</p>
+        @else
+            <p class="mt-1 text-sm text-slate-700">Need a bigger plan, more listings, or help choosing? Tell us and we will reply by email. Your plan does not change until we have agreed it with you.</p>
+            <form method="POST" action="{{ route('account.billing.request-upgrade') }}" class="mt-4">
+                @csrf
+                <fieldset class="mb-4">
+                    <legend class="mb-1 font-medium">Which plan would you like?</legend>
+                    @foreach ($requestable as $option)
+                        <div class="flex min-h-11 items-center gap-2">
+                            <input id="wanted_{{ $option->code }}" name="wanted" type="radio" value="{{ $option->code }}" class="h-5 w-5" @checked(old('wanted', $requestable->first()?->code) === $option->code)>
+                            <label for="wanted_{{ $option->code }}">{{ $option->name }} <span class="text-slate-600">({{ $option->max_listings === null ? 'unlimited listings' : trans_choice(':count listing|up to :count listings', $option->max_listings) }})</span></label>
+                        </div>
+                    @endforeach
+                    <div class="flex min-h-11 items-center gap-2">
+                        <input id="wanted_other" name="wanted" type="radio" value="other" class="h-5 w-5" @checked(old('wanted', $requestable->isEmpty() ? 'other' : null) === 'other')>
+                        <label for="wanted_other">Something else (tell us below)</label>
+                    </div>
+                    @error('wanted')<p class="text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+                </fieldset>
+                <div class="mb-4">
+                    <label for="note" class="mb-1 block font-medium">Message (optional)</label>
+                    <textarea id="note" name="note" rows="4" maxlength="1000" class="block w-full rounded border border-slate-400 px-3 py-2" @error('note') aria-invalid="true" aria-describedby="note-error" @enderror placeholder="For example: I need three listings.">{{ old('note') }}</textarea>
+                    @error('note')<p id="note-error" class="mt-1 text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+                </div>
+                <x-button>Send request</x-button>
+            </form>
+        @endif
+    </section>
 @endsection

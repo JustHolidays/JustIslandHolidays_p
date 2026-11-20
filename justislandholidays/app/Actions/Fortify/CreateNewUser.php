@@ -28,7 +28,8 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             'name' => ['required', 'string', 'max:160'],
             'email' => ['required', 'string', 'email', 'max:190', Rule::unique(User::class)],
-            'account_type' => ['required', Rule::in([Role::Owner->value, Role::Agent->value])],
+            // Visitors save favourites (20 Nov 2026); owners and agents list homes.
+            'account_type' => ['required', Rule::in([Role::Visitor->value, Role::Owner->value, Role::Agent->value])],
             'password' => $this->passwordRules(),
         ])->validate();
 

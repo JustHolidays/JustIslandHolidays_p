@@ -107,11 +107,15 @@ final class Availability
     }
 
     /** Marks the nights from $checkIn up to $checkOut as booked by the owner. */
-    public static function bookRange(Listing $listing, CarbonImmutable $checkIn, CarbonImmutable $checkOut): void
+    /** @param  int|null  $enquiryId  set when the stay comes from an enquiry (Confirm Booking) */
+    public static function bookRange(Listing $listing, CarbonImmutable $checkIn, CarbonImmutable $checkOut, ?int $enquiryId = null): CalendarBooking
     {
         $booking = new CalendarBooking(['check_in' => $checkIn->toDateString(), 'check_out' => $checkOut->toDateString()]);
         $booking->listing_id = $listing->id;
+        $booking->enquiry_id = $enquiryId;
         $booking->save();
+
+        return $booking;
     }
 
     /**
@@ -130,12 +134,15 @@ final class Availability
 
         $in = CarbonImmutable::parse($booking->check_in);
         $out = CarbonImmutable::parse($booking->check_out);
+        // The parts left keep their guest: the enquiry link and the owner's guest reference.
+        $enquiryId = $booking->enquiry_id;
+        $guestRef = $booking->guest_ref;
         $booking->delete();
         if ($in->lt($date)) {
-            self::bookRange($listing, $in, $date);
+            self::bookRange($listing, $in, $date, $enquiryId)->forceFill(['guest_ref' => $guestRef])->save();
         }
         if ($date->addDay()->lt($out)) {
-            self::bookRange($listing, $date->addDay(), $out);
+            self::bookRange($listing, $date->addDay(), $out, $enquiryId)->forceFill(['guest_ref' => $guestRef])->save();
         }
 
         return true;

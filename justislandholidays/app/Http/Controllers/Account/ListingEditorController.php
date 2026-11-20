@@ -54,16 +54,25 @@ class ListingEditorController extends Controller
         return view('account.listings.index', [
             'listings' => $listings,
             'plan' => $user->can('use-billing') ? $this->plans->planFor($this->plans->accountFor($user)) : null,
+            'atLimit' => $this->plans->atListingLimit($user),
+            'held' => $user->can('use-billing') ? $this->plans->listingsHeldBy($user) : null,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
+        if ($this->plans->atListingLimit($request->user())) {
+            return $this->limitReached();
+        }
+
         return view('account.listings.edit', $this->editorData($request, new Listing(), 'basics'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if ($this->plans->atListingLimit($request->user())) {
+            return $this->limitReached();
+        }
         $data = $this->validateBasics($request, null, $request->user()->isAffiliate());
         $user = $request->user();
         $island = Island::findOrFail($data['island_id']);
@@ -382,6 +391,14 @@ class ListingEditorController extends Controller
         return redirect()->route('account.listings.index')->with('status', $messages[$action]);
     }
 
+    /** The plan's listing limit is reached: back to the listings page, which explains (20 Nov 2026). */
+    private function limitReached(): RedirectResponse
+    {
+        return redirect()->route('account.listings.index')->withErrors([
+            'limit' => 'Your plan allows no more listings. Archive one you no longer need, or choose a plan with more listings.',
+        ]);
+    }
+
     /** True when the editor runs in the admin area (/admin/listings/{listing}/editor). */
     private function asAdmin(): bool
     {
@@ -535,7 +552,7 @@ class ListingEditorController extends Controller
         }
         if ($step === 'calendar' || $step === 'bookings') {
             // Stays not yet over: the owner's own (they can change these) and imported ones (shown only).
-            $upcoming = $listing->calendarBookings()->where('check_out', '>=', today()->toDateString())->with('feed')->get();
+            $upcoming = $listing->calendarBookings()->where('check_out', '>=', today()->toDateString())->with(['feed', 'enquiry'])->get();
             $calendar['ownBookings'] = $upcoming->whereNull('feed_id')->values();
             $calendar['importedBookings'] = $upcoming->whereNotNull('feed_id')->values();
         }

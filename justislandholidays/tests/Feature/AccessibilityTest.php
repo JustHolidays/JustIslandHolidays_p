@@ -64,10 +64,12 @@ class AccessibilityTest extends TestCase
         Enquiry::factory()->for($this->listing)->create();
         $enquiry = Enquiry::sole();
 
-        foreach (['/account', '/account/listings', '/account/listings/create', '/account/enquiries', "/account/enquiries/{$enquiry->id}",
-            '/account/clicks', '/account/billing', '/account/security'] as $url) {
+        foreach (['/account', '/account/listings', '/account/enquiries', "/account/enquiries/{$enquiry->id}",
+            '/account/clicks', '/account/billing', '/account/security', '/account/bookings'] as $url) {
             $this->check($url, $owner);
         }
+        // This owner is at the Free Plan's limit, so the new-listing form is checked with an owner who has room.
+        $this->check('/account/listings/create', User::factory()->owner()->create());
         foreach (['basics', 'location', 'photo', 'link', 'licence', 'review'] as $step) {
             $this->check("/account/listings/{$this->listing->id}/edit/{$step}", $owner);
         }

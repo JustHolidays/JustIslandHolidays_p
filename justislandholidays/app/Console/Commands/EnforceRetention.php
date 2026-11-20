@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
  * Nightly data retention (periods are proposals, set in config/site.php):
  *  - enquiries are deleted 24 months after they were sent;
  *  - raw click events are deleted after 13 months, once their daily totals are saved;
+ *  - guest references on booked stays are cleared 24 months after the stay ended;
  *  - accounts soft-deleted more than 30 days ago have their personal data removed.
  *
  * Purged accounts are anonymised rather than removed, because listings, payments and the
@@ -46,6 +47,11 @@ class EnforceRetention extends Command
             $clicks->delete();
         }
 
+        // 2b. Guest references on booked stays: cleared 24 months after the stay ended (the stay stays booked).
+        $refs = DB::table('calendar_bookings')->whereNotNull('guest_ref')
+            ->where('check_out', '<', now()->subMonths((int) config('site.enquiries.retention_months'))->toDateString());
+        $refCount = $dry ? $refs->count() : $refs->update(['guest_ref' => null]);
+
         // 3. Accounts deleted more than 30 days ago
         $accounts = User::onlyTrashed()
             ->where('deleted_at', '<', $accountCutoff)
@@ -55,12 +61,12 @@ class EnforceRetention extends Command
             $accounts->each(fn (User $u) => $this->purge($u));
         }
 
-        $summary = ['enquiries' => $enquiryCount, 'clicks' => $clickCount, 'accounts' => $accounts->count(), 'dry_run' => $dry];
+        $summary = ['enquiries' => $enquiryCount, 'clicks' => $clickCount, 'guest_refs' => $refCount, 'accounts' => $accounts->count(), 'dry_run' => $dry];
         if (! $dry) {
             Audit::record(null, 'job.retention', 'job', 'data:retention', $summary);
         }
 
-        $this->info(($dry ? 'Would remove: ' : 'Removed: ')."{$enquiryCount} enquiries, {$clickCount} click events, {$accounts->count()} deleted accounts.");
+        $this->info(($dry ? 'Would remove: ' : 'Removed: ')."{$enquiryCount} enquiries, {$clickCount} click events, {$refCount} guest references, {$accounts->count()} deleted accounts.");
 
         return self::SUCCESS;
     }
@@ -100,7 +106,9 @@ class EnforceRetention extends Command
                 'affiliate_website_url' => null,
                 'marketing_consent' => false,
                 'consented_at' => null,
+                'closure_reason' => null,   // their own words about closing (20 Nov 2026)
             ])->saveQuietly();
+            DB::table('favourites')->where('user_id', $user->id)->delete();
 
             Audit::record(null, 'user.purge', 'user', $user->id, ['listings' => $listings->count()]);
         });

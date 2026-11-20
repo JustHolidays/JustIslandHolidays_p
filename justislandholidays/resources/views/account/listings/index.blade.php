@@ -3,7 +3,12 @@
 @section('content')
     <div class="flex flex-wrap items-center justify-between gap-4">
         <h1 class="text-2xl font-semibold">Your listings</h1>
-        <a href="{{ route('account.listings.create') }}" class="inline-flex min-h-11 items-center rounded bg-[var(--colour-button)] px-5 font-medium text-white">Add a listing</a>
+        @if ($atLimit)
+            {{-- Plan limit reached (20 Nov 2026): shown greyed out, not a link. --}}
+            <span role="link" aria-disabled="true" aria-describedby="limit-note" class="inline-flex min-h-11 cursor-not-allowed items-center rounded bg-slate-300 px-5 font-medium text-slate-700" data-add-listing="disabled">Add a listing</span>
+        @else
+            <a href="{{ route('account.listings.create') }}" class="inline-flex min-h-11 items-center rounded bg-[var(--colour-button)] px-5 font-medium text-white" data-add-listing="enabled">Add a listing</a>
+        @endif
     </div>
 
     @if ($plan)
@@ -11,6 +16,15 @@
             ({{ $plan->max_listings === null ? 'unlimited listings' : trans_choice(':count listing|up to :count listings', $plan->max_listings) }}).
             <a href="{{ route('account.billing') }}" class="underline">Change plan</a></p>
     @endif
+    @if ($atLimit)
+        <p id="limit-note" role="status" class="mt-3 rounded border border-amber-300 bg-amber-50 p-3">
+            You have {{ trans_choice(':count listing|:count listings', $held) }}, the most the {{ $plan->name }} allows, so you cannot add another.
+            Archive one you no longer need, or <a href="{{ route('account.billing') }}" class="font-medium underline">choose a plan with more listings</a>.
+        </p>
+    @endif
+    @error('limit')
+        @unless ($atLimit)<p class="mt-3 text-sm font-medium text-red-800">{{ $message }}</p>@endunless
+    @enderror
 
     @if ($listings->isEmpty())
         <p class="mt-8">You have no listings yet. Add your first home to get started.</p>

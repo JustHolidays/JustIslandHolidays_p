@@ -25,4 +25,25 @@ class CalendarBooking extends Model
     {
         return $this->belongsTo(CalendarFeed::class, 'feed_id');
     }
+
+    public function listing(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Listing::class);
+    }
+
+    /** The enquiry a stay was booked from with Confirm Booking; null otherwise. */
+    public function enquiry(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Enquiry::class);
+    }
+
+    /** Where the stay came from, in plain words: "Booked from enquiry", "Marked by you" or the imported calendar's name. */
+    public function sourceLabel(): string
+    {
+        if ($this->feed_id !== null) {
+            return 'From '.($this->feed?->name ?? 'an imported calendar');
+        }
+
+        return $this->enquiry_id !== null ? 'Booked from an enquiry' : 'Marked by you';
+    }
 }

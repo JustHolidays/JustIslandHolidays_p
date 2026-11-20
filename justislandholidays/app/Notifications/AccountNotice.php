@@ -17,6 +17,8 @@ class AccountNotice extends Notification implements ShouldQueue
         'account.reactivated' => ['Your account is active again', 'Your Just Island Holidays account is active again. Your listings stay paused until you make them live.'],
         'licence.rejected' => ['Your licence number could not be verified', 'We looked up your licence number in the official register and could not verify it, so your listing cannot go live yet. Please check the number and update it in your listing.'],
         'deeplink.message' => ['About your Check availability link', 'Our team has a message about the booking link on one of your listings.'],
+        'account.closed' => ['Your account is closed', 'As you asked, your Just Island Holidays account is closed and you can no longer sign in. Any listings are taken down, and any paid plan will not renew. Your personal details are removed from our systems within 30 days.'],
+        'account.closure_declined' => ['About your request to close your account', 'We have not closed your Just Island Holidays account yet. Please read the note below; you can ask again from your account at any time.'],
         'phone.choose' => ['Do you want your phone number on your listing?', 'Your plan can show your phone number to visitors. You can now choose whether it is shown. Until you choose, it is hidden. To show it, sign in, edit your listing, and choose "Yes, show it publicly" in the Location and contact step.'],
     ];
 

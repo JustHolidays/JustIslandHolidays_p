@@ -1,6 +1,5 @@
 @php
     $lang = app()->getLocale();
-    $navIslands = \App\Models\Island::active()->orderBy('sort_order')->get();
     $logo = \App\Support\Appearance::logo();
     $favicons = \App\Support\Appearance::favicons();
     $previewing = \App\Support\Appearance::isPreview();
@@ -33,21 +32,43 @@
     @endif
 
     <header class="border-b border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <a href="{{ route('home') }}" class="inline-flex min-h-11 items-center text-xl font-semibold text-[var(--colour-brand)]">
+        <div class="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-x-3 gap-y-2 px-4 pt-3">
+            <a href="{{ route('home') }}" class="mb-3 inline-flex min-h-11 items-center text-xl font-semibold text-[var(--colour-brand)]">
                 @if ($logo)
                     <img src="{{ $logo['url'] }}" alt="{{ $logo['alt'] }}" class="h-10 w-auto">
                 @else
                     Just Island Holidays
                 @endif
             </a>
-            <nav aria-label="{{ __('Main') }}">
-                <ul class="flex flex-wrap items-center gap-1">
-                    @foreach ($navIslands as $navIsland)
-                        <li><a href="{{ route('islands.show', $navIsland->slug) }}" class="inline-flex min-h-11 items-center rounded px-3 hover:underline">{{ $navIsland->translate('name') }}</a></li>
+            {{-- Main menu as tabs sitting on the header's bottom edge (20 Nov 2026). Islands are
+                 reached from the home page and search, not the menu. The current page's tab is
+                 filled with the brand colour. --}}
+            @php
+                $tabs = [
+                    ['url' => route('search'), 'label' => __('Search'), 'current' => request()->routeIs('search'), 'icon' => null],
+                    ['url' => route('owners'), 'label' => __('List your property'), 'current' => request()->routeIs('owners'), 'icon' => null],
+                    auth()->check()
+                        ? ['url' => route('account.favourites'), 'label' => __('My favourites'), 'current' => false, 'icon' => 'heart']
+                        : ['url' => route('login'), 'label' => __('Sign in'), 'current' => false, 'icon' => null],
+                ];
+            @endphp
+            <nav aria-label="{{ __('Main') }}" class="-mb-px">
+                <ul class="flex flex-wrap items-end gap-1">
+                    @foreach ($tabs as $tab)
+                        <li>
+                            <a href="{{ $tab['url'] }}" @if ($tab['current']) aria-current="page" @endif @if ($tab['icon'] === 'heart') data-nav-favourites @endif
+                               @class([
+                                   'inline-flex min-h-11 items-center gap-1 rounded-t-lg border border-b-0 px-4 font-medium no-underline hover:no-underline',
+                                   'border-[var(--colour-brand)] bg-[var(--colour-brand)] text-white' => $tab['current'],
+                                   'border-slate-300 bg-slate-50 text-[var(--colour-text)] hover:bg-white' => ! $tab['current'],
+                               ])>
+                                @if ($tab['icon'] === 'heart')
+                                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5 text-red-600" fill="currentColor"><path d="M12 21s-7.5-4.6-10-9.3C.4 8.6 2.2 4.5 6.1 4.1c2.2-.2 4 1 5.9 3.2 1.9-2.2 3.7-3.4 5.9-3.2 3.9.4 5.7 4.5 4.1 7.6C19.5 16.4 12 21 12 21z"/></svg>
+                                @endif
+                                {{ $tab['label'] }}
+                            </a>
+                        </li>
                     @endforeach
-                    <li><a href="{{ route('search') }}" class="inline-flex min-h-11 items-center rounded px-3 hover:underline">{{ __('Search') }}</a></li>
-                    <li><a href="{{ route('owners') }}" class="inline-flex min-h-11 items-center rounded px-3 hover:underline">{{ __('List your property') }}</a></li>
                 </ul>
             </nav>
         </div>

@@ -133,6 +133,21 @@ class PlatformTest extends TestCase
         $this->actingAs($admin)->post('/admin/plans/grant', [])->assertForbidden();
     }
 
+    public function test_plans_list_shows_yearly_and_featured_period_prices_and_no_monthly_column(): void
+    {
+        Plan::where('code', 'featured')->update(['price_3m_cents' => 4500, 'price_12m_cents' => 15000, 'price_year_cents' => null]);
+        $owner = User::factory()->owner()->create();
+        (new Subscription())->forceFill(['user_id' => $owner->id, 'plan_id' => Plan::where('code', 'featured')->value('id'),
+            'billing_interval' => 'one_off', 'status' => 'active', 'ends_at' => now()->addMonths(3)])->save();
+
+        $this->actingAs($this->super)->get('/admin/plans')->assertOk()
+            ->assertSee('Price for 1 year')
+            ->assertDontSee('>Monthly<', false)
+            ->assertSee('3 months:')->assertSee('12 months:')
+            ->assertSee('(one-off payment)')
+            ->assertDontSee('(monthly)');
+    }
+
     public function test_plan_prices_and_paypal_ids_are_edited_here(): void
     {
         $plan = Plan::where('code', 'standard')->sole();
