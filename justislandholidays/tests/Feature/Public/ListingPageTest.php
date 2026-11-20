@@ -77,6 +77,40 @@ class ListingPageTest extends TestCase
             ->assertDontSee('booking.example.com', false);
     }
 
+    public function test_free_plan_has_the_contact_form_and_agents_pages_say_agent(): void
+    {
+        $owners = $this->listing(['plan_code' => 'free']);
+        $agents = $this->listing(['plan_code' => 'free', 'owner_id' => User::factory()->agent()]);
+
+        $this->get($owners->publicUrl('en'))->assertOk()
+            ->assertSee('id="enquiry"', false)->assertSee('Contact the owner')->assertSee('name="check_in"', false)
+            ->assertDontSee('the agent');
+        $this->get($agents->publicUrl('en'))->assertOk()
+            ->assertSee('id="enquiry"', false)->assertSee('Contact the agent')
+            ->assertSee('Your message goes straight to the agent')
+            ->assertSee('my details are sent to the agent')
+            ->assertDontSee('Contact the owner');
+    }
+
+    public function test_bookmark_menu_links_to_the_sections_the_home_has(): void
+    {
+        $free = $this->listing(['plan_code' => 'free']);
+        $html = $this->get($free->publicUrl('en'))->assertOk()->getContent();
+        $nav = substr($html, strpos($html, 'data-bookmarks'), 1500);
+
+        $this->assertStringContainsString('href="#key-facts"', $nav);
+        $this->assertStringContainsString('href="#location"', $nav);
+        $this->assertStringNotContainsString('href="#rates"', $nav, 'No rates on the Free Plan.');
+        $this->assertStringNotContainsString('href="#availability"', $nav, 'No calendar on the Free Plan.');
+        foreach (['key-facts', 'location'] as $anchor) {
+            $this->assertStringContainsString('id="'.$anchor.'"', $html);
+        }
+        $this->assertLessThan(strpos($html, 'id="key-facts"'), strpos($html, 'data-bookmarks'), 'The menu sits under the title, above the sections.');
+
+        $affiliate = $this->listing(['owner_id' => User::factory()->affiliate()], fn ($f) => $f->withDeeplink());
+        $this->get($affiliate->publicUrl('en'))->assertOk()->assertDontSee('data-bookmarks', false);
+    }
+
     public function test_licence_number_is_shown(): void
     {
         $listing = $this->listing();

@@ -48,6 +48,16 @@ class FooterTest extends TestCase
         $this->assertStringNotContainsString('items-center underline', $footer);
     }
 
+    public function test_public_pages_have_a_back_to_top_button(): void
+    {
+        foreach (['/en', '/en/partners'] as $url) {
+            $this->get($url)->assertOk()
+                ->assertSee('<body id="top"', false)
+                ->assertSee('href="#top" data-back-to-top', false)
+                ->assertSee('Back to top');
+        }
+    }
+
     public function test_super_admin_adds_an_image_that_goes_live_on_publish(): void
     {
         $this->actingAs($this->super)->get(route('admin.appearance.edit'))->assertOk()->assertSee('Footer image');

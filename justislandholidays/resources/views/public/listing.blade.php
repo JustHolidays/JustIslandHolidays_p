@@ -41,6 +41,19 @@
 
         <h1 class="text-3xl font-semibold">{{ $title }}</h1>
         <p class="mt-1 text-lg">{{ $place }}</p>
+
+        {{-- Bookmark menu for owner and agent properties (20 Nov 2026): links to the sections
+             this home has. Affiliate homes have only the critical details, so no menu. --}}
+        @if ($bookmarks !== [])
+            <nav aria-label="{{ __('On this page') }}" class="mt-4" data-bookmarks>
+                <ul class="flex flex-wrap gap-2 text-sm">
+                    @foreach ($bookmarks as $anchor => $label)
+                        <li><a href="#{{ $anchor }}" class="inline-flex min-h-11 items-center rounded-full bg-orange-700 px-4 font-medium text-white no-underline shadow-sm hover:bg-orange-800 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-800">{{ $label }}</a></li>
+                    @endforeach
+                </ul>
+            </nav>
+        @endif
+
         @if ($isFallback)
             <p class="mt-2 inline-block rounded bg-slate-100 px-2 py-1 text-sm">{{ __('Shown in English') }}</p>
         @endif
@@ -78,7 +91,7 @@
                     <p class="mt-6 text-lg">{{ $summary }}</p>
                 @endif
 
-                <section class="mt-8" aria-labelledby="facts-heading">
+                <section class="mt-8 scroll-mt-4" id="key-facts" aria-labelledby="facts-heading">
                     <h2 id="facts-heading" class="text-xl font-semibold">{{ __('Key facts') }}</h2>
                     <dl class="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
                         <div><dt class="text-sm text-slate-600">{{ __('Type') }}</dt><dd class="font-medium">{{ \App\Models\PropertyType::label($listing->property_type) }}</dd></div>
@@ -97,12 +110,12 @@
                         @endif
                     </dl>
                     @if ($listing->guidePrice())
-                        <p class="mt-3 text-sm text-slate-700">{{ __('Prices are a guide from the owner. The owner confirms the final price and terms.') }}</p>
+                        <p class="mt-3 text-sm text-slate-700">{{ $isAgent ? __('Prices are a guide from the agent. The agent confirms the final price and terms.') : __('Prices are a guide from the owner. The owner confirms the final price and terms.') }}</p>
                     @endif
                 </section>
 
                 @if ($rates->isNotEmpty())
-                    <section class="mt-8" id="rates" aria-labelledby="rates-heading">
+                    <section class="mt-8 scroll-mt-4" id="rates" aria-labelledby="rates-heading">
                         <h2 id="rates-heading" class="text-xl font-semibold">{{ __('Rates') }}</h2>
                         <div class="mt-3 overflow-x-auto">
                             <table class="w-full min-w-[30rem] text-left">
@@ -136,21 +149,24 @@
                 @endif
 
                 @if ($calendarMonths)
-                    <section class="mt-8" id="availability" aria-labelledby="availability-heading">
+                    <section class="mt-8 scroll-mt-4" id="availability" aria-labelledby="availability-heading">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <h2 id="availability-heading" class="text-xl font-semibold">{{ __('Availability') }}</h2>
                             <nav aria-label="{{ __('Calendar months') }}" class="flex gap-2">
                                 @if ($calendarOffset > 0)<a href="{{ $canonical }}?months={{ max(0, $calendarOffset - 3) }}#availability" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Earlier months') }}</a>@endif
-                                @if ($calendarOffset < 9)<a href="{{ $canonical }}?months={{ $calendarOffset + 3 }}#availability" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Later months') }}</a>@endif
+                                @if ($calendarOffset < $calendarMaxOffset)<a href="{{ $canonical }}?months={{ min($calendarMaxOffset, $calendarOffset + 3) }}#availability" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Later months') }}</a>@endif
                             </nav>
                         </div>
-                        <p class="mt-1 text-sm text-slate-700">{{ __('Kept up to date by the owner. Send an enquiry to check your dates.') }}</p>
+                        <p class="mt-1 text-sm text-slate-700">{{ $isAgent ? __('Kept up to date by the agent. Send an enquiry to check your dates.') : __('Kept up to date by the owner. Send an enquiry to check your dates.') }}</p>
+                        @if ($listing->changeoverDayName())
+                            <p class="mt-3 inline-flex rounded-full bg-orange-700 px-4 py-1 font-semibold text-white" data-changeover>{{ __('Changeover day') }}: {{ $listing->changeoverDayName() }}</p>
+                        @endif
                         <div class="mt-3">@include('partials.calendar-months', ['months' => $calendarMonths])</div>
                     </section>
                 @endif
 
                 @if ($listing->amenities->isNotEmpty())
-                    <section class="mt-8" aria-labelledby="amenities-heading">
+                    <section class="mt-8 scroll-mt-4" id="features" aria-labelledby="amenities-heading">
                         <h2 id="amenities-heading" class="text-xl font-semibold">{{ __('Features') }}</h2>
                         <ul class="mt-3 grid list-disc gap-1 pl-5 sm:grid-cols-2">
                             @foreach ($listing->amenities->sortBy('sort_order') as $amenity)
@@ -160,7 +176,7 @@
                     </section>
                 @endif
 
-                <section class="mt-8" aria-labelledby="location-heading">
+                <section class="mt-8 scroll-mt-4" id="location" aria-labelledby="location-heading">
                     <h2 id="location-heading" class="text-xl font-semibold">{{ __('Location') }}</h2>
                     <p class="mt-2">{{ __('The home is inside the circle, in or near :place. You get the exact address when you book.', ['place' => $place]) }}</p>
                     <div data-map="area" data-lat="{{ $listing->display_lat }}" data-lng="{{ $listing->display_lng }}" data-radius="{{ config('site.map.area_radius_m') }}"
@@ -209,11 +225,11 @@
                             @if ($isAffiliate)
                                 {{ __('Opens the booking site for this home. We may earn a commission if you book, at no extra cost to you.') }}
                             @elseif ($listing->link_type === 'website')
-                                {{ __('Opens the owner’s own website.') }}
+                                {{ $isAgent ? __('Opens the agent’s own website.') : __('Opens the owner’s own website.') }}
                             @elseif ($listing->link_type === 'facebook')
-                                {{ __('Opens the owner’s Facebook page.') }}
+                                {{ $isAgent ? __('Opens the agent’s Facebook page.') : __('Opens the owner’s Facebook page.') }}
                             @else
-                                {{ __('Opens the owner’s booking page for this home.') }}
+                                {{ $isAgent ? __('Opens the agent’s booking page for this home.') : __('Opens the owner’s booking page for this home.') }}
                             @endif
                         </p>
                     </div>
@@ -227,7 +243,7 @@
 
                 @if ($directContact)
                     <section class="rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="direct-heading">
-                        <h2 id="direct-heading" class="text-xl font-semibold">{{ __('Contact the owner directly') }}</h2>
+                        <h2 id="direct-heading" class="text-xl font-semibold">{{ $isAgent ? __('Contact the agent directly') : __('Contact the owner directly') }}</h2>
                         <dl class="mt-3 space-y-2">
                             @if ($directContact['phone'])
                                 <div><dt class="text-sm text-slate-600">{{ __('Phone') }}</dt>

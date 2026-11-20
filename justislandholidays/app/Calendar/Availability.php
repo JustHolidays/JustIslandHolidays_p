@@ -17,6 +17,15 @@ use Carbon\CarbonImmutable;
  */
 final class Availability
 {
+    /** Visitors can page through this many months, this month included (18, decided 20 Nov 2026). */
+    public const PUBLIC_MONTHS = 18;
+
+    /** The furthest "months" offset that still fits $shown months inside PUBLIC_MONTHS. */
+    public static function maxPublicOffset(int $shown): int
+    {
+        return max(0, self::PUBLIC_MONTHS - $shown);
+    }
+
     /** @return array<string, true> booked nights as 'Y-m-d' => true, for nights from $from up to (not including) $to */
     public static function bookedNights(Listing $listing, CarbonImmutable $from, CarbonImmutable $to): array
     {

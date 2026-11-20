@@ -29,7 +29,8 @@ class RatesController extends Controller
         $data = $request->validate([
             'start_date' => ['required', 'date', 'before:+3 years'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date', 'after_or_equal:today', 'before:+4 years'],
-            'nightly' => ['nullable', 'integer', 'min:1', 'max:100000', 'required_without_all:weekly,fortnight'],
+            // Guests arriving any day need a nightly rate in every period (20 Nov 2026).
+            'nightly' => ['nullable', 'integer', 'min:1', 'max:100000', $listing->arrivesAnyDay() ? 'required' : 'required_without_all:weekly,fortnight'],
             'weekly' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             'fortnight' => ['nullable', 'integer', 'min:1', 'max:2000000'],
         ], [
@@ -37,6 +38,7 @@ class RatesController extends Controller
             'end_date.required' => 'Add the last day of the period.',
             'end_date.after_or_equal' => 'The end date must be on or after the start date, and not in the past.',
             'nightly.required_without_all' => 'Add at least one price: nightly, weekly or 14 nights.',
+            'nightly.required' => 'Guests can arrive any day, so each period needs a nightly rate. You can change this in the Calendar step.',
             '*.min' => 'Prices must be more than 0.',
         ]);
 

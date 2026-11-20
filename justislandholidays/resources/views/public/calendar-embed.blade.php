@@ -14,9 +14,13 @@
         <p class="font-semibold">{{ __('Availability') }}</p>
         <nav aria-label="{{ __('Calendar months') }}" class="flex gap-2 text-sm">
             @if ($offset > 0)<a href="{{ route('calendar.embed', $listing->public_ref) }}?months={{ max(0, $offset - $count) }}&amp;show={{ $count }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Earlier months') }}</a>@endif
-            @if ($offset < 9)<a href="{{ route('calendar.embed', $listing->public_ref) }}?months={{ min(9, $offset + $count) }}&amp;show={{ $count }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Later months') }}</a>@endif
+            @if ($offset < $maxOffset)<a href="{{ route('calendar.embed', $listing->public_ref) }}?months={{ min($maxOffset, $offset + $count) }}&amp;show={{ $count }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">{{ __('Later months') }}</a>@endif
         </nav>
     </div>
+
+    @if ($listing->changeoverDayName())
+        <p class="mb-3 inline-flex rounded-full bg-orange-700 px-4 py-1 font-semibold text-white" data-changeover>{{ __('Changeover day') }}: {{ $listing->changeoverDayName() }}</p>
+    @endif
 
     @include('partials.calendar-months', ['months' => $months])
 

@@ -33,6 +33,7 @@ class Listing extends Model
             'status' => ListingStatus::class,
             'has_private_pool' => 'boolean',
             'min_price_week_cents' => 'integer',
+            'changeover_day' => 'integer',
             'sleeps' => 'integer',
             'bedrooms' => 'integer',
             'bathrooms' => 'integer',
@@ -281,6 +282,23 @@ class Listing extends Model
     public function calendarBookings(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(CalendarBooking::class)->orderBy('check_in');
+    }
+
+    /** Changeover days, Monday (1) to Sunday (7). 0 = any day, null = not chosen yet. */
+    public const CHANGEOVER_DAYS = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'];
+
+    /** True when the owner chose "guests can arrive any day": every rate period then needs a nightly rate. */
+    public function arrivesAnyDay(): bool
+    {
+        return $this->changeover_day === 0;
+    }
+
+    /** The fixed changeover day in the visitor's language ("Saturday"), or null. */
+    public function changeoverDayName(): ?string
+    {
+        $day = self::CHANGEOVER_DAYS[$this->changeover_day ?? 0] ?? null;
+
+        return $day ? __($day) : null;
     }
 
     /** The rates table: owner and agent properties on any plan but Free. */

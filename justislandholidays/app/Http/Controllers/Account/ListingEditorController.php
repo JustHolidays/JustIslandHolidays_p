@@ -93,7 +93,7 @@ class ListingEditorController extends Controller
         if ($step === 'licence' && $listing->isAffiliateListing()) {
             abort(404);
         }
-        if ($step === 'calendar' && ! $listing->hasCalendar()) {
+        if (in_array($step, ['calendar', 'bookings'], true) && ! $listing->hasCalendar()) {
             abort(404);   // paid plans only
         }
         if ($step === 'rates' && ! $listing->hasRates()) {
@@ -107,6 +107,9 @@ class ListingEditorController extends Controller
     {
         $this->ensureEditable($listing);
         $data = $this->validateBasics($request, $listing->property_type, $listing->isAffiliateListing());
+        if ($this->asAdmin() && ! $request->user()->managesIsland((int) $data['island_id'])) {
+            throw ValidationException::withMessages(['island_id' => 'You can only move properties to islands you look after.']);
+        }
 
         DB::transaction(function () use ($listing, $data, $request) {
             $listing->fill($this->basicsAttributes($data));
@@ -379,10 +382,17 @@ class ListingEditorController extends Controller
         return redirect()->route('account.listings.index')->with('status', $messages[$action]);
     }
 
-    /** Listings waiting for review are locked so the admin checks what will go live. */
+    /** True when the editor runs in the admin area (/admin/listings/{listing}/editor). */
+    private function asAdmin(): bool
+    {
+        return request()->routeIs('admin.*');
+    }
+
+    /** Listings waiting for review are locked so the admin checks what will go live. Admins can still edit them. */
     private function ensureEditable(Listing $listing): void
     {
-        if (in_array($listing->status, [ListingStatus::PendingReview, ListingStatus::Archived], true)) {
+        $locked = $this->asAdmin() ? [ListingStatus::Archived] : [ListingStatus::PendingReview, ListingStatus::Archived];
+        if (in_array($listing->status, $locked, true)) {
             throw ValidationException::withMessages([
                 'status' => $listing->status === ListingStatus::Archived
                     ? 'This listing is archived and can no longer be edited.'
@@ -464,7 +474,41 @@ class ListingEditorController extends Controller
 
     private function next(Listing $listing, string $step): RedirectResponse
     {
+        if ($this->asAdmin()) {
+            // Admins have no Licence or Review step: go to the next step they have, or back to the property.
+            $order = ['basics', 'location', 'photo', 'link', 'calendar', 'bookings', 'rates'];
+            $available = array_keys($this->editorSteps($listing, false));
+            foreach (array_slice($order, (int) array_search($step, $order, true)) as $candidate) {
+                if (in_array($step, $order, true) && in_array($candidate, $available, true)) {
+                    return redirect()->route('admin.listings.editor.edit', [$listing, $candidate])->with('status', 'Saved.');
+                }
+            }
+
+            return redirect()->route('admin.listings.show', $listing)->with('status', 'Saved.');
+        }
+
         return redirect()->route('account.listings.edit', [$listing, $step])->with('status', 'Saved.');
+    }
+
+    /** The editor's steps. Admins get the editing steps only (no Licence or Review and send). */
+    private function editorSteps(Listing $listing, bool $isAffiliate): array
+    {
+        $steps = ['basics' => 'Basics', 'location' => 'Location', 'photo' => 'Photo', 'link' => $isAffiliate ? 'Booking link' : 'Link'];
+        if (! $isAffiliate && ! $this->asAdmin()) {
+            $steps['licence'] = 'Licence';
+        }
+        if ($listing->exists && $listing->hasCalendar()) {
+            $steps['calendar'] = 'Calendar';   // paid plans
+            $steps['bookings'] = 'Booked dates';
+        }
+        if ($listing->exists && $listing->hasRates()) {
+            $steps['rates'] = 'Rates';         // paid plans
+        }
+        if (! $this->asAdmin()) {
+            $steps['review'] = 'Review and send';
+        }
+
+        return $steps;
     }
 
     private function editorData(Request $request, Listing $listing, string $step): array
@@ -472,17 +516,8 @@ class ListingEditorController extends Controller
         $listing->loadMissing(['translations', 'private', 'licence', 'island', 'area', 'owner']);
         $isAffiliate = $listing->exists ? $listing->isAffiliateListing() : $request->user()->isAffiliate();
 
-        $steps = ['basics' => 'Basics', 'location' => 'Location', 'photo' => 'Photo', 'link' => $isAffiliate ? 'Booking link' : 'Link'];
-        if (! $isAffiliate) {
-            $steps['licence'] = 'Licence';
-        }
-        if ($listing->exists && $listing->hasCalendar()) {
-            $steps['calendar'] = 'Calendar';   // paid plans
-        }
-        if ($listing->exists && $listing->hasRates()) {
-            $steps['rates'] = 'Rates';         // paid plans
-        }
-        $steps['review'] = 'Review and send';
+        $steps = $this->editorSteps($listing, $isAffiliate);
+        $asAdmin = $this->asAdmin();
 
         $calendar = [];
         if ($step === 'calendar') {
@@ -492,12 +527,17 @@ class ListingEditorController extends Controller
                 'months' => \App\Calendar\Availability::months($listing, $from->addMonths($offset), 3),
                 'offset' => $offset,
                 'feeds' => $listing->calendarFeeds()->withCount('bookings')->get(),
-                'ownBookings' => $listing->calendarBookings()->whereNull('feed_id')->where('check_out', '>=', today()->toDateString())->get(),
             ];
         }
 
         if ($step === 'rates') {
             $calendar['rates'] = $listing->rates()->get();
+        }
+        if ($step === 'calendar' || $step === 'bookings') {
+            // Stays not yet over: the owner's own (they can change these) and imported ones (shown only).
+            $upcoming = $listing->calendarBookings()->where('check_out', '>=', today()->toDateString())->with('feed')->get();
+            $calendar['ownBookings'] = $upcoming->whereNull('feed_id')->values();
+            $calendar['importedBookings'] = $upcoming->whereNotNull('feed_id')->values();
         }
 
         return $calendar + [
@@ -506,9 +546,14 @@ class ListingEditorController extends Controller
             'step' => $step,
             'steps' => $steps,
             'isAffiliate' => $isAffiliate,
-            'islands' => Island::active()->with(['areas' => fn ($q) => $q->orderBy('sort_order')])->orderBy('sort_order')->get(),
+            // In the admin area the same view runs with admin routes and the admin layout.
+            'asAdmin' => $asAdmin,
+            'r' => $asAdmin ? 'admin.listings.editor.' : 'account.listings.',
+            'islands' => Island::active()
+                ->when($asAdmin && ! $request->user()->isSuperAdmin(), fn ($q) => $q->whereIn('id', $request->user()->managedIslandIds()))
+                ->with(['areas' => fn ($q) => $q->orderBy('sort_order')])->orderBy('sort_order')->get(),
             'missing' => $listing->exists ? ListingChecklist::missingForSubmit($listing) : [],
-            'locked' => in_array($listing->status, [ListingStatus::PendingReview, ListingStatus::Archived], true),
+            'locked' => in_array($listing->status, $asAdmin ? [ListingStatus::Archived] : [ListingStatus::PendingReview, ListingStatus::Archived], true),
         ];
     }
 }

@@ -1,4 +1,4 @@
-@extends('layouts.account', ['title' => $listing->exists ? 'Edit listing' : 'Add a listing'])
+@extends($asAdmin ? 'layouts.admin' : 'layouts.account', ['title' => $listing->exists ? ($asAdmin ? 'Edit property: '.$listing->title('en') : 'Edit listing') : 'Add a listing'])
 
 @php
     $t = $listing->exists ? $listing->translationFor('en')[0] : null;
@@ -14,17 +14,23 @@
     @if ($listing->exists)
         <p class="mt-1">Status: <strong>{{ $listing->status->label() }}</strong></p>
     @endif
+    @if ($asAdmin)
+        <div class="mt-4 rounded border border-slate-300 bg-white p-4" data-admin-editor>
+            <p>You are editing this property for <strong>{{ $listing->owner?->name }}</strong> ({{ $listing->owner?->role->label() }}, {{ $listing->owner?->email }}). The steps below are the ones they see, so they speak to them as "you". Your changes are saved in the audit log under your name and go live straight away; the status stays as it is.</p>
+            <p class="mt-2"><a href="{{ route('admin.listings.show', $listing) }}" class="inline-flex min-h-11 items-center underline">Back to the property's admin page</a></p>
+        </div>
+    @endif
 
     <nav aria-label="Steps" class="mt-6">
         <ol class="flex flex-wrap gap-2">
             @foreach ($steps as $key => $label)
                 <li>
                     @if ($listing->exists)
-                        <a href="{{ route('account.listings.edit', [$listing, $key]) }}"
-                           @class(['inline-flex min-h-11 items-center rounded-full border px-4', 'border-[var(--colour-brand)] bg-[var(--colour-brand)] text-white' => $step === $key, 'border-slate-300 bg-white' => $step !== $key])
+                        <a href="{{ route($r.'edit', [$listing, $key]) }}"
+                           @class(['inline-flex min-h-11 items-center rounded-full border px-4', 'border-[var(--colour-brand,#0f172a)] bg-[var(--colour-brand,#0f172a)] text-white' => $step === $key, 'border-slate-300 bg-white' => $step !== $key])
                            @if ($step === $key) aria-current="step" @endif>{{ $loop->iteration }}. {{ $label }}</a>
                     @else
-                        <span @class(['inline-flex min-h-11 items-center rounded-full border px-4', 'border-[var(--colour-brand)] bg-[var(--colour-brand)] text-white' => $key === 'basics', 'border-slate-300 bg-white text-slate-500' => $key !== 'basics'])
+                        <span @class(['inline-flex min-h-11 items-center rounded-full border px-4', 'border-[var(--colour-brand,#0f172a)] bg-[var(--colour-brand,#0f172a)] text-white' => $key === 'basics', 'border-slate-300 bg-white text-slate-500' => $key !== 'basics'])
                               @if ($key === 'basics') aria-current="step" @endif>{{ $loop->iteration }}. {{ $label }}</span>
                     @endif
                 </li>
@@ -42,7 +48,7 @@
         <fieldset @disabled($locked)>
         @switch($step)
             @case('basics')
-                <form method="POST" action="{{ $listing->exists ? route('account.listings.basics', $listing) : route('account.listings.store') }}">
+                <form method="POST" action="{{ $listing->exists ? route($r.'basics', $listing) : route('account.listings.store') }}">
                     @csrf
                     @if ($listing->exists) @method('PUT') @endif
                     <h2 class="mb-4 text-xl font-semibold">Basics</h2>
@@ -115,7 +121,7 @@
                             <div class="mb-4">
                                 <p class="mb-1 font-medium">From price per week</p>
                                 <p class="flex min-h-11 items-center">{{ $listing->guidePrice() }}</p>
-                                <p class="text-sm text-slate-700">Set from your <a href="{{ route('account.listings.edit', [$listing, 'rates']) }}" class="underline">Rates</a>: your lowest weekly rate still to come.</p>
+                                <p class="text-sm text-slate-700">Set from your <a href="{{ route($r.'edit', [$listing, 'rates']) }}" class="underline">Rates</a>: your lowest weekly rate still to come.</p>
                                 <input type="hidden" name="price" value="{{ intdiv($priceFromRates, 100) }}">
                             </div>
                         @else
@@ -136,7 +142,7 @@
                 @break
 
             @case('location')
-                <form method="POST" action="{{ route('account.listings.location', $listing) }}">
+                <form method="POST" action="{{ route($r.'location', $listing) }}">
                     @csrf @method('PUT')
                     <h2 class="mb-2 text-xl font-semibold">Location and contact</h2>
                     <p class="mb-4">Your exact location and contact details are private. Visitors see a map pin about 300 metres from the home, never the address.</p>
@@ -167,7 +173,7 @@
                 @break
 
             @case('photo')
-                <form method="POST" action="{{ route('account.listings.photo', $listing) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route($r.'photo', $listing) }}" enctype="multipart/form-data">
                     @csrf @method('PUT')
                     <h2 class="mb-2 text-xl font-semibold">{{ $isAffiliate ? 'Photo' : 'Main photo' }}</h2>
                     <p class="mb-4">{{ $isAffiliate ? 'Each partner listing has one photo.' : 'Your main photo shows first, on cards and at the top of your listing.' }} Choose your best one: bright, level and showing the home or the view.</p>
@@ -216,7 +222,7 @@
                                             <p class="flex aspect-[4/3] items-center justify-center rounded bg-slate-100 p-2 text-center text-sm">Being prepared, it will appear in a minute.</p>
                                         @endif
                                         <p class="mt-1 text-sm">{{ $extra->alt }}</p>
-                                        <form method="POST" action="{{ route('account.listings.photos.destroy', [$listing, $extra->id]) }}" class="mt-1" onsubmit="return confirm('Remove this photo?')">
+                                        <form method="POST" action="{{ route($r.'photos.destroy', [$listing, $extra->id]) }}" class="mt-1" onsubmit="return confirm('Remove this photo?')">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="min-h-11 text-sm text-red-800 underline">Remove<span class="sr-only"> photo: {{ $extra->alt }}</span></button>
                                         </form>
@@ -226,7 +232,7 @@
                         @endif
 
                         @if ($room > 0 && $listing->image_path)
-                            <form method="POST" action="{{ route('account.listings.photos.store', $listing) }}" enctype="multipart/form-data">
+                            <form method="POST" action="{{ route($r.'photos.store', $listing) }}" enctype="multipart/form-data">
                                 @csrf
                                 <div class="mb-4">
                                     <label for="extra_photo" class="mb-1 block font-medium">Add a photo</label>
@@ -250,7 +256,7 @@
                 @break
 
             @case('link')
-                <form method="POST" action="{{ route('account.listings.link', $listing) }}">
+                <form method="POST" action="{{ route($r.'link', $listing) }}">
                     @csrf @method('PUT')
                     <h2 class="mb-2 text-xl font-semibold">{{ $isAffiliate ? 'Booking link' : 'Link to your booking page, website or Facebook' }}</h2>
                     @if ($isAffiliate)
@@ -260,7 +266,7 @@
                         @if ($listing->deeplink_url)
                             <p class="mb-4 rounded bg-amber-50 p-3 text-sm">Your link ({{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}) is kept but not shown while you are on the Free Plan. It shows again when you choose a paid plan.</p>
                         @endif
-                        <p class="mb-6"><a href="{{ route('account.billing') }}" class="underline">See the paid plans</a></p>
+                        @unless ($asAdmin)<p class="mb-6"><a href="{{ route('account.billing') }}" class="underline">See the paid plans</a></p>@endunless
                     @else
                         <p class="mb-4">Optional. Add a link and visitors will see a button on your listing. Choose what it opens, and the button says so.</p>
                         <p class="mb-4 rounded border border-slate-300 bg-white p-3 text-sm"><strong>You look after this link.</strong> We do not check whether it works. Please make sure it opens the right page, and update it here if the page moves.</p>
@@ -334,6 +340,39 @@
                 <h2 class="mb-2 text-xl font-semibold">Booking calendar</h2>
                 <p class="mb-6">Show guests which dates are free. Import your calendars from Airbnb, Booking.com, Vrbo, Google Calendar and others, and mark dates you take yourself. Changes show on your listing straight away.</p>
 
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="changeover-heading">
+                    <h3 id="changeover-heading" class="text-lg font-semibold">When can guests arrive?</h3>
+                    @php($arrivalsValue = old('arrivals', $listing->changeover_day === null ? null : ($listing->changeover_day === 0 ? 'any' : 'fixed')))
+                    @php($dayValue = (int) old('changeover_day', $listing->changeover_day ?: 6))
+                    @if ($listing->changeover_day === null)
+                        <p class="mt-1 text-sm font-medium text-amber-800">Not chosen yet.</p>
+                    @endif
+                    <form data-keep-scroll method="POST" action="{{ route($r.'calendar.changeover', $listing) }}" class="mt-3">
+                        @csrf @method('PUT')
+                        <fieldset>
+                            <legend class="sr-only">When can guests arrive?</legend>
+                            <div class="flex min-h-11 items-start gap-2">
+                                <input id="arrivals_any" name="arrivals" type="radio" value="any" class="mt-1 h-5 w-5" @checked($arrivalsValue === 'any')>
+                                <label for="arrivals_any">Any day of the week <span class="block text-sm text-slate-600">Every rate period in your Rates needs a nightly rate.</span></label>
+                            </div>
+                            <div class="flex min-h-11 flex-wrap items-center gap-2">
+                                <input id="arrivals_fixed" name="arrivals" type="radio" value="fixed" class="h-5 w-5" @checked($arrivalsValue === 'fixed')>
+                                <label for="arrivals_fixed">On a fixed changeover day:</label>
+                                <label for="changeover_day" class="sr-only">Changeover day</label>
+                                <select id="changeover_day" name="changeover_day" class="min-h-11 rounded border border-slate-400 bg-white px-3" onchange="document.getElementById('arrivals_fixed').checked = true">
+                                    @foreach (\App\Models\Listing::CHANGEOVER_DAYS as $n => $name)
+                                        <option value="{{ $n }}" @selected($dayValue === $n)>{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </fieldset>
+                        @error('arrivals')<p class="mt-2 text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+                        @error('changeover_day')<p class="mt-2 text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+                        <p class="mt-2 text-sm text-slate-700">A changeover day shows above the calendar on your listing, for example "Changeover day: Saturday".</p>
+                        <div class="mt-3"><x-button>Save</x-button></div>
+                    </form>
+                </section>
+
                 <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="feeds-heading">
                     <h3 id="feeds-heading" class="text-lg font-semibold">Imported calendars</h3>
                     <p class="mt-1 text-sm text-slate-700">Paste the calendar's iCal address (it ends in .ics, or starts with webcal://). In Airbnb it is under Calendar, Availability, Connect calendars, Export calendar. In Google Calendar it is under Settings, your calendar, Secret address in iCal format. We check them every night, and you can press Sync now. Only the dates are imported, never guest names.</p>
@@ -352,15 +391,15 @@
                                         </p>
                                     </div>
                                     <div class="flex gap-2">
-                                        <form method="POST" action="{{ route('account.listings.calendar.feeds.sync', [$listing, $feed->id]) }}">@csrf<button type="submit" class="min-h-11 rounded border border-slate-400 px-3">Sync now<span class="sr-only"> {{ $feed->name }}</span></button></form>
-                                        <form method="POST" action="{{ route('account.listings.calendar.feeds.destroy', [$listing, $feed->id]) }}" onsubmit="return confirm('Remove this calendar and the dates it brought in?')">@csrf @method('DELETE')<button type="submit" class="min-h-11 rounded border border-red-800 px-3 text-red-800">Remove<span class="sr-only"> {{ $feed->name }}</span></button></form>
+                                        <form data-keep-scroll method="POST" action="{{ route($r.'calendar.feeds.sync', [$listing, $feed->id]) }}">@csrf<button type="submit" class="min-h-11 rounded border border-slate-400 px-3">Sync now<span class="sr-only"> {{ $feed->name }}</span></button></form>
+                                        <form data-keep-scroll method="POST" action="{{ route($r.'calendar.feeds.destroy', [$listing, $feed->id]) }}" onsubmit="return confirm('Remove this calendar and the dates it brought in?')">@csrf @method('DELETE')<button type="submit" class="min-h-11 rounded border border-red-800 px-3 text-red-800">Remove<span class="sr-only"> {{ $feed->name }}</span></button></form>
                                     </div>
                                 </li>
                             @endforeach
                         </ul>
                     @endif
 
-                    <form method="POST" action="{{ route('account.listings.calendar.feeds.store', $listing) }}" class="mt-4 grid gap-3 sm:grid-cols-[12rem_1fr_auto] sm:items-end">
+                    <form data-keep-scroll method="POST" action="{{ route($r.'calendar.feeds.store', $listing) }}" class="mt-4 grid gap-3 sm:grid-cols-[12rem_1fr_auto] sm:items-end">
                         @csrf
                         <x-field name="feed_name" label="Name" hint="For example Airbnb." required />
                         <x-field name="feed_url" label="iCal address" hint="Starts with https:// or webcal://" required autocomplete="off" />
@@ -370,24 +409,10 @@
 
                 <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="own-heading">
                     <h3 id="own-heading" class="text-lg font-semibold">Dates you take yourself</h3>
-                    <p class="mt-1 text-sm text-slate-700">Press a day on the calendar below to book or free the night from that day, or enter a stay here. The departure day shows as a half day, because the home is free again from the afternoon.</p>
-                    <form method="POST" action="{{ route('account.listings.calendar.bookings.store', $listing) }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                        @csrf
-                        <x-field name="check_in" label="Arrival" type="date" :value="today()->toDateString()" required />
-                        <x-field name="check_out" label="Departure" type="date" :value="today()->addDay()->toDateString()" required />
-                        <div class="mb-4"><x-button>Mark as booked</x-button></div>
-                    </form>
-
-                    @if ($ownBookings->isNotEmpty())
-                        <ul class="mt-2 divide-y divide-slate-200 text-sm">
-                            @foreach ($ownBookings as $own)
-                                <li class="flex flex-wrap items-center justify-between gap-2 py-2">
-                                    <span>{{ $own->check_in->format('j M Y') }} to {{ $own->check_out->format('j M Y') }} ({{ trans_choice(':count night|:count nights', $own->check_in->diffInDays($own->check_out)) }})</span>
-                                    <form method="POST" action="{{ route('account.listings.calendar.bookings.destroy', [$listing, $own->id]) }}">@csrf @method('DELETE')<button type="submit" class="min-h-11 text-red-800 underline">Free these dates</button></form>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
+                    <p class="mt-1 text-sm text-slate-700">Press a day on the calendar below to book or free the night from that day. To enter a whole stay, or to see and change the stays you have booked, use the Booked dates page.</p>
+                    <p class="mt-3">
+                        <a href="{{ route($r.'edit', [$listing, 'bookings']) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-5 font-medium text-white no-underline hover:bg-slate-700">Booked dates ({{ $ownBookings->count() + $importedBookings->count() }} coming up)</a>
+                    </p>
                 </section>
 
                 <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="embed-heading">
@@ -404,17 +429,84 @@
                     @endif
                 </section>
 
-                <section aria-labelledby="cal-heading">
+                <section id="your-calendar" class="scroll-mt-4" aria-labelledby="cal-heading">
                     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <h3 id="cal-heading" class="text-lg font-semibold">Your calendar</h3>
                         <nav aria-label="Calendar months" class="flex gap-2">
-                            @if ($offset > 0)<a href="{{ route('account.listings.edit', [$listing, 'calendar', 'months' => max(0, $offset - 3)]) }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Earlier months</a>@endif
-                            @if ($offset < 33)<a href="{{ route('account.listings.edit', [$listing, 'calendar', 'months' => $offset + 3]) }}" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Later months</a>@endif
+                            @if ($offset > 0)<a data-keep-scroll href="{{ route($r.'edit', [$listing, 'calendar', 'months' => max(0, $offset - 3)]) }}#your-calendar" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Earlier months</a>@endif
+                            @if ($offset < 33)<a data-keep-scroll href="{{ route($r.'edit', [$listing, 'calendar', 'months' => $offset + 3]) }}#your-calendar" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Later months</a>@endif
                         </nav>
                     </div>
-                    <form id="calendar-toggle" method="POST" action="{{ route('account.listings.calendar.toggle', $listing) }}">@csrf</form>
+                    <form data-keep-scroll id="calendar-toggle" method="POST" action="{{ route($r.'calendar.toggle', $listing) }}">@csrf</form>
                     @error('date')<p class="mb-3 text-sm font-medium text-red-800">{{ $message }}</p>@enderror
                     @include('partials.calendar-months', ['months' => $months, 'toggleAction' => true])
+                </section>
+                @break
+
+            @case('bookings')
+                <h2 class="mb-2 text-xl font-semibold">Booked dates</h2>
+                <p class="mb-6">The stays booked on your calendar from today on. Change or free the ones you marked yourself here; stays from your imported calendars change at their source. Changes show on your listing straight away. <a href="{{ route($r.'edit', [$listing, 'calendar']) }}" class="underline">Back to the calendar</a></p>
+
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="add-stay-heading">
+                    <h3 id="add-stay-heading" class="text-lg font-semibold">Mark a stay as booked</h3>
+                    <p class="mt-1 text-sm text-slate-700">From the arrival day up to the departure morning. The departure day shows as a half day, because the home is free again from the afternoon.</p>
+                    <form data-keep-scroll method="POST" action="{{ route($r.'calendar.bookings.store', $listing) }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                        @csrf
+                        <x-field name="check_in" label="Arrival" type="date" :value="today()->toDateString()" required />
+                        <x-field name="check_out" label="Departure" type="date" :value="today()->addDay()->toDateString()" required />
+                        <div class="mb-4"><x-button>Mark as booked</x-button></div>
+                    </form>
+                </section>
+
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="own-list-heading">
+                    <h3 id="own-list-heading" class="text-lg font-semibold">Stays you marked</h3>
+                    @if ($ownBookings->isEmpty())
+                        <p class="mt-2 text-sm text-slate-700">None coming up.</p>
+                    @else
+                        <ul class="mt-2 divide-y divide-slate-200">
+                            @foreach ($ownBookings as $own)
+                                @php($bag = $errors->getBag('booking'.$own->id))
+                                <li class="py-4" data-booking="{{ $own->id }}">
+                                    <p class="font-medium">{{ $own->check_in->format('D j M Y') }} to {{ $own->check_out->format('D j M Y') }} <span class="font-normal text-slate-600">({{ trans_choice(':count night|:count nights', $own->check_in->diffInDays($own->check_out)) }})</span></p>
+                                    <form data-keep-scroll method="POST" action="{{ route($r.'calendar.bookings.update', [$listing, $own->id]) }}" class="mt-2 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+                                        @csrf @method('PUT')
+                                        <div>
+                                            <label for="in-{{ $own->id }}" class="mb-1 block text-sm font-medium">Arrival</label>
+                                            <input id="in-{{ $own->id }}" name="check_in" type="date" required value="{{ $bag->any() ? old('check_in') : $own->check_in->toDateString() }}" class="block min-h-11 w-full rounded border border-slate-400 bg-white px-3" @if ($bag->has('check_in')) aria-invalid="true" aria-describedby="in-{{ $own->id }}-error" @endif>
+                                            @if ($bag->has('check_in'))<p id="in-{{ $own->id }}-error" class="mt-1 text-sm font-medium text-red-800">{{ $bag->first('check_in') }}</p>@endif
+                                        </div>
+                                        <div>
+                                            <label for="out-{{ $own->id }}" class="mb-1 block text-sm font-medium">Departure</label>
+                                            <input id="out-{{ $own->id }}" name="check_out" type="date" required value="{{ $bag->any() ? old('check_out') : $own->check_out->toDateString() }}" class="block min-h-11 w-full rounded border border-slate-400 bg-white px-3" @if ($bag->has('check_out')) aria-invalid="true" aria-describedby="out-{{ $own->id }}-error" @endif>
+                                            @if ($bag->has('check_out'))<p id="out-{{ $own->id }}-error" class="mt-1 text-sm font-medium text-red-800">{{ $bag->first('check_out') }}</p>@endif
+                                        </div>
+                                        <x-button>Save dates<span class="sr-only"> for {{ $own->check_in->format('j M Y') }}</span></x-button>
+                                    </form>
+                                    <form data-keep-scroll method="POST" action="{{ route($r.'calendar.bookings.destroy', [$listing, $own->id]) }}" class="mt-2" onsubmit="return confirm('Free these dates?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="min-h-11 text-red-800 underline">Free these dates<span class="sr-only"> ({{ $own->check_in->format('j M Y') }} to {{ $own->check_out->format('j M Y') }})</span></button>
+                                    </form>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </section>
+
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="imported-heading">
+                    <h3 id="imported-heading" class="text-lg font-semibold">Stays from your imported calendars</h3>
+                    @if ($importedBookings->isEmpty())
+                        <p class="mt-2 text-sm text-slate-700">None coming up.</p>
+                    @else
+                        <p class="mt-1 text-sm text-slate-700">To change these, change them where they came from, then press Sync now on the Calendar page.</p>
+                        <ul class="mt-2 divide-y divide-slate-200">
+                            @foreach ($importedBookings as $stay)
+                                <li class="flex flex-wrap items-center justify-between gap-2 py-3">
+                                    <span>{{ $stay->check_in->format('D j M Y') }} to {{ $stay->check_out->format('D j M Y') }} <span class="text-slate-600">({{ trans_choice(':count night|:count nights', $stay->check_in->diffInDays($stay->check_out)) }})</span></span>
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-sm">From {{ $stay->feed?->name ?? 'an imported calendar' }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </section>
                 @break
 
@@ -449,7 +541,7 @@
                                             <td class="py-2 pr-3">{{ \App\Listings\Rates::money($rate->weekly_cents, $listing->currency) }}</td>
                                             <td class="py-2 pr-3">{{ \App\Listings\Rates::money($rate->fortnight_cents, $listing->currency) }}</td>
                                             <td class="py-2 text-right">
-                                                <form method="POST" action="{{ route('account.listings.rates.destroy', [$listing, $rate->id]) }}">@csrf @method('DELETE')<button type="submit" class="min-h-11 text-red-800 underline">Remove<span class="sr-only"> {{ $rate->start_date->format('j M Y') }} to {{ $rate->end_date->format('j M Y') }}</span></button></form>
+                                                <form data-keep-scroll method="POST" action="{{ route($r.'rates.destroy', [$listing, $rate->id]) }}">@csrf @method('DELETE')<button type="submit" class="min-h-11 text-red-800 underline">Remove<span class="sr-only"> {{ $rate->start_date->format('j M Y') }} to {{ $rate->end_date->format('j M Y') }}</span></button></form>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -462,14 +554,17 @@
                 <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="add-rate-heading">
                     <h3 id="add-rate-heading" class="text-lg font-semibold">Add a period</h3>
                     <p class="mt-1 text-sm text-slate-700">Both dates are included. Periods cannot overlap; to change one, remove it and add it again.</p>
-                    <form method="POST" action="{{ route('account.listings.rates.store', $listing) }}" class="mt-3">
+                    @if ($listing->arrivesAnyDay())
+                        <p class="mt-1 text-sm font-semibold">Guests can arrive any day, so each period needs a nightly rate.</p>
+                    @endif
+                    <form data-keep-scroll method="POST" action="{{ route($r.'rates.store', $listing) }}" class="mt-3">
                         @csrf
                         <div class="grid gap-x-4 sm:grid-cols-2">
                             <x-field name="start_date" label="Start date" type="date" required />
                             <x-field name="end_date" label="End date" type="date" required />
                         </div>
                         <div class="grid gap-x-4 sm:grid-cols-3">
-                            <x-field name="nightly" :label="'Per night ('.$symbol.')'" type="number" min="1" step="1" />
+                            <x-field name="nightly" :label="'Per night ('.$symbol.')'" type="number" min="1" step="1" :required="$listing->arrivesAnyDay()" />
                             <x-field name="weekly" :label="'Per week ('.$symbol.')'" type="number" min="1" step="1" />
                             <x-field name="fortnight" :label="'14 nights ('.$symbol.')'" type="number" min="1" step="1" />
                         </div>

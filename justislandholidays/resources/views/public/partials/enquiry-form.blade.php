@@ -1,10 +1,10 @@
 {{-- Enquiry form for owner and agent listings. Expects $listing. --}}
 <section id="enquiry" class="rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="enquiry-heading">
-    <h2 id="enquiry-heading" class="text-xl font-semibold">{{ __('Contact the owner') }}</h2>
-    <p class="mt-1 text-sm text-slate-700">{{ __('Your message goes straight to the owner, who will reply by email.') }}</p>
+    <h2 id="enquiry-heading" class="text-xl font-semibold">{{ $isAgent ? __('Contact the agent') : __('Contact the owner') }}</h2>
+    <p class="mt-1 text-sm text-slate-700">{{ $isAgent ? __('Your message goes straight to the agent, who will reply by email.') : __('Your message goes straight to the owner, who will reply by email.') }}</p>
 
     @if (session('enquiry_sent'))
-        <p role="status" class="mt-4 rounded border border-green-300 bg-green-50 p-4">{{ __('Thank you. Your enquiry has been sent to the owner.') }}</p>
+        <p role="status" class="mt-4 rounded border border-green-300 bg-green-50 p-4">{{ $isAgent ? __('Thank you. Your enquiry has been sent to the agent.') : __('Thank you. Your enquiry has been sent to the owner.') }}</p>
     @endif
 
     @if ($errors->any())
@@ -49,7 +49,7 @@
         <div class="mb-4 flex items-start gap-2">
             <input id="consent" name="consent" type="checkbox" value="1" class="mt-1 h-5 w-5 shrink-0" @checked(old('consent')) required>
             <label for="consent" class="text-sm">
-                {{ __('I agree that my details are sent to the owner and kept by Just Island Holidays as described in the') }}
+                {{ $isAgent ? __('I agree that my details are sent to the agent and kept by Just Island Holidays as described in the') : __('I agree that my details are sent to the owner and kept by Just Island Holidays as described in the') }}
                 <a href="{{ route('pages.show', 'privacy') }}" class="underline">{{ __('privacy notice') }}</a>.
             </label>
         </div>

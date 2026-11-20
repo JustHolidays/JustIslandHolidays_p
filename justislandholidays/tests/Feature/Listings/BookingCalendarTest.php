@@ -263,4 +263,87 @@ class BookingCalendarTest extends TestCase
         $free = Listing::factory()->live()->titled('Free home')->create(['plan_code' => 'free'])->load(['island', 'area']);
         $this->get($free->publicUrl('en'))->assertOk()->assertDontSee('id="availability"', false);
     }
+
+    public function test_pressing_a_day_returns_to_the_calendar_not_the_top(): void
+    {
+        $page = route('account.listings.edit', [$this->listing, 'calendar', 'months' => 3]);
+
+        $this->actingAs($this->owner)->from($page)
+            ->post(route('account.listings.calendar.toggle', $this->listing), ['date' => '2027-09-10'])
+            ->assertRedirect($page.'#your-calendar');
+
+        $html = $this->actingAs($this->owner)->get($page)->assertOk()->getContent();
+        $this->assertStringContainsString('id="your-calendar"', $html);
+        // Earlier and Later months keep the place as well.
+        $this->assertStringContainsString('<a data-keep-scroll href="'.route('account.listings.edit', [$this->listing, 'calendar', 'months' => 0]).'#your-calendar"', $html);
+        $this->assertStringContainsString('<a data-keep-scroll href="'.route('account.listings.edit', [$this->listing, 'calendar', 'months' => 6]).'#your-calendar"', $html);
+        $this->assertMatchesRegularExpression('#<form data-keep-scroll id="calendar-toggle"#', $html);
+        $this->assertStringNotContainsString('<form method="POST" action="'.route('account.listings.calendar.bookings.store', $this->listing), $html, 'Every calendar form keeps the place.');
+    }
+
+    public function test_booked_dates_have_their_own_page_to_change_or_free_them(): void
+    {
+        $this->stay('2027-06-10', '2027-06-13');
+        $feed = new CalendarFeed(['name' => 'Airbnb', 'url' => 'https://www.airbnb.example/cal.ics']);
+        $feed->listing_id = $this->listing->id;
+        $feed->save();
+        $this->stay('2027-07-01', '2027-07-08', $feed);
+        $this->stay('2027-05-01', '2027-05-03');   // over: not listed
+        $own = CalendarBooking::where('check_in', '2027-06-10')->sole();
+        $page = route('account.listings.edit', [$this->listing, 'bookings']);
+
+        // The Calendar step links to it instead of listing the stays.
+        $this->actingAs($this->owner)->get(route('account.listings.edit', [$this->listing, 'calendar']))->assertOk()
+            ->assertSee($page, false)->assertSee('Booked dates (2 coming up)')
+            ->assertDontSee('Free these dates');
+
+        $this->actingAs($this->owner)->get($page)->assertOk()
+            ->assertSee('Mark a stay as booked')
+            ->assertSee('Thu 10 Jun 2027 to Sun 13 Jun 2027')
+            ->assertSee('value="2027-06-10"', false)
+            ->assertSee('From Airbnb')
+            ->assertDontSee('1 May 2027');
+
+        // Change the dates of a stay the owner marked.
+        $this->actingAs($this->owner)->from($page)->put(route('account.listings.calendar.bookings.update', [$this->listing, $own->id]), ['check_in' => '2027-06-11', 'check_out' => '2027-06-15'])
+            ->assertSessionHasNoErrors()->assertRedirect($page);
+        $this->assertSame(['2027-06-11', '2027-06-15'], [$own->fresh()->check_in->toDateString(), $own->fresh()->check_out->toDateString()]);
+        $this->assertDatabaseHas('audit_log', ['action' => 'calendar.rebook']);
+
+        // Bad dates are refused and shown on that stay only.
+        $this->actingAs($this->owner)->from($page)->put(route('account.listings.calendar.bookings.update', [$this->listing, $own->id]), ['check_in' => '2027-06-15', 'check_out' => '2027-06-12'])
+            ->assertSessionHasErrorsIn('booking'.$own->id, 'check_out');
+        $this->assertSame('2027-06-15', $own->fresh()->check_out->toDateString());
+
+        // Imported stays cannot be changed here; nor can another owner's.
+        $imported = CalendarBooking::whereNotNull('feed_id')->sole();
+        $this->actingAs($this->owner)->put(route('account.listings.calendar.bookings.update', [$this->listing, $imported->id]), ['check_in' => '2027-07-02', 'check_out' => '2027-07-05'])->assertNotFound();
+        $this->actingAs(User::factory()->owner()->create())->put(route('account.listings.calendar.bookings.update', [$this->listing, $own->id]), ['check_in' => '2027-06-20', 'check_out' => '2027-06-22'])->assertForbidden();
+
+        // Free it.
+        $this->actingAs($this->owner)->from($page)->delete(route('account.listings.calendar.bookings.destroy', [$this->listing, $own->id]))->assertRedirect($page);
+        $this->assertModelMissing($own);
+    }
+
+    public function test_free_plan_has_no_booked_dates_page(): void
+    {
+        $this->listing->forceFill(['plan_code' => 'free'])->save();
+        $this->actingAs($this->owner)->get(route('account.listings.edit', [$this->listing, 'bookings']))->assertNotFound();
+    }
+
+    public function test_visitors_can_see_up_to_18_months_ahead(): void
+    {
+        // Today is 1 June 2027 in these tests, so the 18th month is November 2028.
+        $url = $this->listing->publicUrl('en');
+
+        $last = $this->get($url.'?months=15')->assertOk();
+        $last->assertSee('September 2028')->assertSee('November 2028')
+            ->assertDontSee('?months=18', false);   // no Later months after the 18th month
+        $this->get($url.'?months=12')->assertOk()->assertSee('?months=15#availability', false);
+        $this->get($url.'?months=99')->assertOk()->assertSee('November 2028')->assertDontSee('December 2028');
+
+        $embed = route('calendar.embed', $this->listing->public_ref);
+        $this->get($embed.'?months=17&show=1')->assertOk()->assertSee('November 2028')->assertDontSee('Later months');
+        $this->get($embed.'?months=99&show=3')->assertOk()->assertSee('November 2028')->assertDontSee('December 2028');
+    }
 }

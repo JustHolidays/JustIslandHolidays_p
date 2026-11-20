@@ -18,6 +18,12 @@
     <p><a href="{{ route('admin.listings.index') }}" class="inline-flex min-h-11 items-center underline">Back to listings</a></p>
     <h1 class="text-2xl font-semibold">{{ $listing->title('en') }}</h1>
     <p class="mt-1">{{ $listing->status->label() }} · {{ $listing->island->translate('name', 'en') }}, {{ $listing->area->translate('name', 'en') }} · listed by {{ $listing->owner->name }} ({{ $listing->owner->role->label() }}, {{ $listing->owner->email }})</p>
+    @can('editAsAdmin', $listing)
+        <p class="mt-3 flex flex-wrap gap-2">
+            <a href="{{ route('admin.listings.editor.edit', $listing) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-5 font-medium text-white hover:bg-slate-700">Edit the whole property</a>
+            <span class="flex min-h-11 items-center text-sm text-slate-700">Details, location, photos, link{{ $listing->hasCalendar() ? ', calendar' : '' }}{{ $listing->hasRates() ? ', rates' : '' }}: everything the {{ strtolower($listing->owner->role->label()) }} can change.</span>
+        </p>
+    @endcan
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_24rem]">
         {{-- What visitors will see --}}

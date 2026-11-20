@@ -98,14 +98,77 @@ class CalendarController extends Controller
         if (Availability::freeNight($listing, $date)) {
             $message = 'The night of '.$date->format('j F').' is free again.';
         } elseif (Availability::nightFromFeed($listing, $date)) {
-            return back()->withErrors(['date' => 'The night of '.$date->format('j F').' comes from one of your imported calendars. Change it there.']);
+            return $this->backToCalendar()->withErrors(['date' => 'The night of '.$date->format('j F').' comes from one of your imported calendars. Change it there.']);
         } else {
             Availability::bookNight($listing, $date);
             $message = 'The night of '.$date->format('j F').' is marked as booked.';
         }
         Audit::record($request->user(), 'calendar.toggle', $listing, null, ['date' => $date->toDateString()]);
 
-        return back()->with('status', $message);
+        return $this->backToCalendar()->with('status', $message);
+    }
+
+    /**
+     * When guests can arrive: any day, or one fixed changeover day (Monday to Sunday).
+     * "Any day" needs a nightly rate in every rate period still to come.
+     */
+    public function saveChangeover(Request $request, Listing $listing): RedirectResponse
+    {
+        $this->ensureCalendar($listing);
+        $data = $request->validate([
+            'arrivals' => ['required', \Illuminate\Validation\Rule::in(['any', 'fixed'])],
+            'changeover_day' => ['required_if:arrivals,fixed', 'nullable', 'integer', 'between:1,7'],
+        ], [
+            'arrivals.required' => 'Choose when guests can arrive.',
+            'changeover_day.required_if' => 'Choose your changeover day.',
+        ]);
+
+        if ($data['arrivals'] === 'any') {
+            $missing = \App\Models\ListingRate::where('listing_id', $listing->id)
+                ->where('end_date', '>=', today()->toDateString())
+                ->whereNull('nightly_cents')
+                ->orderBy('start_date')->get();
+            if ($missing->isNotEmpty()) {
+                $periods = $missing->map(fn ($r) => $r->start_date->format('j M Y').' to '.$r->end_date->format('j M Y'))->implode('; ');
+
+                return back()->withErrors(['arrivals' => 'To let guests arrive any day, every rate period needs a nightly rate. Add one in Rates for: '.$periods.'.'])->withInput();
+            }
+        }
+
+        $day = $data['arrivals'] === 'any' ? 0 : (int) $data['changeover_day'];
+        $before = $listing->changeover_day;
+        $listing->forceFill(['changeover_day' => $day])->save();
+        Audit::record($request->user(), 'calendar.changeover', $listing, null, ['before' => $before, 'after' => $day]);
+
+        return back()->with('status', $day === 0
+            ? 'Saved: guests can arrive any day.'
+            : 'Saved: your changeover day is '.Listing::CHANGEOVER_DAYS[$day].'. It shows above the calendar on your listing.');
+    }
+
+    /** Changes the dates of a stay the owner marked (on the Booked dates page). Imported stays change at their source. */
+    public function updateBooking(Request $request, Listing $listing, int $booking): RedirectResponse
+    {
+        $this->ensureCalendar($listing);
+        $record = CalendarBooking::where('listing_id', $listing->id)->whereNull('feed_id')->whereKey($booking)->firstOrFail();
+
+        $errorBag = 'booking'.$record->id;
+        $validator = validator($request->all(), [
+            'check_in' => ['required', 'date', 'after_or_equal:today', 'before:+3 years'],
+            'check_out' => ['required', 'date', 'after:check_in'],
+        ], [
+            'check_in.after_or_equal' => 'The arrival date cannot be in the past.',
+            'check_out.after' => 'The departure date must be after the arrival date.',
+        ]);
+        if ($validator->fails()) {
+            return back()->withErrors($validator, $errorBag)->withInput();
+        }
+        $data = $validator->validated();
+
+        $before = ['check_in' => $record->check_in->toDateString(), 'check_out' => $record->check_out->toDateString()];
+        $record->fill($data)->save();
+        Audit::record($request->user(), 'calendar.rebook', $listing, null, ['booking_id' => $record->id, 'before' => $before, 'after' => $data]);
+
+        return back()->with('status', 'Stay changed to '.CarbonImmutable::parse($data['check_in'])->format('j M Y').' to '.CarbonImmutable::parse($data['check_out'])->format('j M Y').'.');
     }
 
     public function removeBooking(Request $request, Listing $listing, int $booking): RedirectResponse
@@ -115,6 +178,15 @@ class CalendarController extends Controller
         Audit::record($request->user(), 'calendar.unbook', $listing, null, ['booking_id' => $booking]);
 
         return back()->with('status', 'Those dates are free again.');
+    }
+
+    /**
+     * Back to the editor at the calendar itself, not the top of the page. The page script also
+     * puts the visitor back exactly where they were; this anchor is for when script is off.
+     */
+    private function backToCalendar(): RedirectResponse
+    {
+        return redirect()->to(strtok(url()->previous(), '#').'#your-calendar');
     }
 
     private function ensureCalendar(Listing $listing): void

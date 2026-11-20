@@ -19,4 +19,10 @@ class CalendarBooking extends Model
     {
         return ['check_in' => 'date', 'check_out' => 'date'];
     }
+
+    /** The imported calendar a stay came from; null when the owner marked it. */
+    public function feed(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(CalendarFeed::class, 'feed_id');
+    }
 }

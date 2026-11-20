@@ -25,7 +25,7 @@
     @vite(array_merge(['resources/css/app.css', 'resources/js/app.js'], $extraScripts ?? []))
     @stack('head')
 </head>
-<body class="flex min-h-screen flex-col bg-[var(--colour-background)] text-[var(--colour-text)] antialiased">
+<body id="top" class="flex min-h-screen flex-col bg-[var(--colour-background)] text-[var(--colour-text)] antialiased">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2">{{ __('Skip to content') }}</a>
 
     @if ($previewing)
@@ -93,5 +93,13 @@
             </nav>
         </div>
     </footer>
+
+    {{-- Back to top (20 Nov 2026): bottom right on every public page. It works as a plain link;
+         app.js hides it near the top of the page and shows it once the visitor scrolls down. --}}
+    <a href="#top" data-back-to-top
+       class="fixed bottom-4 right-4 z-[1000] inline-flex min-h-12 min-w-12 items-center justify-center gap-1 rounded-full bg-orange-700 px-4 font-semibold text-white no-underline shadow-lg transition-opacity hover:bg-orange-800 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-800 focus-visible:ring-2 focus-visible:ring-white">
+        <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5"><path fill-rule="evenodd" d="M10 3a1 1 0 0 1 .7.3l5 5a1 1 0 0 1-1.4 1.4L11 6.4V16a1 1 0 1 1-2 0V6.4L5.7 9.7a1 1 0 0 1-1.4-1.4l5-5A1 1 0 0 1 10 3Z" clip-rule="evenodd"/></svg>
+        <span>{{ __('Back to top') }}</span>
+    </a>
 </body>
 </html>

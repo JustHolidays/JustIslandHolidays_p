@@ -25,8 +25,9 @@ class CalendarEmbedController extends Controller
             404,
         );
 
-        $offset = max(0, min(9, (int) request()->query('months', 0)));
         $count = max(1, min(3, (int) request()->query('show', 3)));
+        $maxOffset = Availability::maxPublicOffset($count);   // up to 18 months ahead
+        $offset = max(0, min($maxOffset, (int) request()->query('months', 0)));
 
         return response()
             ->view('public.calendar-embed', [
@@ -34,6 +35,7 @@ class CalendarEmbedController extends Controller
                 'months' => Availability::months($listing, CarbonImmutable::today()->startOfMonth()->addMonths($offset), $count),
                 'offset' => $offset,
                 'count' => $count,
+                'maxOffset' => $maxOffset,
             ])
             ->header('X-Robots-Tag', 'noindex, nofollow')
             ->header('Cache-Control', 'public, max-age=300');

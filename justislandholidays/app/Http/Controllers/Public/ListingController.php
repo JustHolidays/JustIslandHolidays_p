@@ -44,19 +44,38 @@ class ListingController extends Controller
             ->limit(config('site.similar_count'))
             ->get();
 
+        $isAffiliate = $listing->isAffiliateListing();
+        $rates = $listing->hasRates() ? \App\Listings\Rates::upcoming($listing) : collect();
+        $calendarMaxOffset = \App\Calendar\Availability::maxPublicOffset(3);   // 18 months, 3 at a time
+        $offset = max(0, min($calendarMaxOffset, (int) request()->query('months', 0)));
+        $calendarMonths = $listing->hasCalendar()
+            ? \App\Calendar\Availability::months($listing, \Carbon\CarbonImmutable::today()->startOfMonth()->addMonths($offset), 3)
+            : null;
+
+        // Bookmark menu under the title (owner and agent homes, 20 Nov 2026): only the sections this home has.
+        $bookmarks = $isAffiliate ? [] : array_filter([
+            'key-facts' => __('Key facts'),
+            'rates' => $rates->isNotEmpty() ? __('Rates') : null,
+            'availability' => $calendarMonths ? __('Availability') : null,
+            'features' => $listing->amenities->isNotEmpty() ? __('Features') : null,
+            'location' => __('Location'),
+        ]);
+
         return view('public.listing', [
             'listing' => $listing,
             'similar' => $similar,
-            'isAffiliate' => $listing->isAffiliateListing(),
+            'isAffiliate' => $isAffiliate,
+            // Agents' properties say "the agent" instead of "the owner" (20 Nov 2026).
+            'isAgent' => $listing->owner?->role === \App\Enums\Role::Agent,
             'directContact' => \App\Listings\DirectContact::for($listing),
             'sidebarAdverts' => \App\Ads\IslandAdverts::sidebarFor($listing->island),   // Sidebar Section
             // Rates table (paid plans): periods that have not ended yet.
-            'rates' => $listing->hasRates() ? \App\Listings\Rates::upcoming($listing) : collect(),
-            // Booking calendar (paid plans): 3 months at a time, up to a year ahead.
-            'calendarOffset' => $offset = max(0, min(9, (int) request()->query('months', 0))),
-            'calendarMonths' => $listing->hasCalendar()
-                ? \App\Calendar\Availability::months($listing, \Carbon\CarbonImmutable::today()->startOfMonth()->addMonths($offset), 3)
-                : null,
+            'rates' => $rates,
+            // Booking calendar (paid plans): 3 months at a time, up to 18 months ahead.
+            'calendarOffset' => $offset,
+            'calendarMaxOffset' => $calendarMaxOffset,
+            'calendarMonths' => $calendarMonths,
+            'bookmarks' => $bookmarks,
             'canonical' => $canonical,
             'alternates' => collect(config('site.enabled_languages'))
                 ->mapWithKeys(fn ($l) => [$l => $listing->publicUrl($l)])->all(),

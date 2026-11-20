@@ -26,6 +26,20 @@ class ListingPolicy
         return $this->isLister($user, $listing);
     }
 
+    /**
+     * The full property editor in the admin area (20 Nov 2026): owner and agent properties,
+     * for super admins and for island admins on their own islands. Affiliate properties are
+     * edited through their own admin pages.
+     */
+    public function editAsAdmin(User $user, Listing $listing): bool
+    {
+        if ($listing->isAffiliateListing()) {
+            return false;
+        }
+
+        return $user->isSuperAdmin() || ($user->isIslandAdmin() && $user->managesIsland($listing->island_id));
+    }
+
     /** Lister sends a draft for review. */
     public function submit(User $user, Listing $listing): bool
     {

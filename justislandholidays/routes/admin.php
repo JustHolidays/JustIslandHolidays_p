@@ -39,6 +39,32 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     // Add a property for an owner or agent (island admins for their own islands).
     Route::get('/listings/add', [\App\Http\Controllers\Admin\PropertyCreateController::class, 'create'])->name('listings.create');
     Route::post('/listings/add', [\App\Http\Controllers\Admin\PropertyCreateController::class, 'store'])->name('listings.store');
+    // Full property editor for owner and agent properties (20 Nov 2026): the owner's own editor
+    // steps, run in the admin area. Super admins, and island admins on their own islands.
+    Route::middleware('can:editAsAdmin,listing')->prefix('/listings/{listing}/editor')->name('listings.editor.')->group(function () {
+        $editor = \App\Http\Controllers\Account\ListingEditorController::class;
+        $calendar = \App\Http\Controllers\Account\CalendarController::class;
+        $rates = \App\Http\Controllers\Account\RatesController::class;
+
+        Route::get('/{step?}', [$editor, 'edit'])->where('step', 'basics|location|photo|link|calendar|bookings|rates')->name('edit');
+        Route::put('/basics', [$editor, 'updateBasics'])->name('basics');
+        Route::put('/location', [$editor, 'updateLocation'])->name('location');
+        Route::put('/photo', [$editor, 'updatePhoto'])->name('photo');
+        Route::post('/photos', [$editor, 'addPhoto'])->name('photos.store');
+        Route::delete('/photos/{photo}', [$editor, 'removePhoto'])->whereNumber('photo')->name('photos.destroy');
+        Route::put('/link', [$editor, 'updateLink'])->name('link');
+        Route::post('/calendar/feeds', [$calendar, 'addFeed'])->middleware('throttle:10,1')->name('calendar.feeds.store');
+        Route::post('/calendar/feeds/{feed}/sync', [$calendar, 'syncFeed'])->whereNumber('feed')->middleware('throttle:10,1')->name('calendar.feeds.sync');
+        Route::delete('/calendar/feeds/{feed}', [$calendar, 'removeFeed'])->whereNumber('feed')->name('calendar.feeds.destroy');
+        Route::post('/calendar/bookings', [$calendar, 'addBooking'])->name('calendar.bookings.store');
+        Route::put('/calendar/changeover', [$calendar, 'saveChangeover'])->name('calendar.changeover');
+        Route::post('/calendar/toggle', [$calendar, 'toggleNight'])->name('calendar.toggle');
+        Route::put('/calendar/bookings/{booking}', [$calendar, 'updateBooking'])->whereNumber('booking')->name('calendar.bookings.update');
+        Route::delete('/calendar/bookings/{booking}', [$calendar, 'removeBooking'])->whereNumber('booking')->name('calendar.bookings.destroy');
+        Route::post('/rates', [$rates, 'store'])->middleware('throttle:30,1')->name('rates.store');
+        Route::delete('/rates/{rate}', [$rates, 'destroy'])->whereNumber('rate')->name('rates.destroy');
+    });
+
     Route::get('/listings/{listing}', [ListingController::class, 'show'])->middleware('can:view,listing')->name('listings.show');
     Route::put('/listings/{listing}', [ListingController::class, 'update'])->name('listings.update');
     Route::post('/listings/{listing}/approve', [ListingController::class, 'approve'])->name('listings.approve');
