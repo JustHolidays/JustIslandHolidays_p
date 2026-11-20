@@ -54,7 +54,13 @@ class ReconcileListings extends Command
             }
         });
 
-        Audit::record(null, 'job.reconcile', 'job', 'listings:reconcile', ['expired_subscriptions' => $expired->count(), 'rank_changes' => $refreshed]);
+        // From prices set by the rates table move on as rate periods end.
+        $prices = 0;
+        Listing::whereIn('id', \App\Models\ListingRate::select('listing_id'))->with('owner')->each(function (Listing $listing) use (&$prices) {
+            $prices += \App\Listings\Rates::sync($listing) ? 1 : 0;
+        });
+
+        Audit::record(null, 'job.reconcile', 'job', 'listings:reconcile', ['expired_subscriptions' => $expired->count(), 'rank_changes' => $refreshed, 'from_prices_from_rates' => $prices]);
         $this->info("Expired {$expired->count()} subscriptions; {$refreshed} rank scores changed.");
 
         return self::SUCCESS;

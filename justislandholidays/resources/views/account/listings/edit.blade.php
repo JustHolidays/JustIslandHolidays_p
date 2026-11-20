@@ -111,7 +111,16 @@
                     <x-field name="distance_to_beach_m" label="Distance to the nearest beach, in metres (optional)" type="number" min="0" :value="$listing->distance_to_beach_m" />
 
                     <div class="grid grid-cols-[1fr_8rem] gap-4">
-                        <x-field name="price" :label="$isAffiliate ? 'From price per week (optional)' : 'From price per week'" type="number" min="1" step="1" hint="Your lowest weekly price, shown as From Price. You confirm the final price with guests." :required="! $isAffiliate" :value="$listing->min_price_week_cents !== null ? intdiv($listing->min_price_week_cents, 100) : null" />
+                        @if ($priceFromRates !== null)
+                            <div class="mb-4">
+                                <p class="mb-1 font-medium">From price per week</p>
+                                <p class="flex min-h-11 items-center">{{ $listing->guidePrice() }}</p>
+                                <p class="text-sm text-slate-700">Set from your <a href="{{ route('account.listings.edit', [$listing, 'rates']) }}" class="underline">Rates</a>: your lowest weekly rate still to come.</p>
+                                <input type="hidden" name="price" value="{{ intdiv($priceFromRates, 100) }}">
+                            </div>
+                        @else
+                            <x-field name="price" :label="$isAffiliate ? 'From price per week (optional)' : 'From price per week'" type="number" min="1" step="1" :hint="$listing->exists && $listing->hasRates() ? 'Your lowest weekly price, shown as From Price. Add weekly rates in the Rates step and this is set for you.' : 'Your lowest weekly price, shown as From Price. You confirm the final price with guests.'" :required="! $isAffiliate" :value="$listing->min_price_week_cents !== null ? intdiv($listing->min_price_week_cents, 100) : null" />
+                        @endif
                         <div class="mb-4">
                             <label for="currency" class="mb-1 block font-medium">Currency</label>
                             <select id="currency" name="currency" class="{{ $input }}">
@@ -359,6 +368,20 @@
                     @endif
                 </section>
 
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="embed-heading">
+                    <h3 id="embed-heading" class="text-lg font-semibold">Show this calendar on your own website</h3>
+                    @if ($listing->status->value === 'live')
+                        <p class="mt-1 text-sm text-slate-700">Copy this code into your website (an "embed" or "HTML" block). The calendar stays up to date by itself.</p>
+                        <label for="embed-code" class="mt-3 block font-medium">iFrame code</label>
+                        <textarea id="embed-code" rows="3" readonly class="mt-1 block w-full rounded border border-slate-400 bg-slate-50 px-3 py-2 font-mono text-sm" onfocus="this.select()">{{ \App\Http\Controllers\Public\CalendarEmbedController::snippet($listing) }}</textarea>
+                        <label for="embed-url" class="mt-3 block font-medium">Or just the address</label>
+                        <input id="embed-url" type="text" readonly value="{{ \App\Http\Controllers\Public\CalendarEmbedController::url($listing) }}" class="mt-1 block min-h-11 w-full rounded border border-slate-400 bg-slate-50 px-3 font-mono text-sm" onfocus="this.select()">
+                        <p class="mt-2 text-sm"><a href="{{ \App\Http\Controllers\Public\CalendarEmbedController::url($listing) }}" target="_blank" rel="noopener" class="underline">Preview it (new tab)</a></p>
+                    @else
+                        <p class="mt-1 text-sm text-slate-700">Once your listing is live, you will find the code here to show this calendar on your own website.</p>
+                    @endif
+                </section>
+
                 <section aria-labelledby="cal-heading">
                     <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <h3 id="cal-heading" class="text-lg font-semibold">Your calendar</h3>
@@ -370,6 +393,66 @@
                     <form id="calendar-toggle" method="POST" action="{{ route('account.listings.calendar.toggle', $listing) }}">@csrf</form>
                     @error('date')<p class="mb-3 text-sm font-medium text-red-800">{{ $message }}</p>@enderror
                     @include('partials.calendar-months', ['months' => $months, 'toggleAction' => true])
+                </section>
+                @break
+
+            @case('rates')
+                @php($symbol = ($listing->currency ?? 'EUR') === 'GBP' ? '£' : '€')
+                <h2 class="mb-2 text-xl font-semibold">Rates</h2>
+                <p class="mb-2">Add your prices for each period of the year. Guests see them as a table on your listing. Each period needs at least one price; leave the others empty if you do not offer them.</p>
+                <p class="mb-6">Your From price is set from this table: it is your lowest weekly rate still to come{{ $priceFromRates !== null ? ', now '.$listing->guidePrice() : '' }}. Prices are in {{ $symbol === '£' ? 'pounds' : 'euros' }}; you can change the currency in the Basics step.</p>
+
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="rates-heading">
+                    <h3 id="rates-heading" class="text-lg font-semibold">Your rate periods</h3>
+                    @if ($rates->isEmpty())
+                        <p class="mt-2 text-sm text-slate-700">No rates yet. Add your first period below.</p>
+                    @else
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full min-w-[36rem] text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-slate-300">
+                                        <th scope="col" class="py-2 pr-3">Dates</th>
+                                        <th scope="col" class="py-2 pr-3">Per night</th>
+                                        <th scope="col" class="py-2 pr-3">Per week</th>
+                                        <th scope="col" class="py-2 pr-3">14 nights</th>
+                                        <th scope="col" class="py-2"><span class="sr-only">Remove</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($rates as $rate)
+                                        @php($ended = $rate->end_date->lt(today()))
+                                        <tr @class(['border-b border-slate-200', 'text-slate-500' => $ended]) data-rate="{{ $rate->id }}">
+                                            <td class="py-2 pr-3">{{ $rate->start_date->format('j M Y') }} to {{ $rate->end_date->format('j M Y') }}@if ($ended) <span class="block text-xs">Ended, not shown to guests</span>@endif</td>
+                                            <td class="py-2 pr-3">{{ \App\Listings\Rates::money($rate->nightly_cents, $listing->currency) }}</td>
+                                            <td class="py-2 pr-3">{{ \App\Listings\Rates::money($rate->weekly_cents, $listing->currency) }}</td>
+                                            <td class="py-2 pr-3">{{ \App\Listings\Rates::money($rate->fortnight_cents, $listing->currency) }}</td>
+                                            <td class="py-2 text-right">
+                                                <form method="POST" action="{{ route('account.listings.rates.destroy', [$listing, $rate->id]) }}">@csrf @method('DELETE')<button type="submit" class="min-h-11 text-red-800 underline">Remove<span class="sr-only"> {{ $rate->start_date->format('j M Y') }} to {{ $rate->end_date->format('j M Y') }}</span></button></form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </section>
+
+                <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="add-rate-heading">
+                    <h3 id="add-rate-heading" class="text-lg font-semibold">Add a period</h3>
+                    <p class="mt-1 text-sm text-slate-700">Both dates are included. Periods cannot overlap; to change one, remove it and add it again.</p>
+                    <form method="POST" action="{{ route('account.listings.rates.store', $listing) }}" class="mt-3">
+                        @csrf
+                        <div class="grid gap-x-4 sm:grid-cols-2">
+                            <x-field name="start_date" label="Start date" type="date" required />
+                            <x-field name="end_date" label="End date" type="date" required />
+                        </div>
+                        <div class="grid gap-x-4 sm:grid-cols-3">
+                            <x-field name="nightly" :label="'Per night ('.$symbol.')'" type="number" min="1" step="1" />
+                            <x-field name="weekly" :label="'Per week ('.$symbol.')'" type="number" min="1" step="1" />
+                            <x-field name="fortnight" :label="'14 nights ('.$symbol.')'" type="number" min="1" step="1" />
+                        </div>
+                        <x-button>Add period</x-button>
+                    </form>
                 </section>
                 @break
 

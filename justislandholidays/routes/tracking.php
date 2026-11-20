@@ -20,6 +20,12 @@ Route::get('/api/map', \App\Http\Controllers\Public\MapController::class)
     ->middleware('throttle:60,1')
     ->name('api.map');
 
+// Booking calendar for owners to put on their own website in an iframe (paid plans).
+Route::get('/embed/calendar/{ref}', \App\Http\Controllers\Public\CalendarEmbedController::class)
+    ->where('ref', '[a-z2-9]{8}')
+    ->middleware('throttle:120,1')
+    ->name('calendar.embed');
+
 // Our partners page: a logo click is counted per day, then on to the affiliate's home page.
 Route::get('/go/partner/{id}', [\App\Http\Controllers\Public\PartnerController::class, 'go'])
     ->whereNumber('id')

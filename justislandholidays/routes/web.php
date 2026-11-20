@@ -69,11 +69,14 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
 
             Route::middleware('can:editAsLister,listing')->group(function () {
                 Route::get('/listings/{listing}/edit/{step?}', [ListingEditorController::class, 'edit'])
-                    ->where('step', 'basics|location|photo|link|licence|calendar|review')->name('listings.edit');
+                    ->where('step', 'basics|location|photo|link|licence|calendar|rates|review')->name('listings.edit');
                 Route::put('/listings/{listing}/basics', [ListingEditorController::class, 'updateBasics'])->name('listings.basics');
                 Route::put('/listings/{listing}/location', [ListingEditorController::class, 'updateLocation'])->name('listings.location');
                 Route::put('/listings/{listing}/photo', [ListingEditorController::class, 'updatePhoto'])->name('listings.photo');
                 Route::post('/listings/{listing}/photos', [ListingEditorController::class, 'addPhoto'])->name('listings.photos.store');
+                // Rates table (paid plans).
+                Route::post('/listings/{listing}/rates', [\App\Http\Controllers\Account\RatesController::class, 'store'])->middleware('throttle:30,1')->name('listings.rates.store');
+                Route::delete('/listings/{listing}/rates/{rate}', [\App\Http\Controllers\Account\RatesController::class, 'destroy'])->whereNumber('rate')->name('listings.rates.destroy');
                 // Booking calendar (paid plans).
                 Route::post('/listings/{listing}/calendar/feeds', [\App\Http\Controllers\Account\CalendarController::class, 'addFeed'])->middleware('throttle:10,1')->name('listings.calendar.feeds.store');
                 Route::post('/listings/{listing}/calendar/feeds/{feed}/sync', [\App\Http\Controllers\Account\CalendarController::class, 'syncFeed'])->whereNumber('feed')->middleware('throttle:10,1')->name('listings.calendar.feeds.sync');

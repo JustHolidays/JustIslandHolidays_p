@@ -12,7 +12,7 @@ class RobotsController extends Controller
     {
         $body = config('site.block_indexing')
             ? "User-agent: *\nDisallow: /\n"
-            : "User-agent: *\nDisallow: /account\nDisallow: /admin\nDisallow: /go/\nDisallow: /altcha/\nDisallow: /api/\n";
+            : "User-agent: *\nDisallow: /account\nDisallow: /admin\nDisallow: /go/\nDisallow: /altcha/\nDisallow: /api/\nDisallow: /embed/\n";
 
         return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8', 'Cache-Control' => 'public, max-age=3600']);
     }

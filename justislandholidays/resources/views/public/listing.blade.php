@@ -101,6 +101,41 @@
                     @endif
                 </section>
 
+                @if ($rates->isNotEmpty())
+                    <section class="mt-8" id="rates" aria-labelledby="rates-heading">
+                        <h2 id="rates-heading" class="text-xl font-semibold">{{ __('Rates') }}</h2>
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="w-full min-w-[30rem] text-left">
+                                <thead>
+                                    <tr class="border-b-2 border-slate-300">
+                                        <th scope="col" class="py-2 pr-3">{{ __('Dates') }}</th>
+                                        <th scope="col" class="py-2 pr-3">{{ __('Per night') }}</th>
+                                        <th scope="col" class="py-2 pr-3">{{ __('Per week') }}</th>
+                                        <th scope="col" class="py-2">{{ __('14 nights') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($rates as $rate)
+                                        <tr class="border-b border-slate-200">
+                                            <td class="py-2 pr-3">{{ $rate->start_date->translatedFormat('j M Y') }} {{ __('to') }} {{ $rate->end_date->translatedFormat('j M Y') }}</td>
+                                            @foreach (['nightly_cents', 'weekly_cents', 'fortnight_cents'] as $column)
+                                                <td class="py-2 pr-3">
+                                                    @if ($rate->{$column} === null)
+                                                        <span aria-hidden="true">–</span><span class="sr-only">{{ __('Not offered') }}</span>
+                                                    @else
+                                                        {{ \App\Listings\Rates::money($rate->{$column}, $listing->currency) }}
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-2 text-sm text-slate-700">{{ __('Prices are a guide from the owner. The owner confirms the final price and terms.') }}</p>
+                    </section>
+                @endif
+
                 @if ($calendarMonths)
                     <section class="mt-8" id="availability" aria-labelledby="availability-heading">
                         <div class="flex flex-wrap items-center justify-between gap-2">

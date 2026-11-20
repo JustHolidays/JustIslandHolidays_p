@@ -18,7 +18,13 @@ class SecurityHeaders
         $headers = $response->headers;
 
         $headers->set('X-Content-Type-Options', 'nosniff');
-        $headers->set('X-Frame-Options', 'SAMEORIGIN');
+        if ($request->routeIs('calendar.embed')) {
+            // The booking calendar embed is made to sit in an iframe on owners' own websites.
+            $headers->remove('X-Frame-Options');
+            $headers->set('Content-Security-Policy', 'frame-ancestors *');
+        } else {
+            $headers->set('X-Frame-Options', 'SAMEORIGIN');
+        }
         $headers->set('Referrer-Policy', $headers->get('Referrer-Policy') ?? 'strict-origin-when-cross-origin');
         $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
         $headers->set('Cross-Origin-Opener-Policy', 'same-origin');

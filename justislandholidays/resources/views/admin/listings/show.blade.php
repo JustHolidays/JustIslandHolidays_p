@@ -167,7 +167,7 @@
                 <x-field name="bedrooms" label="Bedrooms" type="number" min="0" :value="$listing->bedrooms" />
                 <x-field name="bathrooms" label="Bathrooms" type="number" min="0" :value="$listing->bathrooms" />
                 <x-field name="sleeps" label="Sleeps" type="number" min="1" max="40" :value="$listing->sleeps" />
-                <x-field name="price" label="From price per week" type="number" min="1" :value="$listing->min_price_week_cents !== null ? intdiv($listing->min_price_week_cents, 100) : null" />
+                <x-field name="price" label="From price per week" type="number" min="1" :hint="\App\Listings\Rates::fromPrice($listing) !== null ? 'Set from the owner’s rates table (lowest weekly rate still to come), so a change here is replaced.' : null" :value="$listing->min_price_week_cents !== null ? intdiv($listing->min_price_week_cents, 100) : null" />
                 <div><label for="pets" class="mb-1 block font-medium">Pets</label><select id="pets" name="pets" class="{{ $input }}">@foreach (['yes' => 'Allowed', 'no' => 'Not allowed', 'not_stated' => 'Not stated'] as $v => $l)<option value="{{ $v }}" @selected($pets === $v)>{{ $l }}</option>@endforeach</select></div>
                 <div class="flex min-h-11 items-center gap-2"><input type="hidden" name="has_private_pool" value="0"><input id="has_private_pool" type="checkbox" name="has_private_pool" value="1" class="h-5 w-5" @checked($listing->has_private_pool)><label for="has_private_pool">Private pool</label></div>
                 <div class="md:col-span-2"><x-field name="image_alt" label="Photo description" :value="$listing->image_alt" maxlength="160" /></div>

@@ -96,6 +96,9 @@ class ListingEditorController extends Controller
         if ($step === 'calendar' && ! $listing->hasCalendar()) {
             abort(404);   // paid plans only
         }
+        if ($step === 'rates' && ! $listing->hasRates()) {
+            abort(404);   // paid plans only
+        }
 
         return view('account.listings.edit', $this->editorData($request, $listing, $step));
     }
@@ -462,6 +465,9 @@ class ListingEditorController extends Controller
         if ($listing->exists && $listing->hasCalendar()) {
             $steps['calendar'] = 'Calendar';   // paid plans
         }
+        if ($listing->exists && $listing->hasRates()) {
+            $steps['rates'] = 'Rates';         // paid plans
+        }
         $steps['review'] = 'Review and send';
 
         $calendar = [];
@@ -476,7 +482,12 @@ class ListingEditorController extends Controller
             ];
         }
 
+        if ($step === 'rates') {
+            $calendar['rates'] = $listing->rates()->get();
+        }
+
         return $calendar + [
+            'priceFromRates' => \App\Listings\Rates::fromPrice($listing),
             'listing' => $listing,
             'step' => $step,
             'steps' => $steps,

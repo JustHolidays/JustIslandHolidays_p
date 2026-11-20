@@ -50,6 +50,8 @@ class ListingController extends Controller
             'isAffiliate' => $listing->isAffiliateListing(),
             'directContact' => \App\Listings\DirectContact::for($listing),
             'sidebarAdverts' => \App\Ads\IslandAdverts::sidebarFor($listing->island),   // Sidebar Section
+            // Rates table (paid plans): periods that have not ended yet.
+            'rates' => $listing->hasRates() ? \App\Listings\Rates::upcoming($listing) : collect(),
             // Booking calendar (paid plans): 3 months at a time, up to a year ahead.
             'calendarOffset' => $offset = max(0, min(9, (int) request()->query('months', 0))),
             'calendarMonths' => $listing->hasCalendar()

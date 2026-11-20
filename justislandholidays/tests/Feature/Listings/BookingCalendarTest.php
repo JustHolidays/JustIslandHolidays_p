@@ -205,6 +205,48 @@ class BookingCalendarTest extends TestCase
         $this->actingAs($freeOwner)->post(route('account.listings.calendar.toggle', $this->listing), ['date' => '2027-06-15'])->assertForbidden();
     }
 
+    // --- iFrame embed ------------------------------------------------------------------------
+
+    public function test_paid_plan_calendar_can_be_embedded_in_an_iframe(): void
+    {
+        $this->stay('2027-06-10', '2027-06-13');
+        $url = route('calendar.embed', $this->listing->public_ref);
+
+        $response = $this->get($url)->assertOk()
+            ->assertHeaderMissing('X-Frame-Options')
+            ->assertHeader('Content-Security-Policy', 'frame-ancestors *')
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow')
+            ->assertHeaderMissing('Set-Cookie');
+        $html = $response->getContent();
+        $this->assertStringContainsString('data-calendar-embed', $html);
+        $this->assertStringContainsString('data-day="2027-06-10" data-state="pm"', $html);
+        $this->assertStringContainsString($this->listing->publicUrl('en'), $html, 'Links back to the listing.');
+        $this->assertStringNotContainsString('<footer', $html, 'No menu or footer.');
+        $this->assertStringNotContainsString('calendar-toggle', $html, 'Read only.');
+
+        // Other pages still cannot be framed.
+        $this->get($this->listing->publicUrl('en'))->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+    }
+
+    public function test_the_owner_gets_the_iframe_code(): void
+    {
+        $this->actingAs($this->owner)->get("/account/listings/{$this->listing->id}/edit/calendar")->assertOk()
+            ->assertSee('Show this calendar on your own website')
+            ->assertSee('&lt;iframe src=&quot;'.route('calendar.embed', $this->listing->public_ref).'&quot;', false);
+    }
+
+    public function test_no_embed_for_free_plans_affiliates_or_listings_that_are_not_live(): void
+    {
+        $free = Listing::factory()->live()->create(['plan_code' => 'free']);
+        $affiliate = Listing::factory()->live()->create(['plan_code' => 'standard', 'owner_id' => User::factory()->affiliate()]);
+        $draft = Listing::factory()->create(['plan_code' => 'standard']);
+
+        foreach ([$free, $affiliate, $draft] as $listing) {
+            $this->get(route('calendar.embed', $listing->public_ref))->assertNotFound();
+        }
+        $this->get('/robots.txt')->assertSee('Disallow: /embed/');
+    }
+
     public function test_the_property_page_shows_the_calendar_with_half_days(): void
     {
         $this->stay('2027-06-10', '2027-06-13');

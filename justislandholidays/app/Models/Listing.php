@@ -51,6 +51,14 @@ class Listing extends Model
         static::creating(function (Listing $listing) {
             $listing->public_ref ??= static::newPublicRef();
         });
+
+        // While the rates table has a weekly rate still to come, the From price follows it.
+        static::saving(function (Listing $listing) {
+            $price = \App\Listings\Rates::fromPrice($listing);
+            if ($price !== null) {
+                $listing->min_price_week_cents = $price;
+            }
+        });
     }
 
     /** Short random code for URLs; avoids look-alike characters. */
@@ -239,6 +247,17 @@ class Listing extends Model
     public function calendarBookings(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(CalendarBooking::class)->orderBy('check_in');
+    }
+
+    /** The rates table: owner and agent properties on any plan but Free. */
+    public function hasRates(): bool
+    {
+        return ! $this->isAffiliateListing() && $this->plan_code !== null && $this->plan_code !== 'free';
+    }
+
+    public function rates(): HasMany
+    {
+        return $this->hasMany(ListingRate::class)->orderBy('start_date')->orderBy('id');
     }
 
     /** Extra photos after the main one, in order. */
