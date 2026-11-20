@@ -132,7 +132,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        <p class="mt-2 text-sm text-slate-700">{{ __('Prices are a guide from the owner. The owner confirms the final price and terms.') }}</p>
                     </section>
                 @endif
 
