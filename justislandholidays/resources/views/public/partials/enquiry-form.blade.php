@@ -4,7 +4,7 @@
     <p class="mt-1 text-sm text-slate-700">{{ $isAgent ? __('Your message goes straight to the agent, who will reply by email.') : __('Your message goes straight to the owner, who will reply by email.') }}</p>
 
     @if (session('enquiry_sent'))
-        <p role="status" class="mt-4 rounded border border-green-300 bg-green-50 p-4">{{ $isAgent ? __('Thank you. Your enquiry has been sent to the agent.') : __('Thank you. Your enquiry has been sent to the owner.') }}</p>
+        <p role="status" class="mt-4 rounded border border-green-300 bg-green-50 p-4">{{ $isAgent ? __('Thank you. Your enquiry has been sent to the agent.') : __('Thank you. Your enquiry has been sent to the owner.') }} @if (session('enquiry_ref')) {{ __('Your reference is :ref.', ['ref' => session('enquiry_ref')]) }}@endif</p>
     @endif
 
     @if ($errors->any())

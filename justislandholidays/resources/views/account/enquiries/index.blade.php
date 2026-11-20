@@ -21,6 +21,7 @@
                 <caption class="sr-only">Enquiries, newest first</caption>
                 <thead>
                     <tr class="border-b border-slate-300">
+                        <th scope="col" class="p-3">Ref</th>
                         <th scope="col" class="p-3">Received</th>
                         <th scope="col" class="p-3">From</th>
                         <th scope="col" class="p-3">Listing</th>
@@ -31,6 +32,7 @@
                 <tbody>
                     @foreach ($enquiries as $enquiry)
                         <tr class="border-b border-slate-200">
+                            <td class="p-3 whitespace-nowrap font-mono">{{ $enquiry->reference() }}</td>
                             <td class="p-3">{{ $enquiry->created_at->format('j M Y, H:i') }}</td>
                             <td class="p-3"><a href="{{ route('account.enquiries.show', $enquiry) }}" class="font-medium underline">{{ $enquiry->guest_name }}</a></td>
                             <td class="p-3">{{ $enquiry->listing?->title('en') }}</td>

@@ -195,6 +195,25 @@ class LicenceDeeplinkEnquiryTest extends TestCase
         $this->actingAs($this->admin)->get("/admin/enquiries/{$theirs->id}")->assertForbidden();
     }
 
+    public function test_admin_sees_and_searches_enquiry_references(): void
+    {
+        $first = Enquiry::factory()->for(Listing::factory()->onIsland($this->island))->create(['guest_name' => 'Ann Ref']);
+        $second = Enquiry::factory()->for(Listing::factory()->onIsland($this->island))->create(['guest_name' => 'Bob Ref']);
+        $elsewhere = Enquiry::factory()->for(Listing::factory()->onIsland(Island::factory()->create()))->create(['guest_name' => 'Cat Ref']);
+
+        $this->actingAs($this->admin)->get('/admin/enquiries')->assertOk()
+            ->assertSee($first->reference())->assertSee($second->reference())->assertDontSee($elsewhere->reference());
+
+        $this->actingAs($this->admin)->get('/admin/enquiries?q='.$second->reference())->assertOk()
+            ->assertSee('Bob Ref')->assertDontSee('Ann Ref');
+        $this->actingAs($this->admin)->get('/admin/enquiries?q=e'.$first->id)->assertOk()
+            ->assertSee('Ann Ref')->assertDontSee('Bob Ref');
+        // Another island's enquiry stays hidden, even by its reference.
+        $this->actingAs($this->admin)->get('/admin/enquiries?q='.$elsewhere->reference())->assertOk()->assertDontSee('Cat Ref');
+
+        $this->actingAs($this->admin)->get("/admin/enquiries/{$first->id}")->assertOk()->assertSee('Enquiry '.$first->reference().' from Ann Ref');
+    }
+
     public function test_admin_marks_an_enquiry_as_spam(): void
     {
         $enquiry = Enquiry::factory()->for(Listing::factory()->onIsland($this->island))->create();

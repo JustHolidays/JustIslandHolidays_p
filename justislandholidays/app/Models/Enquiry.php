@@ -29,6 +29,18 @@ class Enquiry extends Model
         ];
     }
 
+    /** The reference people quote, from the saved id: E-000042 (20 Nov 2026). */
+    public function reference(): string
+    {
+        return 'E-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    /** The id in a reference someone types: "E-000042", "e42" or "E 42". Null when it is not one. */
+    public static function idFromReference(string $text): ?int
+    {
+        return preg_match('/^\s*E\s*-?\s*0*(\d{1,12})\s*$/i', $text, $m) ? (int) $m[1] : null;
+    }
+
     public function listing(): BelongsTo
     {
         return $this->belongsTo(Listing::class)->withTrashed();

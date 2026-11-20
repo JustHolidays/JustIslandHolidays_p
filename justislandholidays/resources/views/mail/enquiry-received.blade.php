@@ -1,6 +1,8 @@
 <x-mail::message>
 # New enquiry for {{ $enquiry->listing->title('en') }}
 
+**Enquiry ref:** {{ $enquiry->reference() }}
+
 **From:** {{ $enquiry->guest_name }} ({{ $enquiry->guest_email }})
 @if ($enquiry->guest_phone)
 **Phone:** {{ $enquiry->guest_phone }}
@@ -16,7 +18,7 @@
 {{ $enquiry->message }}
 </x-mail::panel>
 
-Reply to this email to answer {{ $enquiry->guest_name }} directly.
+Reply to this email to answer {{ $enquiry->guest_name }} directly. If you contact us about this enquiry, please quote {{ $enquiry->reference() }}.
 
 The guest agreed to our privacy notice when sending this. Please use their details only to reply about this booking.
 

@@ -25,8 +25,13 @@ class EnquiryController extends AdminController
             $query->where('status', $status);
         }
         if (filled($q = $request->query('q')) && is_string($q)) {
-            $like = $this->like($q);
-            $query->where(fn ($w) => $w->where('guest_name', 'like', $like)->orWhere('guest_email', 'like', $like));
+            // An enquiry reference (E-000042) finds that enquiry; anything else searches guest name and email.
+            if (($id = Enquiry::idFromReference($q)) !== null) {
+                $query->whereKey($id);
+            } else {
+                $like = $this->like($q);
+                $query->where(fn ($w) => $w->where('guest_name', 'like', $like)->orWhere('guest_email', 'like', $like));
+            }
         }
 
         $query->latest('created_at')->latest('id');

@@ -2,7 +2,7 @@
 
 @section('content')
     <p><a href="{{ route('account.enquiries.index') }}" class="inline-flex min-h-11 items-center underline">Back to enquiries</a></p>
-    <h1 class="text-2xl font-semibold">Enquiry from {{ $enquiry->guest_name }}</h1>
+    <h1 class="text-2xl font-semibold">Enquiry {{ $enquiry->reference() }} from {{ $enquiry->guest_name }}</h1>
     <p class="mt-1">For {{ $enquiry->listing?->title('en') }}, received {{ $enquiry->created_at->format('j M Y, H:i') }}</p>
 
     <dl class="mt-6 grid max-w-2xl gap-3 rounded-lg border border-slate-200 bg-white p-5 sm:grid-cols-2">

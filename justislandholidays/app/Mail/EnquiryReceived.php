@@ -22,7 +22,7 @@ class EnquiryReceived extends Mailable
     {
         return new Envelope(
             replyTo: [new Address($this->enquiry->guest_email, $this->enquiry->guest_name)],
-            subject: 'New enquiry: '.$this->enquiry->listing->title('en'),
+            subject: 'New enquiry '.$this->enquiry->reference().': '.$this->enquiry->listing->title('en'),
         );
     }
 

@@ -70,6 +70,39 @@ class EnquiryTest extends TestCase
         });
     }
 
+    public function test_every_enquiry_has_a_reference_in_the_email_and_for_the_visitor(): void
+    {
+        Mail::fake();
+
+        $this->send()->assertSessionHas('enquiry_ref', fn ($ref) => $ref === Enquiry::sole()->reference());
+        $enquiry = Enquiry::sole();
+        $ref = $enquiry->reference();
+        $this->assertMatchesRegularExpression('/^E-\d{6}$/', $ref);
+        $this->assertSame('E-'.str_pad((string) $enquiry->id, 6, '0', STR_PAD_LEFT), $ref);
+
+        Mail::assertSent(EnquiryReceived::class, function (EnquiryReceived $mail) use ($ref) {
+            $mail->assertSeeInHtml('Enquiry ref:')->assertSeeInHtml($ref)->assertSeeInText('Enquiry ref: '.$ref);
+
+            return $mail->hasSubject('New enquiry '.$ref.': Villa Sunset');
+        });
+
+        $this->withSession(['enquiry_sent' => true, 'enquiry_ref' => $ref])->get($this->listing->publicUrl('en'))
+            ->assertSee('Your reference is '.$ref.'.');
+
+        // A second enquiry gets a different reference.
+        $this->send(['guest_email' => 'other@guest.example']);
+        $this->assertNotSame($ref, Enquiry::latest('id')->first()->reference());
+    }
+
+    public function test_typed_references_are_understood(): void
+    {
+        $this->assertSame(42, Enquiry::idFromReference('E-000042'));
+        $this->assertSame(42, Enquiry::idFromReference(' e42 '));
+        $this->assertSame(42, Enquiry::idFromReference('E 42'));
+        $this->assertNull(Enquiry::idFromReference('Emma'));
+        $this->assertNull(Enquiry::idFromReference('42'));
+    }
+
     public function test_email_is_sent_from_the_queue(): void
     {
         Queue::fake();

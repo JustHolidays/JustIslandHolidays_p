@@ -57,6 +57,6 @@ class EnquiryController extends Controller
 
         SendEnquiryEmail::dispatch($enquiry->id)->afterCommit();
 
-        return redirect()->to($back)->with('enquiry_sent', true);
+        return redirect()->to($back)->with('enquiry_sent', true)->with('enquiry_ref', $enquiry->reference());
     }
 }
