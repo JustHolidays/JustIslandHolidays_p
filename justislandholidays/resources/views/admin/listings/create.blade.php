@@ -124,9 +124,20 @@
         </section>
 
         <section class="rounded-lg bg-white p-5 shadow-sm" aria-labelledby="link-heading">
-            <h2 id="link-heading" class="text-lg font-semibold">Booking link (optional)</h2>
+            <h2 id="link-heading" class="text-lg font-semibold">Link (optional)</h2>
+            <p class="mt-1 max-w-xl text-sm">Shown as a button on the property page on paid plans only. On the Free Plan it is kept but hidden until they upgrade.</p>
             <div class="mt-3 max-w-xl">
-                <x-field name="deeplink_url" label="Check availability link" type="url" hint="Their own booking page, starting with https://. The owner or agent looks after it; we do not check it." />
+                @php($linkTypeValue = old('link_type', 'booking'))
+                <fieldset class="mb-4">
+                    <legend class="mb-1 font-medium">What does the link open?</legend>
+                    @foreach (['booking' => ['Their booking page', 'Check availability'], 'website' => ['Their website', 'Visit Our Website'], 'facebook' => ['Their Facebook page', 'Visit Our Facebook']] as $value => [$label, $button])
+                        <div class="flex min-h-11 items-center gap-2">
+                            <input id="link_type_{{ $value }}" name="link_type" type="radio" value="{{ $value }}" class="h-5 w-5" @checked($linkTypeValue === $value)>
+                            <label for="link_type_{{ $value }}">{{ $label }} <span class="text-slate-600">(button: {{ $button }})</span></label>
+                        </div>
+                    @endforeach
+                </fieldset>
+                <x-field name="deeplink_url" label="Link address" type="url" hint="Starting with https://. The owner or agent looks after it; we do not check it." />
             </div>
         </section>
 

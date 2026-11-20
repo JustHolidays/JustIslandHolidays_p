@@ -73,6 +73,7 @@ class PropertyCreateController extends AdminController
             'national_registry_no' => ['nullable', 'string', 'max:60'],
             'licence_checked' => ['nullable', 'boolean'],
             'deeplink_url' => ['nullable', 'url:https', 'max:2048'],
+            'link_type' => ['nullable', Rule::in(array_keys(Listing::LINK_TYPES))],
         ], [
             'lister_email.required' => 'Enter the email address of the owner or agent this property belongs to.',
             'price.required' => 'Add the From price per week. The property cannot go live without one.',
@@ -92,6 +93,14 @@ class PropertyCreateController extends AdminController
         }
         if ($lister->isDeactivated()) {
             throw ValidationException::withMessages(['lister_email' => 'This account is deactivated, so properties cannot be added to it.']);
+        }
+
+        $data['link_type'] ??= 'booking';
+        $hasLink = ($data['deeplink_url'] ?? null) !== null;
+        if ($hasLink && ($data['link_type'] === 'facebook') !== Listing::isFacebookUrl($data['deeplink_url'])) {
+            throw ValidationException::withMessages(['deeplink_url' => $data['link_type'] === 'facebook'
+                ? 'This is not a Facebook address. Facebook page addresses start with https://www.facebook.com/'
+                : 'This is a Facebook address. Choose "Their Facebook page", or add a different link.']);
         }
 
         $area = Area::with('island')->findOrFail($data['area_id']);
@@ -125,6 +134,7 @@ class PropertyCreateController extends AdminController
                 'deeplink_url' => $data['deeplink_url'] ?? null,
             ]);
             [$listing->display_lat, $listing->display_lng] = DisplayLocation::offset(...$coords);
+            $listing->link_type = ($data['deeplink_url'] ?? null) !== null ? $data['link_type'] : 'booking';
             $listing->owner_id = $lister->id;
             $listing->agency_id = $lister->role === Role::Agent ? $lister->agency_id : null;
             $listing->slug = $this->uniqueSlug($data['title'], $area->island_id);

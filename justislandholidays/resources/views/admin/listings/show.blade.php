@@ -100,7 +100,7 @@
                             <form method="POST" action="{{ route('admin.listings.check-link', $listing) }}">@csrf<input type="hidden" name="mode" value="manual_ok"><button type="submit" class="min-h-11 rounded border border-slate-400 px-3">I tested it: it opens the right property</button></form>
                         </div>
                     @else
-                        <p class="mt-1">Goes to <strong>{{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}</strong>.</p>
+                        <p class="mt-1">Goes to <strong>{{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}</strong> · button: <strong>{{ $listing->linkLabel() }}</strong>@unless ($listing->onPaidPlan()) · <span class="font-medium text-amber-800">hidden on the Free Plan</span>@endunless</p>
                         <p class="mt-1 text-sm">The {{ $listing->owner->role->label() === 'Agent' ? 'agent' : 'owner' }} looks after this link. We do not check whether it works, and it does not need checking before approval.</p>
                         <p class="mt-3"><a href="{{ route('admin.listings.test-link', $listing) }}" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded border border-slate-400 px-3">Open the link (new tab, no click recorded)</a></p>
                     @endif

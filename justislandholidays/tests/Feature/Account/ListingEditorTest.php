@@ -200,7 +200,7 @@ class ListingEditorTest extends TestCase
     {
         $agent = User::factory()->agent()->create();
         foreach ([$this->owner, $agent] as $lister) {
-            $listing = $this->setStatus($this->completeListing($lister), S::Live);
+            $listing = $this->setStatus($this->completeListing($lister, null, ['plan_code' => 'standard']), S::Live);   // links are for paid plans
 
             $this->actingAs($lister)->get("/account/listings/{$listing->id}/edit/link")->assertOk()
                 ->assertDontSee('sends your listing back');
@@ -232,6 +232,7 @@ class ListingEditorTest extends TestCase
     public function test_link_must_be_https_and_owners_cannot_set_a_sub_id(): void
     {
         $listing = $this->createListing();
+        $listing->forceFill(['plan_code' => 'standard'])->save();   // links are for paid plans
 
         $this->actingAs($this->owner)->put("/account/listings/{$listing->id}/link", ['deeplink_url' => 'http://booking.example.com'])
             ->assertSessionHasErrors('deeplink_url');
@@ -274,7 +275,7 @@ class ListingEditorTest extends TestCase
 
     public function test_owners_are_told_they_look_after_their_own_link(): void
     {
-        $listing = $this->completeListing($this->owner);
+        $listing = $this->completeListing($this->owner, null, ['plan_code' => 'standard']);
         $this->actingAs($this->owner)->get("/account/listings/{$listing->id}/edit/link")->assertOk()
             ->assertSee('You look after this link.')
             ->assertSee('We do not check whether it works.');

@@ -243,17 +243,31 @@ class ListingEditorController extends Controller
         $this->ensureEditable($listing);
         $isAffiliate = $listing->isAffiliateListing();
 
+        // Owner and agent links are for paid plans (20 Nov 2026). On Free the step only
+        // explains this; a link kept from a paid plan stays, hidden, for when they upgrade.
+        if (! $isAffiliate && ! $listing->onPaidPlan()) {
+            return $this->next($listing, 'licence');
+        }
+
         $data = $request->validate([
             'deeplink_url' => [$isAffiliate ? 'required' : 'nullable', 'url:https', 'max:2048'],
             'deeplink_subid_param' => ['nullable', Rule::prohibitedIf(! $isAffiliate), 'regex:/^[A-Za-z0-9_\-]{1,30}$/'],
+            'link_type' => ['nullable', Rule::in(array_keys(Listing::LINK_TYPES))],
         ], [
             'deeplink_url.url' => 'The link must be a full web address starting with https://',
             'deeplink_url.required' => 'Add the booking link for this property.',
         ]);
 
+        $linkType = $isAffiliate ? 'booking' : ($data['link_type'] ?? 'booking');
         $newUrl = $data['deeplink_url'] ?? null;
+        if ($newUrl !== null && ($linkType === 'facebook') !== Listing::isFacebookUrl($newUrl)) {
+            throw ValidationException::withMessages(['deeplink_url' => $linkType === 'facebook'
+                ? 'This is not a Facebook address. Facebook page addresses start with https://www.facebook.com/'
+                : 'This is a Facebook address. Choose "Our Facebook page" above, or add a different link.']);
+        }
 
-        DB::transaction(function () use ($listing, $newUrl, $data, $isAffiliate, $request) {
+        DB::transaction(function () use ($listing, $newUrl, $data, $isAffiliate, $linkType, $request) {
+            $listing->forceFill(['link_type' => $newUrl === null ? 'booking' : $linkType]);
             $changed = $newUrl !== $listing->deeplink_url;
 
             if ($changed) {
@@ -458,7 +472,7 @@ class ListingEditorController extends Controller
         $listing->loadMissing(['translations', 'private', 'licence', 'island', 'area', 'owner']);
         $isAffiliate = $listing->exists ? $listing->isAffiliateListing() : $request->user()->isAffiliate();
 
-        $steps = ['basics' => 'Basics', 'location' => 'Location', 'photo' => 'Photo', 'link' => 'Booking link'];
+        $steps = ['basics' => 'Basics', 'location' => 'Location', 'photo' => 'Photo', 'link' => $isAffiliate ? 'Booking link' : 'Link'];
         if (! $isAffiliate) {
             $steps['licence'] = 'Licence';
         }

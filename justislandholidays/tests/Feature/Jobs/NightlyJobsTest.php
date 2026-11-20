@@ -82,8 +82,8 @@ class NightlyJobsTest extends TestCase
         $off = Listing::factory()->live()->withDeeplink('https://good.example/2', status: 'broken')->create(['owner_id' => $partner->id]);
         $draft = Listing::factory()->withDeeplink('https://good.example/3', status: 'unchecked')->create(['owner_id' => $partner->id]);
         // Owners and agents look after their own links: never checked, even when live.
-        $owners = Listing::factory()->live()->withDeeplink('https://gone.example/owner', status: 'unchecked')->create(['owner_id' => User::factory()->owner()]);
-        $agents = Listing::factory()->live()->withDeeplink('https://gone.example/agent', status: 'unchecked')->create(['owner_id' => User::factory()->agent()]);
+        $owners = Listing::factory()->live()->withDeeplink('https://gone.example/owner', status: 'unchecked')->create(['owner_id' => User::factory()->owner(), 'plan_code' => 'standard']);
+        $agents = Listing::factory()->live()->withDeeplink('https://gone.example/agent', status: 'unchecked')->create(['owner_id' => User::factory()->agent(), 'plan_code' => 'standard']);
 
         $this->artisan('deeplinks:check')->assertSuccessful();
 

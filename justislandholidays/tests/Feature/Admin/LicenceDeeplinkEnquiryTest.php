@@ -126,8 +126,8 @@ class LicenceDeeplinkEnquiryTest extends TestCase
     public function test_owner_and_agent_links_are_never_checked_or_switched_off(): void
     {
         Http::fake();
-        $owner = $this->setStatus($this->completeListing(island: $this->island, attributes: ['deeplink_url' => 'https://own.example/1']), S::Live);
-        $agent = $this->setStatus($this->completeListing(User::factory()->agent()->create(), $this->island, ['deeplink_url' => 'https://agent.example/1']), S::Live);
+        $owner = $this->setStatus($this->completeListing(island: $this->island, attributes: ['deeplink_url' => 'https://own.example/1', 'plan_code' => 'standard']), S::Live);
+        $agent = $this->setStatus($this->completeListing(User::factory()->agent()->create(), $this->island, ['deeplink_url' => 'https://agent.example/1', 'plan_code' => 'standard']), S::Live);
 
         foreach ([$owner, $agent] as $listing) {
             $this->actingAs($this->admin)->post("/admin/deeplinks/{$listing->id}/recheck")->assertNotFound();
@@ -143,7 +143,7 @@ class LicenceDeeplinkEnquiryTest extends TestCase
 
     public function test_an_old_broken_result_does_not_hide_an_owners_banner(): void
     {
-        $owner = $this->setStatus($this->completeListing(island: $this->island, attributes: ['deeplink_url' => 'https://own.example/1', 'deeplink_status' => 'broken']), S::Live);
+        $owner = $this->setStatus($this->completeListing(island: $this->island, attributes: ['deeplink_url' => 'https://own.example/1', 'deeplink_status' => 'broken', 'plan_code' => 'standard']), S::Live);
         $affiliate = $this->affiliateLinked(['deeplink_url' => 'https://partner.example/1', 'deeplink_status' => 'broken']);
 
         $this->assertTrue($owner->showsCheckAvailability());

@@ -62,9 +62,9 @@ class ListingPageTest extends TestCase
     public function test_check_availability_banner_shows_owner_links_and_working_affiliate_links(): void
     {
         $none = $this->listing();
-        $ok = $this->listing([], fn ($f) => $f->withDeeplink());
+        $ok = $this->listing(['plan_code' => 'standard'], fn ($f) => $f->withDeeplink());   // owner links: paid plans
         // An owner's link is never checked, so an old "broken" result does not hide it.
-        $ownerOld = $this->listing([], fn ($f) => $f->withDeeplink(status: 'broken'));
+        $ownerOld = $this->listing(['plan_code' => 'standard'], fn ($f) => $f->withDeeplink(status: 'broken'));
         $affiliateBroken = $this->listing(['owner_id' => User::factory()->affiliate()], fn ($f) => $f->withDeeplink(status: 'broken'));
 
         $this->get($none->publicUrl('en'))->assertDontSee('Check availability');

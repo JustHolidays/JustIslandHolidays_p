@@ -202,8 +202,20 @@
                                 @endif
                             </div>
                         @endif
-                        <a href="{{ $listing->goUrl('listing') }}" rel="sponsored nofollow" class="flex min-h-11 w-full items-center justify-center rounded bg-[var(--colour-button)] px-5 text-lg font-semibold text-white">{{ __('Check availability') }}</a>
-                        <p class="mt-3 text-sm text-slate-700">{{ __('Opens the booking site for this home. We may earn a commission if you book, at no extra cost to you.') }}</p>
+                        {{-- Button text follows the link type (paid plans, 20 Nov 2026): Check availability,
+                             Visit Our Website or Visit Our Facebook. Affiliates always have Check availability. --}}
+                        <a href="{{ $listing->goUrl('listing') }}" rel="sponsored nofollow" data-link-type="{{ $isAffiliate ? 'booking' : $listing->link_type }}" class="flex min-h-11 w-full items-center justify-center rounded bg-[var(--colour-button)] px-5 text-lg font-semibold text-white">{{ $listing->linkLabel() }}</a>
+                        <p class="mt-3 text-sm text-slate-700">
+                            @if ($isAffiliate)
+                                {{ __('Opens the booking site for this home. We may earn a commission if you book, at no extra cost to you.') }}
+                            @elseif ($listing->link_type === 'website')
+                                {{ __('Opens the owner’s own website.') }}
+                            @elseif ($listing->link_type === 'facebook')
+                                {{ __('Opens the owner’s Facebook page.') }}
+                            @else
+                                {{ __('Opens the owner’s booking page for this home.') }}
+                            @endif
+                        </p>
                     </div>
                 @endif
 

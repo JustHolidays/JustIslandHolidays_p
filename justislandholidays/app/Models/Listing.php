@@ -226,7 +226,41 @@ class Listing extends Model
             return false;
         }
 
-        return ! $this->isAffiliateListing() || $this->deeplink_status !== 'broken';
+        if ($this->isAffiliateListing()) {
+            return $this->deeplink_status !== 'broken';
+        }
+
+        // Owner and agent links are for paid plans (20 Nov 2026); on Free the link is kept but hidden.
+        return $this->onPaidPlan();
+    }
+
+    /** Link types owners and agents can choose, with the button text visitors see. */
+    public const LINK_TYPES = [
+        'booking' => 'Check availability',
+        'website' => 'Visit Our Website',
+        'facebook' => 'Visit Our Facebook',
+    ];
+
+    /** Button text for the link: Check availability, Visit Our Website or Visit Our Facebook. */
+    public function linkLabel(): string
+    {
+        $type = $this->isAffiliateListing() ? 'booking' : ($this->link_type ?? 'booking');
+
+        return __(self::LINK_TYPES[$type] ?? self::LINK_TYPES['booking']);
+    }
+
+    /** facebook.com, fb.com or fb.me, or one of their subdomains (www., m.). */
+    public static function isFacebookUrl(?string $url): bool
+    {
+        $host = strtolower((string) parse_url((string) $url, PHP_URL_HOST));
+
+        return (bool) preg_match('/(^|\.)(facebook\.com|fb\.com|fb\.me)$/', $host);
+    }
+
+    /** Owner and agent properties on any plan but Free (a gifted plan counts). */
+    public function onPaidPlan(): bool
+    {
+        return ! $this->isAffiliateListing() && $this->plan_code !== null && $this->plan_code !== 'free';
     }
 
     /** The booking calendar: owner and agent properties on a plan that includes it (paid plans). */
@@ -252,7 +286,7 @@ class Listing extends Model
     /** The rates table: owner and agent properties on any plan but Free. */
     public function hasRates(): bool
     {
-        return ! $this->isAffiliateListing() && $this->plan_code !== null && $this->plan_code !== 'free';
+        return $this->onPaidPlan();
     }
 
     public function rates(): HasMany

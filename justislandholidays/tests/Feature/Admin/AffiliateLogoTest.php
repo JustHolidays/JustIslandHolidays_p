@@ -112,7 +112,7 @@ class AffiliateLogoTest extends TestCase
 
     public function test_owner_listings_have_no_logo_banner(): void
     {
-        $owned = Listing::factory()->live()->titled('Owner home')->withDeeplink()->create(['owner_id' => User::factory()->owner()])->load(['island', 'area']);
+        $owned = Listing::factory()->live()->titled('Owner home')->withDeeplink()->create(['owner_id' => User::factory()->owner(), 'plan_code' => 'standard'])->load(['island', 'area']);
 
         $this->get($owned->publicUrl('en'))->assertOk()->assertSee('Check availability')->assertDontSee('data-partner-logo', false);
     }

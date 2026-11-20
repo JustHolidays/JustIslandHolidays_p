@@ -252,15 +252,37 @@
             @case('link')
                 <form method="POST" action="{{ route('account.listings.link', $listing) }}">
                     @csrf @method('PUT')
-                    <h2 class="mb-2 text-xl font-semibold">Booking link</h2>
+                    <h2 class="mb-2 text-xl font-semibold">{{ $isAffiliate ? 'Booking link' : 'Link to your booking page, website or Facebook' }}</h2>
                     @if ($isAffiliate)
                         <p class="mb-4">The page on your booking site for this property. Visitors reach it through the Check availability button.</p>
+                    @elseif (! $listing->onPaidPlan())
+                        <p class="mb-4">On a paid plan you can add a link to your booking page, your own website or your Facebook page, shown as a button on your listing.</p>
+                        @if ($listing->deeplink_url)
+                            <p class="mb-4 rounded bg-amber-50 p-3 text-sm">Your link ({{ parse_url($listing->deeplink_url, PHP_URL_HOST) }}) is kept but not shown while you are on the Free Plan. It shows again when you choose a paid plan.</p>
+                        @endif
+                        <p class="mb-6"><a href="{{ route('account.billing') }}" class="underline">See the paid plans</a></p>
                     @else
-                        <p class="mb-4">Optional. If guests can check dates and book on your own website or a booking site, add the page here and visitors will see a Check availability button.</p>
-                        <p class="mb-4 rounded border border-slate-300 bg-white p-3 text-sm"><strong>You look after this link.</strong> We do not check whether it works. Please make sure it opens the right property, and update it here if the page moves.</p>
+                        <p class="mb-4">Optional. Add a link and visitors will see a button on your listing. Choose what it opens, and the button says so.</p>
+                        <p class="mb-4 rounded border border-slate-300 bg-white p-3 text-sm"><strong>You look after this link.</strong> We do not check whether it works. Please make sure it opens the right page, and update it here if the page moves.</p>
                     @endif
 
-                    <x-field name="deeplink_url" label="Booking page address" type="url" :value="$listing->deeplink_url" hint="Must start with https://" :required="$isAffiliate" />
+                    @if ($isAffiliate || $listing->onPaidPlan())
+                        @unless ($isAffiliate)
+                            @php($linkTypeValue = old('link_type', $listing->link_type ?? 'booking'))
+                            <fieldset class="mb-4">
+                                <legend class="mb-1 font-medium">What does the link open?</legend>
+                                @foreach (['booking' => ['Our booking page', 'Check availability'], 'website' => ['Our website', 'Visit Our Website'], 'facebook' => ['Our Facebook page', 'Visit Our Facebook']] as $value => [$label, $button])
+                                    <div class="flex min-h-11 items-center gap-2">
+                                        <input id="link_type_{{ $value }}" name="link_type" type="radio" value="{{ $value }}" class="h-5 w-5" @checked($linkTypeValue === $value)>
+                                        <label for="link_type_{{ $value }}">{{ $label }} <span class="text-slate-600">(button: {{ $button }})</span></label>
+                                    </div>
+                                @endforeach
+                                @error('link_type')<p class="text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+                            </fieldset>
+                        @endunless
+
+                        <x-field name="deeplink_url" :label="$isAffiliate ? 'Booking page address' : 'Link address'" type="url" :value="$listing->deeplink_url" hint="Must start with https://" :required="$isAffiliate" />
+                    @endif
 
                     @if ($isAffiliate)
                         <x-field name="deeplink_subid_param" label="Click id parameter (optional)" :value="$listing->deeplink_subid_param"
