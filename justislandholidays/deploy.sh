@@ -10,7 +10,7 @@
 #      half-updated site (this is separate from Settings > Maintenance mode in the admin)
 #   2. installs the PHP packages the live site needs (not the development ones)
 #   3. builds the styles and scripts, if Node.js is available on the server
-#   4. updates the database
+#   4. updates the database and adds any new reference data (never overwrites admin edits)
 #   5. links public/storage, clears old caches and builds new ones
 #   6. tells the queue worker to restart with the new code
 #   7. brings the site back up
@@ -58,6 +58,7 @@ fi
 
 say "Updating the database"
 php artisan migrate --force
+php artisan db:seed --force   # reference data and draft legal pages; never overwrites edits made in the admin
 
 say "Linking uploaded files"
 if [ ! -e public/storage ]; then

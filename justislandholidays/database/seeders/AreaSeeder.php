@@ -59,7 +59,8 @@ class AreaSeeder extends Seeder
             $island = Island::where('slug', $islandSlug)->firstOrFail();
 
             foreach ($rows as $order => [$slug, $name, $kind]) {
-                Area::updateOrCreate(
+                // Add missing resorts only; names and order are edited in the admin.
+                Area::firstOrCreate(
                     ['island_id' => $island->id, 'slug' => $slug],
                     [
                         'name' => ['en' => $name, 'es' => $name, 'de' => $name],

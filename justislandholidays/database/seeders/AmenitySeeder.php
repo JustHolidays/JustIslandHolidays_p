@@ -48,7 +48,8 @@ class AmenitySeeder extends Seeder
         ];
 
         foreach ($amenities as $order => [$code, $category, $en, $es, $de, $filterable]) {
-            Amenity::updateOrCreate(['code' => $code], [
+            // Add missing facilities only; existing ones keep any changes.
+            Amenity::firstOrCreate(['code' => $code], [
                 'category' => $category,
                 'name' => ['en' => $en, 'es' => $es, 'de' => $de],
                 'is_filterable' => $filterable,

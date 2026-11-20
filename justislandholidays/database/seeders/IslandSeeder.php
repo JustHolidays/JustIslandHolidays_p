@@ -21,7 +21,9 @@ class IslandSeeder extends Seeder
         ];
 
         foreach ($islands as $i) {
-            Island::updateOrCreate(['slug' => $i['slug']], [
+            // Add missing islands only: names, switching on and order are edited in the admin
+            // and must survive every deploy (deploy.sh runs the seeders).
+            Island::firstOrCreate(['slug' => $i['slug']], [
                 'name' => ['en' => $i['name'], 'es' => $i['name'], 'de' => $i['name']],
                 'centre_lat' => $i['lat'],
                 'centre_lng' => $i['lng'],
