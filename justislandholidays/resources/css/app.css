@@ -37,6 +37,12 @@ main p a {
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
+
+    /* The home page pictures still cross-fade (20 Nov 2026): fading is not movement, and
+       without it they would jump. The slideshow can be paused with its button. */
+    [data-hero-slide] {
+        transition-duration: 1600ms !important;
+    }
 }
 
 /*

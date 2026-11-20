@@ -16,7 +16,7 @@ class AdminMenuOrderTest extends TestCase
     {
         $start = strpos($html, '<nav aria-label="Admin"');
         $nav = substr($html, $start, strpos($html, '</nav>', $start) - $start);
-        preg_match_all('#<li class="w-full px-3[^"]*" data-menu-heading>([^<]+)</li>|<a href="[^"]*/admin(?:/(?:plans|listings|licences|enquiries|users|ads|clicks|locations/create|staff|pages|property-types|appearance|admin-colours||account-closures|paypal-settings|audit))?"[^>]*>\s*([^<]+?)\s*</a>|<summary[^>]*>\s*([^<]+?)\s*<span#', $nav, $m, PREG_SET_ORDER);
+        preg_match_all('#<li class="w-full px-3[^"]*" data-menu-heading>([^<]+)</li>|<a href="[^"]*/admin(?:/(?:plans|listings|licences|enquiries|users|ads|clicks|locations/create|staff|pages|property-types|appearance|admin-colours|seo|maintenance|account-closures|paypal-settings|audit))?"[^>]*>\s*([^<]+?)\s*</a>|<summary[^>]*>\s*([^<]+?)\s*<span#', $nav, $m, PREG_SET_ORDER);
 
         return array_map(fn ($x) => isset($x[3]) && $x[3] !== '' ? $x[3] : (($x[2] ?? '') !== '' ? $x[2] : 'HEADING: '.$x[1]), $m);
     }
@@ -26,7 +26,7 @@ class AdminMenuOrderTest extends TestCase
         $this->assertSame([
             'Dashboard', 'Plans', 'Listing Search', 'Licence checks', 'Enquiries', 'Owners', 'Agents', 'Affiliates', 'Affiliate Adverts', 'Click reports',
             'HEADING: Locations', 'Islands and resorts', 'Add a location',
-            'HEADING: Settings', 'Staff', 'Content pages', 'Property types', 'Frontend Styler', 'Admin Styler', 'Account closures', 'PayPal Settings', 'Audit log',
+            'HEADING: Settings', 'Staff', 'Content pages', 'Property types', 'Frontend Styler', 'Admin Styler', 'SEO', 'Maintenance mode', 'Account closures', 'PayPal Settings', 'Audit log',
         ], $this->menu($this->actingAs($this->superAdmin())->get('/admin')->assertOk()->getContent()));
     }
 

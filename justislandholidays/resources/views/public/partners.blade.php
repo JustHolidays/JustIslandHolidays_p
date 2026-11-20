@@ -2,6 +2,7 @@
     'metaTitle' => __('Our partners | Just Island Holidays'),
     'metaDescription' => __('The booking partners whose holiday homes you can find on Just Island Holidays.'),
     'canonical' => route('partners'),
+    'seoKeys' => 'partners',
 ])
 
 @section('content')

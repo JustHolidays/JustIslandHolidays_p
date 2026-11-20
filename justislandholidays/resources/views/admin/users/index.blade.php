@@ -6,7 +6,12 @@
 @extends('layouts.admin', ['title' => $heading])
 
 @section('content')
-    <h1 class="text-2xl font-semibold">{{ $heading }}</h1>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-semibold">{{ $heading }}</h1>
+        @can('manage-owners')
+            <a href="{{ route('admin.users.create', $isAgents ? ['as' => 'agent'] : []) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">{{ $isAgents ? 'Add an agent' : 'Add an owner' }}</a>
+        @endcan
+    </div>
     @if (auth()->user()->isSuperAdmin())
         <p class="mt-1">To move someone between Owners and Agents, change their role on their page.</p>
     @else

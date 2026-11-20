@@ -26,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureAccountIsActive::class,
             // Admins: emailed code or authenticator app before any signed-in page.
             \App\Http\Middleware\RequireSecondFactor::class,
+            // Maintenance mode: public pages show the maintenance page; admins see the site.
+            \App\Http\Middleware\PublicMaintenance::class,
         ]);
 
         $middleware->alias([

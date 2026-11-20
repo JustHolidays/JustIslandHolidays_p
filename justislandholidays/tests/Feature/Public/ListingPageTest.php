@@ -111,6 +111,56 @@ class ListingPageTest extends TestCase
         $this->get($affiliate->publicUrl('en'))->assertOk()->assertDontSee('data-bookmarks', false);
     }
 
+    public function test_share_buttons_point_to_our_site_which_passes_visitors_on(): void
+    {
+        $listing = $this->listing();
+        $url = rawurlencode($listing->publicUrl('en'));
+        $html = $this->get($listing->publicUrl('en'))->assertOk()->getContent();
+
+        // The page links to our own addresses (blockers hide links straight to share pages).
+        foreach (['facebook', 'whatsapp', 'x', 'pinterest'] as $network) {
+            $this->assertStringContainsString('href="'.e(route('share', ['network' => $network, 'ref' => $listing->public_ref, 'l' => 'en'])).'"', $html);
+        }
+        $this->assertStringNotContainsString('facebook.com/sharer', $html);
+        $this->assertStringNotContainsString('twitter.com/intent', $html);
+        $this->assertStringNotContainsString('data-share', $html, 'Nothing marked "share" for blockers to hide.');
+        $this->assertStringContainsString('href="mailto:?subject=Villa%20Sunset', $html);
+        $this->assertStringContainsString('Share on Facebook', $html);
+        $this->assertStringNotContainsString('connect.facebook.net', $html);
+        $this->assertMatchesRegularExpression('#<li hidden data-pass-on-copy-item>#', $html);
+
+        // Each address passes the visitor on to that network's share page.
+        $this->get(route('share', ['network' => 'facebook', 'ref' => $listing->public_ref]))->assertRedirect('https://www.facebook.com/sharer/sharer.php?u='.$url);
+        $this->assertStringStartsWith('https://wa.me/?text=Villa%20Sunset', $this->get(route('share', ['network' => 'whatsapp', 'ref' => $listing->public_ref]))->headers->get('Location'));
+        $this->assertStringStartsWith('https://twitter.com/intent/tweet?url='.$url, $this->get(route('share', ['network' => 'x', 'ref' => $listing->public_ref]))->headers->get('Location'));
+        $this->assertStringStartsWith('https://pinterest.com/pin/create/button/?url='.$url, $this->get(route('share', ['network' => 'pinterest', 'ref' => $listing->public_ref]))->headers->get('Location'));
+    }
+
+    public function test_share_addresses_only_work_for_live_homes_and_known_networks(): void
+    {
+        $draft = Listing::factory()->create();
+        $live = $this->listing();
+
+        $this->get(route('share', ['network' => 'facebook', 'ref' => $draft->public_ref]))->assertNotFound();
+        $this->get('/share/myspace/'.$live->public_ref)->assertNotFound();
+    }
+
+    public function test_wheelchair_friendly_homes_show_the_icon_on_cards_and_their_page(): void
+    {
+        $amenity = \App\Models\Amenity::firstOrCreate(['code' => 'wheelchair_friendly'], ['category' => 'accessibility', 'name' => ['en' => 'Wheelchair friendly'], 'is_filterable' => true]);
+        $accessible = $this->listing();
+        $accessible->amenities()->attach($amenity->id);
+        $other = $this->listing(['island_id' => $accessible->island_id]);
+
+        $this->get($accessible->publicUrl('en'))->assertOk()->assertSee('data-wheelchair', false)->assertSee('Wheelchair friendly');
+        $this->get($other->publicUrl('en'))->assertOk()
+            ->assertDontSee('<span class="mt-2 inline-flex', false);   // not on this home's own page
+
+        // On the island page's cards: once, for the accessible home only.
+        $island = $this->get(route('islands.show', ['en', $accessible->island->slug]))->assertOk()->getContent();
+        $this->assertSame(1, substr_count($island, 'data-wheelchair'));
+    }
+
     public function test_licence_number_is_shown(): void
     {
         $listing = $this->listing();

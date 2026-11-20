@@ -2,14 +2,33 @@
     'metaTitle' => __('Holiday homes in Mallorca and Menorca | Just Island Holidays'),
     'metaDescription' => __('Find villas, apartments and fincas in Mallorca and Menorca, and contact the owners directly.'),
     'canonical' => route('home'),
+    'seoKeys' => 'home',
 ])
 
 @section('content')
     <section class="relative bg-[var(--colour-band)]">
         @if ($hero)
-            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($hero->image_path) }}" srcset="{{ \App\Support\Appearance::heroSrcset($hero) }}" sizes="100vw"
-                 alt="{{ $hero->alt_text }}" class="absolute inset-0 h-full w-full object-cover" width="2400" height="900" fetchpriority="high">
+            {{-- Hero slideshow (20 Nov 2026): the images sit on top of each other and app.js
+                 cross-fades from one to the next every 7 seconds, with a pause button. Without
+                 script, the first image simply stays. --}}
+            <div class="absolute inset-0 isolate" data-hero-slides>
+                @foreach ($heroes as $slide)
+                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($slide->image_path) }}" srcset="{{ \App\Support\Appearance::heroSrcset($slide) }}" sizes="100vw"
+                         alt="{{ $slide->alt_text }}" width="2400" height="900"
+                         @if ($loop->first) fetchpriority="high" @else loading="lazy" aria-hidden="true" @endif
+                         class="absolute inset-0 h-full w-full object-cover transition-opacity duration-[1600ms] ease-in-out {{ $loop->first ? 'opacity-100' : 'opacity-0' }}"
+                         data-hero-slide>
+                @endforeach
+            </div>
             <div class="absolute inset-0 bg-black/40" aria-hidden="true"></div>
+            @if ($heroes->count() > 1)
+                <button type="button" class="absolute bottom-3 right-3 z-10 inline-flex min-h-11 items-center gap-2 rounded-full bg-black/55 px-4 text-sm font-medium text-white hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                        data-hero-pause hidden>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" data-icon-pause><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="hidden h-4 w-4" fill="currentColor" data-icon-play><path d="M8 5v14l11-7z"/></svg>
+                    <span data-pause-label>{{ __('Pause pictures') }}</span>
+                </button>
+            @endif
         @endif
         <div class="relative mx-auto max-w-6xl px-4 py-16 {{ $hero ? 'text-white' : '' }}">
             <h1 class="text-3xl font-semibold md:text-4xl">{{ __('Holiday homes in the Balearic Islands') }}</h1>

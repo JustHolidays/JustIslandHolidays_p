@@ -13,7 +13,13 @@
     <h1 class="text-2xl font-semibold">{{ $user->name }}</h1>
     <p class="mt-1">{{ $user->role->label() }} · {{ $user->email }} · {{ $plan->name }} plan · {{ $user->isDeactivated() ? 'Deactivated '.$user->deactivated_at->format('j M Y') : 'Active' }} · last sign-in {{ $user->last_login_at?->format('j M Y') ?? 'never' }}</p>
     @unless ($user->isDeactivated())
-        <p class="mt-2"><a href="{{ route('admin.listings.create', ['lister' => $user->email]) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add a property for them</a></p>
+        <p class="mt-2 flex flex-wrap gap-2"><a href="{{ route('admin.listings.create', ['lister' => $user->email]) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add a property for them</a>
+            @if (! $user->last_login_at && in_array($user->role, [\App\Enums\Role::Owner, \App\Enums\Role::Agent], true))
+                @can('manage-owners')
+                    <form method="POST" action="{{ route('admin.users.invite', $user) }}" data-invite-form>@csrf<button type="submit" class="min-h-11 rounded border border-slate-900 bg-white px-4 font-medium">Send invitation to set a password</button></form>
+                @endcan
+            @endif
+        </p>
     @endunless
 
     <section class="mt-6 rounded-lg bg-white p-5 shadow-sm" aria-labelledby="listings-heading">

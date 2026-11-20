@@ -43,7 +43,7 @@ class ListingController extends Controller
             ->orderByRaw('CASE WHEN area_id = ? THEN 0 ELSE 1 END', [$listing->area_id])
             ->orderByRaw('CASE WHEN property_type = ? THEN 0 ELSE 1 END', [$listing->property_type])
             ->orderByDesc('rank_score')
-            ->with(['island', 'area', 'translations'])
+            ->with(['island', 'area', 'translations', 'amenities:id,code'])
             ->limit(config('site.similar_count'))
             ->get();
 

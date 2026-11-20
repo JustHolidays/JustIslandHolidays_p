@@ -48,6 +48,8 @@ class FavouritesTest extends TestCase
         Favourites::flush();
 
         $this->actingAs($visitor)->get($page)->assertOk()
+            ->assertSee('Saved to your favourites')
+            ->assertSee('class="mx-auto max-w-6xl px-4 py-6" data-auto-dismiss="5000"', false)   // spaced, and fades after 5 seconds
             ->assertSee('data-favourite="saved"', false)->assertSee('aria-pressed="true"', false)
             ->assertSee('text-red-600', false)->assertSee('Saved to favourites');
 

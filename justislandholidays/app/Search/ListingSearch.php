@@ -33,7 +33,7 @@ final class ListingSearch
         $featured = $this->featured(clone $query, $filters->page);
 
         $listings = $this->sorted($query, $filters->sort)
-            ->with(['island', 'area', 'translations'])
+            ->with(['island', 'area', 'translations', 'amenities:id,code'])
             ->paginate(config('site.per_page'), ['*'], 'page', $filters->page)
             ->withQueryString();
 
@@ -162,7 +162,7 @@ final class ListingSearch
         $per = (int) config('site.featured_per_page');
         $all = $query->where('featured_until', '>', now())
             ->orderByDesc('rank_score')->orderBy('id')
-            ->with(['island', 'area', 'translations'])
+            ->with(['island', 'area', 'translations', 'amenities:id,code'])
             ->limit(50)
             ->get();
 

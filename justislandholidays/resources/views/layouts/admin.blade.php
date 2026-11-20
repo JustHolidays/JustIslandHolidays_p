@@ -24,6 +24,8 @@
         ['admin.property-types.index', 'Property types', 'manage-property-types'],
         ['admin.appearance.edit', 'Frontend Styler', 'manage-appearance'],
         ['admin.admin-colours.edit', 'Admin Styler', 'manage-appearance'],
+        ['admin.seo.edit', 'SEO', 'manage-seo'],
+        ['admin.maintenance.edit', 'Maintenance mode', 'manage-maintenance'],
         ['admin.closures.index', 'Account closures', 'manage-account-closures'],
         ['admin.paypal-settings.edit', 'PayPal Settings', 'manage-paypal-settings'],
         ['admin.audit.index', 'Audit log', 'view-audit-log'],
@@ -58,7 +60,7 @@
                         <label for="admin-island" class="text-sm">Island</label>
                         {{-- No auto-submit on change (WCAG 3.2.2): the admin presses Show. --}}
                         <select id="admin-island" name="island" class="min-h-11 rounded bg-white px-2 text-slate-900">
-                            <option value="">All my islands</option>
+                            <option value="">All Locations</option>
                             @foreach ($adminIslands as $i)
                                 <option value="{{ $i->id }}" @selected($selectedIsland === $i->id)>{{ $i->translate('name', 'en') }}</option>
                             @endforeach
@@ -224,6 +226,13 @@
         </nav>
 
         <main id="main" class="min-w-0 flex-1">
+            @if (\App\Support\Maintenance::isOn())
+                {{-- Reminder on every admin page while visitors see the maintenance page. --}}
+                <div role="status" class="mb-4 rounded border-2 border-amber-500 bg-amber-50 p-3 font-medium" data-maintenance-banner>
+                    Maintenance mode is on: visitors see the maintenance page.
+                    @can('manage-maintenance')<a href="{{ route('admin.maintenance.edit') }}" class="underline">Switch it off</a>@endcan
+                </div>
+            @endif
             @if (session('status'))
                 <div role="status" class="mb-4 rounded border border-green-300 bg-green-50 p-4">{{ session('status') }}</div>
             @endif

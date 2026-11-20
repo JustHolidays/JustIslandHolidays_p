@@ -54,7 +54,7 @@ class FavouriteController extends Controller
     public function index(Request $request): View
     {
         $ids = DB::table('favourites')->where('user_id', $request->user()->id)->orderByDesc('created_at')->pluck('listing_id');
-        $listings = Listing::withTrashed()->whereIn('id', $ids)->with(['island', 'area', 'translations'])->get()
+        $listings = Listing::withTrashed()->whereIn('id', $ids)->with(['island', 'area', 'translations', 'amenities:id,code'])->get()
             ->sortBy(fn (Listing $l) => $ids->search($l->id))->values();
 
         return view('account.favourites', ['listings' => $listings]);

@@ -21,6 +21,9 @@
     'metaDescription' => __('Villas, apartments and fincas to rent in :place. Contact the owners directly.', ['place' => $placeName]),
     'canonical' => $pageUrl,
     'noindex' => ! $filters->isIndexable(),
+    // SEO wording (Settings › SEO): this island or resort's own, else the island or resort template.
+    'seoKeys' => $area ? ['area:'.$area->id, 'area'] : ['island:'.$island->id, 'island'],
+    'seoVars' => ['island' => $island->translate('name'), 'resort' => $area?->translate('name') ?? '', 'count' => isset($result) ? $result->total() : ''],
     'extraScripts' => ['resources/js/map.js'],
 ])
 

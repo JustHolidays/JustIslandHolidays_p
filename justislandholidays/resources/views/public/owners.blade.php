@@ -2,6 +2,7 @@
     'metaTitle' => __('List your holiday home | Just Island Holidays'),
     'metaDescription' => __('Advertise your holiday home in Mallorca or Menorca. Guests contact you directly, with no booking fees.'),
     'canonical' => route('owners'),
+    'seoKeys' => 'owners',
 ])
 
 @section('content')

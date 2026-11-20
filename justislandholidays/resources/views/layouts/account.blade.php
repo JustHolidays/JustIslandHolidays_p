@@ -19,7 +19,10 @@
             <a href="{{ route('home', 'en') }}" class="text-lg font-semibold text-[var(--colour-brand)]">Just Island Holidays</a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="min-h-11 rounded px-3 text-sm underline">Sign out</button>
+                <button type="submit" class="inline-flex min-h-11 items-center gap-2 rounded-full bg-orange-700 px-5 font-medium text-white shadow-sm hover:bg-orange-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-800">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg>
+                    Sign out
+                </button>
             </form>
         </div>
         {{-- The account menu as tabs on the header's bottom edge (20 Nov 2026); the current one is filled. --}}
@@ -38,8 +41,8 @@
                     if ($user->can('use-billing')) {
                         $links[] = ['account.billing', 'Plan and billing'];
                     }
-                    $links[] = ['account.favourites', 'My favourites'];   // everyone can save homes (20 Nov 2026)
                     $links[] = ['account.security', 'Two-factor sign-in'];
+                    $links[] = ['account.favourites', 'My favourites'];   // everyone can save homes; always the last tab (20 Nov 2026)
                 @endphp
                 @foreach ($links as [$route, $label])
                     @php($current = request()->routeIs($route.'*') || request()->routeIs(str_replace('.index', '.*', $route)))

@@ -62,6 +62,22 @@ class FooterTest extends TestCase
         $this->assertStringContainsString('Sign in', $nav);
     }
 
+    public function test_owners_and_agents_get_an_account_tab_on_the_site(): void
+    {
+        $tab = fn (string $html) => substr($html, strpos($html, '<nav aria-label="Main"'), 3000);
+
+        foreach ([User::factory()->owner()->create(), User::factory()->agent()->create()] as $lister) {
+            $nav = $tab($this->actingAs($lister)->get('/en')->assertOk()->getContent());
+            $this->assertStringContainsString('href="'.route('account.home').'"', $nav);
+            $this->assertMatchesRegularExpression('#>\s*Account\s*</a>#', $nav);
+        }
+
+        $visitorNav = $tab($this->actingAs(User::factory()->visitor()->create())->get('/en')->getContent());
+        $this->assertStringNotContainsString('href="'.route('account.home').'"', substr($visitorNav, 0, strpos($visitorNav, '</nav>')));
+        $this->assertStringContainsString('My favourites', $visitorNav);
+        auth()->logout();
+    }
+
     public function test_owner_and_agent_account_menu_is_tabs(): void
     {
         $owner = User::factory()->owner()->create();
@@ -72,6 +88,10 @@ class FooterTest extends TestCase
         $this->assertSame(substr_count($nav, '<a '), substr_count($nav, 'rounded-t-lg'), 'Every menu link is a tab.');
         $this->assertMatchesRegularExpression('#href="[^"]*/account/enquiries"\s+aria-current="page"#', $nav);
         $this->assertStringContainsString('bg-[var(--colour-brand)] text-white', $nav);
+
+        // My favourites is the last tab.
+        preg_match_all('#<a href="([^"]+)"#', $nav, $m);
+        $this->assertSame(route('account.favourites'), end($m[1]));
     }
 
     public function test_public_pages_have_a_back_to_top_button(): void

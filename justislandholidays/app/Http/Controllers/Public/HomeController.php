@@ -20,7 +20,7 @@ class HomeController extends Controller
 
         $publicListings = fn () => Listing::live()
             ->whereIn('island_id', $islands->pluck('id'))
-            ->with(['island', 'area', 'translations']);
+            ->with(['island', 'area', 'translations', 'amenities:id,code']);
 
         $featured = $publicListings()
             ->where('featured_until', '>', now())
@@ -35,18 +35,26 @@ class HomeController extends Controller
             'islands' => $islands,
             'featured' => $featured,
             'recent' => $recent,
-            'hero' => $this->heroImage(),
+            'heroes' => $heroes = $this->heroImages(),
+            'hero' => $heroes->first(),
         ]);
     }
 
-    /** One image at random on each visit, or the first one only, as set on the Appearance page. */
-    private function heroImage(): ?HeroImage
+    /**
+     * The hero images in the order they are shown (20 Nov 2026: they cross-fade from one to the
+     * next). "Random" on the Frontend Styler starts the slideshow on a random image each visit;
+     * "first" always starts on the first.
+     *
+     * @return \Illuminate\Support\Collection<int, HeroImage>
+     */
+    private function heroImages(): \Illuminate\Support\Collection
     {
-        $heroes = \App\Support\Appearance::heroes();
-        if ($heroes->isEmpty()) {
-            return null;
+        $heroes = \App\Support\Appearance::heroes()->values();
+        if ($heroes->count() < 2 || \App\Support\Appearance::heroMode() === 'first') {
+            return $heroes;
         }
+        $start = random_int(0, $heroes->count() - 1);
 
-        return \App\Support\Appearance::heroMode() === 'first' ? $heroes->first() : $heroes->random();
+        return $heroes->slice($start)->concat($heroes->slice(0, $start))->values();
     }
 }

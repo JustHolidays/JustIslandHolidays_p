@@ -9,6 +9,7 @@
 @extends('layouts.public', [
     'metaTitle' => __('Search holiday homes | Just Island Holidays'),
     'canonical' => route('search'),
+    'seoKeys' => 'search',
     'noindex' => true,
     'extraScripts' => $mapView ? ['resources/js/map.js'] : [],
 ])

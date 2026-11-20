@@ -37,6 +37,16 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/listings/import/fetch', [ImportController::class, 'fetch'])->middleware('throttle:20,1')->name('import.fetch');
     Route::post('/listings/import', [ImportController::class, 'store'])->name('import.store');
     // Add a property for an owner or agent (island admins for their own islands).
+    // Listing CSV import and export (super admins only, 20 Nov 2026).
+    Route::middleware('can:manage-listing-csv')->prefix('/listings/csv')->name('listings.csv')->group(function () {
+        $csv = \App\Http\Controllers\Admin\ListingCsvController::class;
+        Route::get('/', [$csv, 'index']);
+        Route::get('/export', [$csv, 'export'])->middleware('throttle:10,1')->name('.export');
+        Route::get('/template', [$csv, 'template'])->name('.template');
+        Route::post('/', [$csv, 'upload'])->middleware('throttle:10,1')->name('.upload');
+        Route::get('/preview/{token}', [$csv, 'preview'])->where('token', '[A-Za-z0-9]{32}')->name('.preview');
+        Route::post('/preview/{token}', [$csv, 'apply'])->where('token', '[A-Za-z0-9]{32}')->name('.apply');
+    });
     Route::get('/listings/add', [\App\Http\Controllers\Admin\PropertyCreateController::class, 'create'])->name('listings.create');
     Route::post('/listings/add', [\App\Http\Controllers\Admin\PropertyCreateController::class, 'store'])->name('listings.store');
     // Full property editor for owner and agent properties (20 Nov 2026): the owner's own editor
@@ -97,6 +107,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 
     // Owners and agents
     // Owners and agents are listed apart; changing a person's role on their page moves them.
+    // Add an owner or agent (super admins only, 20 Nov 2026).
+    Route::middleware('can:manage-owners')->group(function () {
+        Route::get('/users/add', [\App\Http\Controllers\Admin\OwnerCreateController::class, 'create'])->name('users.create');
+        Route::post('/users/add', [\App\Http\Controllers\Admin\OwnerCreateController::class, 'store'])->name('users.store');
+        Route::post('/users/{user}/invite', [\App\Http\Controllers\Admin\OwnerCreateController::class, 'invite'])->middleware('throttle:10,1')->name('users.invite');
+    });
     Route::get('/users', [UserController::class, 'index'])->defaults('role', 'owner')->name('users.index');
     Route::get('/agents', [UserController::class, 'index'])->defaults('role', 'agent')->name('agents.index');
     Route::get('/agents/{user}', [UserController::class, 'agent'])->middleware('can:view,user')->name('agents.show');
@@ -179,6 +195,20 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::middleware('can:manage-appearance')->group(function () {
         Route::get('/admin-colours', [\App\Http\Controllers\Admin\AdminColoursController::class, 'edit'])->name('admin-colours.edit');
         Route::put('/admin-colours', [\App\Http\Controllers\Admin\AdminColoursController::class, 'update'])->name('admin-colours.update');
+    });
+
+    // Maintenance mode (super admins only, 20 Nov 2026).
+    Route::middleware('can:manage-maintenance')->group(function () {
+        Route::get('/maintenance', [\App\Http\Controllers\Admin\MaintenanceController::class, 'edit'])->name('maintenance.edit');
+        Route::put('/maintenance', [\App\Http\Controllers\Admin\MaintenanceController::class, 'update'])->name('maintenance.update');
+    });
+
+    // SEO: sitemap, titles and descriptions, sharing, health check (super admins only, 20 Nov 2026).
+    Route::middleware('can:manage-seo')->prefix('seo')->name('seo.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SeoController::class, 'edit'])->name('edit');
+        Route::post('/meta', [\App\Http\Controllers\Admin\SeoController::class, 'saveMeta'])->name('meta');
+        Route::post('/share', [\App\Http\Controllers\Admin\SeoController::class, 'saveShareImage'])->name('share');
+        Route::post('/sitemap', [\App\Http\Controllers\Admin\SeoController::class, 'rebuildSitemap'])->middleware('throttle:10,1')->name('sitemap');
     });
 
     // Account closures: "Close my account" requests (super admins only, 20 Nov 2026).

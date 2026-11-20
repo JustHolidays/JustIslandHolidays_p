@@ -133,6 +133,30 @@ class PlatformTest extends TestCase
         $this->actingAs($admin)->post('/admin/plans/grant', [])->assertForbidden();
     }
 
+    public function test_home_page_hero_images_are_a_cross_fading_slideshow(): void
+    {
+        foreach (['Beach', 'Harbour', 'Cliffs'] as $i => $alt) {
+            HeroImage::create(['image_path' => "hero/h{$i}-2400.webp", 'alt_text' => $alt, 'sort_order' => $i, 'is_active' => true]);
+        }
+
+        $html = $this->get('/en')->assertOk()->getContent();
+        $this->assertSame(3, substr_count($html, 'data-hero-slide>') + substr_count($html, 'data-hero-slide '), 'Every active picture is on the page.');
+        $this->assertSame(1, substr_count($html, 'opacity-100'), 'One picture shows at first.');
+        $this->assertStringContainsString('transition-opacity duration-[1600ms]', $html);
+        $this->assertStringContainsString('data-hero-pause', $html);
+        $this->assertStringContainsString('Pause pictures', $html);
+
+        // "First" mode always starts with the first picture.
+        \App\Models\SiteSetting::updateOrCreate(['setting_key' => 'home.hero_mode'], ['value' => ['mode' => 'first']]);
+        \Illuminate\Support\Facades\Cache::flush();
+        $first = $this->get('/en')->getContent();
+        $this->assertMatchesRegularExpression('#alt="Beach"[^>]*fetchpriority="high"#', $first);
+
+        // One picture: no slideshow controls.
+        HeroImage::where('alt_text', '!=', 'Beach')->update(['is_active' => false]);
+        $this->assertStringNotContainsString('data-hero-pause', $this->get('/en')->getContent());
+    }
+
     public function test_plans_list_shows_yearly_and_featured_period_prices_and_no_monthly_column(): void
     {
         Plan::where('code', 'featured')->update(['price_3m_cents' => 4500, 'price_12m_cents' => 15000, 'price_year_cents' => null]);

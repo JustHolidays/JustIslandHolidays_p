@@ -301,6 +301,14 @@ class Listing extends Model
         return $day ? __($day) : null;
     }
 
+    /** True when the home lists the "Wheelchair friendly" facility (shown with an icon, 20 Nov 2026). */
+    public function isWheelchairFriendly(): bool
+    {
+        return $this->relationLoaded('amenities')
+            ? $this->amenities->contains('code', 'wheelchair_friendly')
+            : $this->amenities()->where('code', 'wheelchair_friendly')->exists();
+    }
+
     /** The rates table: owner and agent properties on any plan but Free. */
     public function hasRates(): bool
     {

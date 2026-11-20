@@ -12,6 +12,15 @@ use Illuminate\Support\Facades\Route;
 // robots.txt: everything blocked before launch (SITE_BLOCK_INDEXING), otherwise only private areas.
 Route::get('/robots.txt', \App\Http\Controllers\Public\RobotsController::class)->name('robots');
 
+// Sitemap for search engines (20 Nov 2026).
+Route::get('/sitemap.xml', \App\Http\Controllers\Public\SitemapController::class)->middleware('throttle:30,1')->name('sitemap');
+
+// Share buttons pass visitors on to each network's share page (20 Nov 2026).
+Route::get('/share/{network}/{ref}', \App\Http\Controllers\Public\ShareController::class)
+    ->where(['network' => implode('|', \App\Http\Controllers\Public\ShareController::NETWORKS), 'ref' => '[a-z2-9]{8}'])
+    ->middleware('throttle:60,1')
+    ->name('share');
+
 // Click tracking: the redirect sets no cookies.
 Route::get('/go/{ref}', GoController::class)->where('ref', '[a-z2-9]{8}')->name('go');
 

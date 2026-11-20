@@ -12,6 +12,9 @@
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.listings.create') }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-4 font-medium text-white">Add a property for an owner or agent</a>
             <a href="{{ route('admin.import.create') }}" class="inline-flex min-h-11 items-center rounded border border-slate-900 bg-white px-4 font-medium">Add an affiliate listing from a web address</a>
+            @can('manage-listing-csv')
+                <a href="{{ route('admin.listings.csv') }}" class="inline-flex min-h-11 items-center rounded border border-slate-900 bg-white px-4 font-medium">Import and export (CSV)</a>
+            @endcan
         </div>
     </div>
 

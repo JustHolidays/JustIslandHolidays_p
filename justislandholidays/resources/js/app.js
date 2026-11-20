@@ -115,3 +115,107 @@ try {
 } catch {
     // Storage blocked: nothing to restore.
 }
+
+// Share buttons on property pages (20 Nov 2026; marked data-pass-on, as blockers hide "share"): Copy link, and the phone's own share sheet
+// where the browser has one. Both stay hidden when script does not run.
+document.querySelectorAll('[data-pass-on]').forEach((box) => {
+    const status = box.querySelector('[data-pass-on-status]');
+    const copy = box.querySelector('[data-pass-on-copy]');
+    if (copy && navigator.clipboard) {
+        box.querySelector('[data-pass-on-copy-item]').hidden = false;
+        copy.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(copy.dataset.passOnCopy);
+                status.textContent = 'Link copied';
+            } catch {
+                status.textContent = 'Could not copy the link';
+            }
+            setTimeout(() => { status.textContent = ''; }, 4000);
+        });
+    }
+    const native = box.querySelector('[data-pass-on-native]');
+    if (native && navigator.share) {
+        box.querySelector('[data-pass-on-native-item]').hidden = false;
+        native.addEventListener('click', () => {
+            navigator.share({ title: native.dataset.title, url: native.dataset.url }).catch(() => {});
+        });
+    }
+});
+
+// Short messages marked data-auto-dismiss (for example "Saved to your favourites") fade away
+// after the given time, then free the space they took (20 Nov 2026).
+document.querySelectorAll('[data-auto-dismiss]').forEach((box) => {
+    const wait = Number(box.dataset.autoDismiss) || 5000;
+    setTimeout(() => {
+        box.style.transition = 'opacity 400ms ease';
+        box.style.opacity = '0';
+        setTimeout(() => box.remove(), 450);
+    }, wait);
+});
+
+// Home page hero slideshow (20 Nov 2026): each picture shows for 7 seconds, then the next one
+// fades in ON TOP of it while it stays fully visible underneath, so the hero never dims or
+// flashes part-way. The old picture is hidden only once the new one covers it, and a fade only
+// starts once the next picture has loaded. A pause button stops it (moving content needs one);
+// it also rests while the tab is hidden. Pictures not on show are hidden from screen readers.
+const heroSlides = [...document.querySelectorAll('[data-hero-slide]')];
+if (heroSlides.length > 1) {
+    const FADE = 1600;   // matches duration-[1600ms] on the images
+    const pauseButton = document.querySelector('[data-hero-pause]');
+    let current = 0;
+    let paused = false;
+    let fading = false;
+
+    heroSlides.forEach((img, i) => { img.style.zIndex = i === 0 ? '1' : '0'; });
+
+    const ready = (img) => {
+        img.loading = 'eager';
+        if (img.complete && img.naturalWidth > 0) {
+            return Promise.resolve();
+        }
+        return img.decode ? img.decode().catch(() => {}) : new Promise((done) => { img.onload = img.onerror = done; });
+    };
+
+    const show = async (next) => {
+        if (fading) {
+            return;
+        }
+        fading = true;
+        const from = heroSlides[current];
+        const to = heroSlides[next];
+        await ready(to);
+        heroSlides.forEach((img) => { if (img !== from && img !== to) img.style.zIndex = '0'; });
+        from.style.zIndex = '1';
+        to.style.zIndex = '2';
+        to.removeAttribute('aria-hidden');
+        to.classList.replace('opacity-0', 'opacity-100');
+        setTimeout(() => {
+            // Covered now: hide the old one underneath without anyone seeing it go.
+            from.style.transition = 'none';
+            from.classList.replace('opacity-100', 'opacity-0');
+            from.setAttribute('aria-hidden', 'true');
+            from.offsetHeight;   // apply before the transition comes back
+            from.style.transition = '';
+            current = next;
+            fading = false;
+            ready(heroSlides[(next + 1) % heroSlides.length]);   // get the one after ready early
+        }, FADE + 50);
+    };
+
+    ready(heroSlides[1]);
+    setInterval(() => {
+        if (!paused && !document.hidden) {
+            show((current + 1) % heroSlides.length);
+        }
+    }, 7000);
+
+    if (pauseButton) {
+        pauseButton.hidden = false;
+        pauseButton.addEventListener('click', () => {
+            paused = !paused;
+            pauseButton.querySelector('[data-pause-label]').textContent = paused ? 'Play pictures' : 'Pause pictures';
+            pauseButton.querySelector('[data-icon-pause]').classList.toggle('hidden', paused);
+            pauseButton.querySelector('[data-icon-play]').classList.toggle('hidden', !paused);
+        });
+    }
+}

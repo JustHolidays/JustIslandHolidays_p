@@ -54,7 +54,7 @@
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
         <section class="rounded-lg bg-white p-5 shadow-sm" aria-labelledby="logo-heading">
             <h2 id="logo-heading" class="text-lg font-semibold">Logo</h2>
-            <p class="mt-1 text-sm">PNG, up to 1 MB. Shown about 40 pixels tall in place of the brand name. Without a logo, the name shows as text.</p>
+            <p class="mt-1 text-sm">PNG, up to 1 MB. Shown 300 pixels wide at the top of every page (smaller on phones), in place of the brand name. For a sharp logo, upload one at least 600 pixels wide. Without a logo, the name shows as text.</p>
             @if ($logoUrl)<img src="{{ $logoUrl }}" alt="{{ $logo['alt'] ?? '' }}" class="mt-3 h-10 w-auto">@endif
             <form method="POST" action="{{ route('admin.appearance.logo') }}" enctype="multipart/form-data" class="mt-3 space-y-2">
                 @csrf

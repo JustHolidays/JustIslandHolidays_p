@@ -35,6 +35,16 @@ return [
     'languages' => ['en', 'es', 'de'],
     'enabled_languages' => explode(',', env('SITE_LANGUAGES', 'en')),
 
+    // The business behind the site, for search engines (schema.org Organization on the home page)
+    // and the legal pages: the registered office (CLAUDE.md).
+    'business' => [
+        'name' => 'Just Island Holidays',
+        'street' => '86 Manston Road',
+        'locality' => 'Ramsgate',
+        'postcode' => 'CT11 0RJ',
+        'country' => 'GB',
+    ],
+
     /*
     | Maps (Leaflet). The map images come from a tile provider, which sees the visitor's
     | address when their browser loads them (the privacy notice says so). The default is

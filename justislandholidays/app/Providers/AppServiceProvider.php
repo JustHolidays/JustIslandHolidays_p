@@ -27,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
         'manage-property-types', // /admin/property-types (super admins only, decided 19 Nov 2026)
         'manage-paypal-settings', // /admin/paypal-settings: PayPal details (super admins only, 20 Nov 2026)
         'manage-account-closures', // /admin/account-closures: "Close my account" requests (super admins only, 20 Nov 2026)
+        'manage-listing-csv',    // /admin/listings/csv: listing CSV import and export (super admins only, 20 Nov 2026)
+        'manage-seo',            // /admin/seo: sitemap, titles and descriptions, sharing (super admins only, 20 Nov 2026)
+        'manage-maintenance',    // /admin/maintenance: maintenance mode (super admins only, 20 Nov 2026)
+        'manage-owners',         // /admin/users/add: add owner and agent accounts (super admins only, 20 Nov 2026)
     ];
 
     public function register(): void

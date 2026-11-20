@@ -86,7 +86,7 @@ class AppearanceController extends AdminController
 
         $current = Appearance::get('brand.logo', true) ?? [];
         $path = $request->hasFile('logo')
-            ? $this->storePng($request->file('logo'), 'brand/logo-'.Str::uuid().'.png', maxHeight: 160)
+            ? $this->storePng($request->file('logo'), 'brand/logo-'.Str::uuid().'.png', maxHeight: 320)   // room for a sharp 300-pixel-wide logo on high-resolution screens
             : ($current['path'] ?? null);
 
         if (! $path) {

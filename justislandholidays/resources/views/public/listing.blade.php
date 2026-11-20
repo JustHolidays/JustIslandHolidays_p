@@ -21,6 +21,9 @@
 @extends('layouts.public', [
     'metaTitle' => $title.' – '.$place.' | Just Island Holidays',
     'metaDescription' => $summary ? \Illuminate\Support\Str::limit($summary, 155) : null,
+    // Sharing previews show the home's own photo (20 Nov 2026).
+    'shareImage' => $listing->imageUrl(1600),
+    'ogType' => 'article',
     'canonical' => $canonical,
     'alternates' => $alternates,
     'extraScripts' => $isAffiliate ? ['resources/js/map.js'] : ['resources/js/map.js', 'resources/js/altcha.js'],
@@ -43,9 +46,15 @@
             <div>
                 <h1 class="text-3xl font-semibold">{{ $title }}</h1>
                 <p class="mt-1 text-lg">{{ $place }}</p>
+                @if ($listing->isWheelchairFriendly())
+                    <x-wheelchair-icon size="page" class="mt-2" />
+                @endif
             </div>
-            {{-- Favourites heart (20 Nov 2026): red once saved. --}}
-            <x-favourite-heart :listing="$listing" size="page" />
+            {{-- Favourites heart and share buttons (20 Nov 2026). --}}
+            <div class="flex flex-col items-start gap-2 sm:items-end">
+                <x-favourite-heart :listing="$listing" size="page" />
+                <x-share-buttons :listing="$listing" :title="$title.' – '.$place" />
+            </div>
         </div>
 
         {{-- Bookmark menu for owner and agent properties (20 Nov 2026): links to the sections

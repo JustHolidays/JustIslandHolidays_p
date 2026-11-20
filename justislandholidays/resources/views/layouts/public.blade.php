@@ -3,6 +3,9 @@
     $logo = \App\Support\Appearance::logo();
     $favicons = \App\Support\Appearance::favicons();
     $previewing = \App\Support\Appearance::isPreview();
+    // SEO wording from Settings › SEO (20 Nov 2026) when saved, else the page's own.
+    [$metaTitle, $metaDescription] = \App\Support\Seo::resolve($seoKeys ?? null, $seoVars ?? [], $metaTitle ?? null, $metaDescription ?? null);
+    $ogImage = $shareImage ?? \App\Support\Seo::shareImageUrl();
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $lang }}">
@@ -11,6 +14,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $metaTitle ?? 'Just Island Holidays' }}</title>
     @isset($metaDescription)<meta name="description" content="{{ $metaDescription }}">@endisset
+    {{-- Sharing previews (Facebook, WhatsApp and others): the page's own picture, else the default. --}}
+    <meta property="og:site_name" content="Just Island Holidays">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
+    <meta property="og:title" content="{{ $metaTitle ?? 'Just Island Holidays' }}">
+    @isset($metaDescription)<meta property="og:description" content="{{ $metaDescription }}">@endisset
+    @isset($canonical)<meta property="og:url" content="{{ $canonical }}">@endisset
+    <meta property="og:locale" content="{{ ['en' => 'en_GB', 'es' => 'es_ES', 'de' => 'de_DE'][$lang] ?? 'en_GB' }}">
+    @if ($ogImage)
+        <meta property="og:image" content="{{ $ogImage }}">
+        <meta name="twitter:card" content="summary_large_image">
+    @else
+        <meta name="twitter:card" content="summary">
+    @endif
+    @if (request()->routeIs('home'))
+        <script type="application/ld+json">{!! json_encode(\App\Support\Seo::organisation(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+    @endif
     @isset($canonical)<link rel="canonical" href="{{ $canonical }}">@endisset
     @if (! empty($noindex))<meta name="robots" content="noindex, follow">@endif
     @foreach ($alternates ?? [] as $altLang => $altUrl)
@@ -27,6 +46,13 @@
 <body id="top" class="flex min-h-screen flex-col bg-[var(--colour-background)] text-[var(--colour-text)] antialiased">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2">{{ __('Skip to content') }}</a>
 
+    @if (auth()->user()?->isAdmin() && \App\Support\Maintenance::isOn())
+        {{-- Only admins get this far while maintenance mode is on (20 Nov 2026). --}}
+        <p role="status" class="bg-amber-300 px-4 py-2 text-center font-medium text-black" data-maintenance-banner>
+            Maintenance mode is on: visitors see the maintenance page, you see the site because you are an admin.
+            <a href="{{ route('home', ['en', 'maintenance' => 'preview']) }}" class="underline">See what visitors see</a>
+        </p>
+    @endif
     @if ($previewing)
         <p role="status" class="bg-amber-300 px-4 py-2 text-center font-medium text-black">Preview of the draft appearance. Visitors still see the published version.</p>
     @endif
@@ -35,7 +61,7 @@
         <div class="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-x-3 gap-y-2 px-4 pt-3">
             <a href="{{ route('home') }}" class="mb-3 inline-flex min-h-11 items-center text-xl font-semibold text-[var(--colour-brand)]">
                 @if ($logo)
-                    <img src="{{ $logo['url'] }}" alt="{{ $logo['alt'] }}" class="h-10 w-auto">
+                    <img src="{{ $logo['url'] }}" alt="{{ $logo['alt'] }}" width="300" class="h-auto w-[300px] max-w-[70vw]">
                 @else
                     Just Island Holidays
                 @endif
@@ -51,6 +77,10 @@
                         ? ['url' => route('account.favourites'), 'label' => __('My favourites'), 'current' => false, 'icon' => 'heart']
                         : ['url' => route('login'), 'label' => __('Sign in'), 'current' => false, 'icon' => null],
                 ];
+                // Owners and agents also get a tab back to their account (20 Nov 2026).
+                if (auth()->user()?->role?->canSubscribe()) {
+                    $tabs[] = ['url' => route('account.home'), 'label' => __('Account'), 'current' => false, 'icon' => null];
+                }
             @endphp
             <nav aria-label="{{ __('Main') }}" class="-mb-px">
                 <ul class="flex flex-wrap items-end gap-1">
@@ -76,7 +106,9 @@
 
     <main id="main" class="flex-1">
         @if (session('status'))
-            <div class="mx-auto max-w-6xl px-4 pt-6">
+            {{-- Messages such as "Saved to your favourites": space below so they never touch the
+                 page under them, and app.js fades them away after 5 seconds (20 Nov 2026). --}}
+            <div class="mx-auto max-w-6xl px-4 py-6" data-auto-dismiss="5000">
                 <div role="status" class="rounded border border-green-300 bg-green-50 p-4">{{ session('status') }}</div>
             </div>
         @endif
@@ -97,7 +129,14 @@
         <div class="absolute inset-0 -z-10 bg-black/65" aria-hidden="true"></div>
         <div class="mx-auto grid max-w-6xl gap-6 px-4 py-10 md:grid-cols-2 md:items-center md:py-16">
             <div>
-                <p class="font-semibold">Just Island Holidays</p>
+                {{-- The logo, 200 pixels wide, on a light panel so it reads over the dark footer (20 Nov 2026). --}}
+                @if ($logo)
+                    <a href="{{ route('home') }}" class="inline-block rounded-lg bg-white/95 p-2 shadow-sm" data-footer-logo>
+                        <img src="{{ $logo['url'] }}" alt="{{ $logo['alt'] }}" width="200" class="h-auto w-[200px] max-w-full" loading="lazy">
+                    </a>
+                @else
+                    <p class="font-semibold">Just Island Holidays</p>
+                @endif
                 <p class="mt-2 text-sm">{{ __('Holiday homes in Mallorca and Menorca. You contact owners directly; we take no bookings or payments.') }}</p>
                 <p class="mt-2 text-sm">{{ __('Some links go to booking partners. We may earn a commission if you book through them, at no extra cost to you.') }}</p>
             </div>
