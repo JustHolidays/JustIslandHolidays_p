@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
  * The public site reads the published values; a super admin can preview the draft
  * by adding ?preview=draft to a public address.
  *
- * Keys in site_settings: theme.colours, brand.logo, brand.favicon, home.hero_mode, home.hero, map.markers.
+ * Keys in site_settings: theme.colours, brand.logo, brand.favicon, home.hero_mode, home.hero, map.markers, footer.image.
  */
 final class Appearance
 {
@@ -51,6 +51,28 @@ final class Appearance
         $logo = self::get('brand.logo', $draft);
 
         return ! empty($logo['path']) ? ['url' => Storage::disk('public')->url($logo['path']), 'alt' => (string) ($logo['alt'] ?? 'Just Island Holidays')] : null;
+    }
+
+    /** Footer image band: shown this tall on tablets and desktops (180 on phones). */
+    public const FOOTER_IMAGE_HEIGHT = 300;
+
+    /**
+     * The image across the top of the footer on every public page, or null for the placeholder.
+     *
+     * @return array{url: string, srcset: string, alt: string}|null
+     */
+    public static function footerImage(?bool $draft = null): ?array
+    {
+        $image = self::get('footer.image', $draft);
+        if (empty($image['path'])) {
+            return null;
+        }
+
+        return [
+            'url' => Storage::disk('public')->url($image['path']),
+            'srcset' => HeaderImage::srcsetForPath($image['path']),
+            'alt' => (string) ($image['alt'] ?? ''),
+        ];
     }
 
     /** @return array<int, string> size => url */

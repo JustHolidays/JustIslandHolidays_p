@@ -68,7 +68,7 @@ class HeaderImageTest extends TestCase
         $html = $this->islandPage();
         $this->assertStringContainsString('data-header-image="photo"', $html);
         $this->assertStringContainsString('sm:min-h-[400px]', $html);
-        $this->assertStringNotContainsString('images/placeholders/header-', $html);
+        $this->assertStringNotContainsString('images/placeholders/header-', strstr($html, '<footer', true), 'The footer has its own placeholder.');
         $this->assertStringContainsString('alt="Turquoise water at Cala Macarella"', $html);
         $this->assertStringContainsString('-800.webp 800w', $html);
         // Below the menu.
@@ -112,7 +112,7 @@ class HeaderImageTest extends TestCase
         $html = $this->islandPage($this->area);
         $this->assertStringNotContainsString('data-header-image', $html);
         $this->assertStringNotContainsString('alt="Island view"', $html);
-        $this->assertStringNotContainsString('images/placeholders/header-', $html);
+        $this->assertStringNotContainsString('images/placeholders/header-', strstr($html, '<footer', true), 'The footer has its own placeholder.');
 
         // And nothing to edit for a resort.
         $this->actingAs($admin)->get(route('admin.areas.edit', $this->area))->assertOk()->assertDontSee('Page header image');

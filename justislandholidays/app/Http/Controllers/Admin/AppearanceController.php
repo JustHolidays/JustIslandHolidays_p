@@ -28,7 +28,7 @@ use Illuminate\View\View;
  */
 class AppearanceController extends AdminController
 {
-    private const KEYS = ['theme.colours', 'brand.logo', 'brand.favicon', 'home.hero_mode', 'home.hero', 'map.markers'];
+    private const KEYS = ['theme.colours', 'brand.logo', 'brand.favicon', 'home.hero_mode', 'home.hero', 'map.markers', 'footer.image'];
 
     private const HERO_WIDTHS = [800, 1600, 2400];
 
@@ -46,6 +46,7 @@ class AppearanceController extends AdminController
             'logo' => Appearance::get('brand.logo', true),
             'logoUrl' => Appearance::logo(true)['url'] ?? null,
             'favicons' => Appearance::favicons(true),
+            'footerImage' => Appearance::footerImage(true),
             'heroMode' => Appearance::heroMode(true),
             'heroes' => HeroImage::orderBy('sort_order')->orderBy('id')->get(),
             'heroDraft' => collect($this->heroArrangement())->keyBy('id'),
@@ -115,6 +116,41 @@ class AppearanceController extends AdminController
         $this->saveDraft('brand.favicon', ['sizes' => $sizes], $request);
 
         return back()->with('status', 'Favicon saved as a draft.');
+    }
+
+    /**
+     * The image across the top of the footer on every public page. Saved as WebP copies
+     * (like island header images) and published with everything else. Old copies are kept,
+     * so Undo can put the previous image back.
+     */
+    public function saveFooterImage(Request $request): RedirectResponse
+    {
+        if ($request->boolean('remove')) {
+            $this->saveDraft('footer.image', [], $request);
+
+            return back()->with('status', 'Footer image removed in the draft. The placeholder shows until a new one is added.');
+        }
+
+        $current = Appearance::get('footer.image', true) ?? [];
+        $request->validate([
+            'footer_image' => [empty($current['path']) ? 'required' : 'nullable', 'file', 'mimes:jpg,jpeg,webp', 'max:5120',
+                'dimensions:min_width='.\App\Support\HeaderImage::MIN_WIDTH.',min_height='.Appearance::FOOTER_IMAGE_HEIGHT],
+            'footer_image_alt' => ['required', 'string', 'max:160'],
+        ], [
+            'footer_image.required' => 'Choose an image file.',
+            'footer_image.mimes' => 'The footer image must be a JPG or WebP file.',
+            'footer_image.max' => 'The footer image must be 5 MB or smaller.',
+            'footer_image.dimensions' => 'The footer image must be at least '.\App\Support\HeaderImage::MIN_WIDTH.' pixels wide and '.Appearance::FOOTER_IMAGE_HEIGHT.' pixels tall.',
+            'footer_image_alt.required' => 'Describe the image for people who cannot see it.',
+        ]);
+
+        $path = $request->hasFile('footer_image')
+            ? \App\Support\HeaderImage::store($request->file('footer_image'))
+            : $current['path'];
+
+        $this->saveDraft('footer.image', ['path' => $path, 'alt' => trim((string) $request->input('footer_image_alt'))], $request);
+
+        return back()->with('status', 'Footer image saved as a draft. Publish to make it live.');
     }
 
     /**

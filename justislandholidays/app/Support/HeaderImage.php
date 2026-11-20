@@ -79,7 +79,12 @@ final class HeaderImage
     /** srcset for the copies that exist (up to the largest one stored). */
     public static function srcset(Model $place): string
     {
-        $path = (string) $place->header_image_path;
+        return self::srcsetForPath((string) $place->header_image_path);
+    }
+
+    /** srcset for any image stored by store() (header images, the footer image). */
+    public static function srcsetForPath(string $path): string
+    {
         if (! preg_match('#^(places/[0-9a-f-]+)-(\d+)\.webp$#', $path, $m)) {
             return '';
         }

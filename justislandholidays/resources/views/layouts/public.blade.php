@@ -63,21 +63,32 @@
         @yield('content')
     </main>
 
-    <footer class="mt-12 bg-[var(--colour-band)]">
-        <div class="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-2">
+    {{-- Footer image behind the footer content, the same on every page (Frontend Styler).
+         A dark layer over it keeps the white text readable (at least 4.5 to 1 over any photo).
+         Until an image is added, a plain placeholder with no alt text, as it shows nothing real. --}}
+    @php($footerImage = \App\Support\Appearance::footerImage())
+    <footer class="relative isolate mt-12 min-h-[180px] overflow-hidden bg-slate-800 text-white md:min-h-[300px]" data-footer-image="{{ $footerImage ? 'photo' : 'placeholder' }}">
+        @if ($footerImage)
+            <img src="{{ $footerImage['url'] }}" @if ($footerImage['srcset']) srcset="{{ $footerImage['srcset'] }}" sizes="100vw" @endif alt="{{ $footerImage['alt'] }}" loading="lazy" decoding="async" class="absolute inset-0 -z-20 h-full w-full object-cover">
+        @else
+            <img src="{{ \App\Support\HeaderImage::placeholderUrl() }}" srcset="{{ \App\Support\HeaderImage::placeholderSrcset() }}" sizes="100vw" alt="" loading="lazy" decoding="async" class="absolute inset-0 -z-20 h-full w-full object-cover">
+        @endif
+        <div class="absolute inset-0 -z-10 bg-black/65" aria-hidden="true"></div>
+        <div class="mx-auto grid max-w-6xl gap-6 px-4 py-10 md:grid-cols-2 md:items-center md:py-16">
             <div>
                 <p class="font-semibold">Just Island Holidays</p>
                 <p class="mt-2 text-sm">{{ __('Holiday homes in Mallorca and Menorca. You contact owners directly; we take no bookings or payments.') }}</p>
                 <p class="mt-2 text-sm">{{ __('Some links go to booking partners. We may earn a commission if you book through them, at no extra cost to you.') }}</p>
             </div>
             <nav aria-label="{{ __('Footer') }}">
-                <ul class="grid grid-cols-2 gap-1 text-sm">
+                @php($footerButton = 'flex min-h-11 w-full items-center justify-center rounded-full bg-orange-700 px-4 text-center font-medium text-white no-underline shadow-sm hover:bg-orange-800 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white')
+                <ul class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
                     @foreach (['about' => __('About us'), 'contact' => __('Contact'), 'terms' => __('Terms'), 'privacy' => __('Privacy'), 'accessibility' => __('Accessibility')] as $slug => $label)
-                        <li><a href="{{ route('pages.show', $slug) }}" class="inline-flex min-h-11 items-center underline">{{ $label }}</a></li>
+                        <li><a href="{{ route('pages.show', $slug) }}" class="{{ $footerButton }}">{{ $label }}</a></li>
                     @endforeach
-                    <li><a href="{{ route('partners') }}" class="inline-flex min-h-11 items-center underline">{{ __('Our partners') }}</a></li>
-                    <li><a href="{{ route('owners') }}" class="inline-flex min-h-11 items-center underline">{{ __('For owners') }}</a></li>
-                    <li><a href="{{ route('login') }}" class="inline-flex min-h-11 items-center underline">{{ __('Owner sign in') }}</a></li>
+                    <li><a href="{{ route('partners') }}" class="{{ $footerButton }}">{{ __('Our partners') }}</a></li>
+                    <li><a href="{{ route('owners') }}" class="{{ $footerButton }}">{{ __('For owners') }}</a></li>
+                    <li><a href="{{ route('login') }}" class="{{ $footerButton }}">{{ __('Owner sign in') }}</a></li>
                 </ul>
             </nav>
         </div>

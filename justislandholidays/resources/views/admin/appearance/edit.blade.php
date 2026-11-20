@@ -180,4 +180,26 @@
             </div>
         @endif
     </section>
+
+    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm" aria-labelledby="footer-image-heading" id="footer-image">
+        <h2 id="footer-image-heading" class="text-lg font-semibold">Footer image</h2>
+        <p class="mt-1 max-w-3xl text-sm">One image behind the whole footer, the same on every page of the public site. The footer text and buttons sit on top of it, with a dark layer so the white text stays readable. The footer is at least {{ \App\Support\Appearance::FOOTER_IMAGE_HEIGHT }} pixels tall (taller on phones, where the buttons stack) and the image is cropped to fit, so keep the important part in the middle. JPG or WebP, at least {{ \App\Support\HeaderImage::MIN_WIDTH }} pixels wide and {{ \App\Support\Appearance::FOOTER_IMAGE_HEIGHT }} tall, up to 5 MB. A placeholder shows until you add one.</p>
+        @if ($footerImage)
+            <img src="{{ $footerImage['url'] }}" alt="{{ $footerImage['alt'] }}" class="mt-3 h-32 w-full max-w-3xl rounded object-cover">
+        @else
+            <img src="{{ \App\Support\HeaderImage::placeholderUrl() }}" alt="" class="mt-3 h-32 w-full max-w-3xl rounded object-cover opacity-70">
+            <p class="mt-1 text-sm text-slate-700">Placeholder: no footer image yet.</p>
+        @endif
+        <form method="POST" action="{{ route('admin.appearance.footer-image') }}" enctype="multipart/form-data" class="mt-3 max-w-3xl space-y-2">
+            @csrf
+            <label for="footer_image" class="block font-medium">Image file{{ $footerImage ? ' (leave empty to keep the current one)' : '' }}</label>
+            <input id="footer_image" name="footer_image" type="file" accept="image/jpeg,image/webp" class="block min-h-11" @if (! $footerImage) required @endif>
+            @error('footer_image')<p class="text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+            <x-field name="footer_image_alt" label="Description (alt text)" :value="$footerImage['alt'] ?? null" required />
+            <div class="flex flex-wrap gap-2">
+                <x-button>Save as draft</x-button>
+                @if ($footerImage)<button type="submit" name="remove" value="1" formnovalidate class="min-h-11 rounded border border-slate-400 px-4">Remove footer image</button>@endif
+            </div>
+        </form>
+    </section>
 @endsection
