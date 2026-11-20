@@ -33,5 +33,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Sign out always works (20 Nov 2026): a page left open past the session lifetime has an
+        // out-of-date form token, which would otherwise show "Page Expired" instead of signing out.
+        // Laravel turns the token mismatch into a 419 before these callbacks run.
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
+            if ($e->getStatusCode() !== 419 || ! $e->getPrevious() instanceof \Illuminate\Session\TokenMismatchException || ! $request->routeIs('logout')) {
+                return null;
+            }
+            \Illuminate\Support\Facades\Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect('/')->with('status', 'You are signed out.');
+        });
     })->create();
