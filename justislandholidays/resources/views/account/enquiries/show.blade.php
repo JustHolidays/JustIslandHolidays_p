@@ -13,6 +13,28 @@
         <div class="sm:col-span-2"><dt class="text-sm text-slate-600">Message</dt><dd class="whitespace-pre-line">{{ $enquiry->message }}</dd></div>
     </dl>
 
+    {{-- Confirm Booking: puts the requested dates on the property's calendar (paid plans). --}}
+    <section class="mt-6 max-w-2xl rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="book-heading" data-booking-state="{{ $booking['state'] }}">
+        <h2 id="book-heading" class="text-lg font-semibold">Booking</h2>
+        @error('booking')<p class="mt-2 text-sm font-medium text-red-800">{{ $message }}</p>@enderror
+        @if ($booking['state'] === 'ready')
+            <p class="mt-1 text-sm text-slate-700">Agreed with {{ $enquiry->guest_name }}? Book {{ $enquiry->check_in->format('j M Y') }} to {{ $enquiry->check_out->format('j M Y') }} ({{ trans_choice(':count night|:count nights', $enquiry->check_in->diffInDays($enquiry->check_out)) }}) on your calendar. Visitors then see those dates as booked, and this enquiry is closed. This does not email the guest; reply to them yourself.</p>
+            <form method="POST" action="{{ route('account.enquiries.confirm-booking', $enquiry) }}" class="mt-3"
+                  onsubmit="return confirm(@js('Confirm this booking for '.$enquiry->guest_name.'?'."\n\n".$enquiry->check_in->format('j M Y').' to '.$enquiry->check_out->format('j M Y').' will be booked on your calendar, and enquiry '.$enquiry->reference().' will be closed.'))">
+                @csrf
+                <button type="submit" class="min-h-11 rounded bg-orange-700 px-5 font-semibold text-white hover:bg-orange-800">Confirm Booking</button>
+            </form>
+        @elseif ($booking['state'] === 'booked')
+            <p class="mt-1">{{ $booking['message'] }}
+                @if ($enquiry->listing?->hasCalendar())
+                    <a href="{{ route('account.listings.edit', [$enquiry->listing, 'bookings']) }}" class="underline">See your booked dates</a>
+                @endif
+            </p>
+        @else
+            <p class="mt-1 text-sm text-slate-700">{{ $booking['message'] }}</p>
+        @endif
+    </section>
+
     <form method="POST" action="{{ route('account.enquiries.status', $enquiry) }}" class="mt-6 flex max-w-2xl flex-wrap items-end gap-3">
         @csrf @method('PATCH')
         <div>

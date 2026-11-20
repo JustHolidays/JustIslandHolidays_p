@@ -97,6 +97,7 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
             Route::get('/enquiries', [AccountEnquiryController::class, 'index'])->name('enquiries.index');
             Route::get('/enquiries/{enquiry}', [AccountEnquiryController::class, 'show'])->middleware('can:view,enquiry')->name('enquiries.show');
             Route::patch('/enquiries/{enquiry}/status', [AccountEnquiryController::class, 'updateStatus'])->middleware('can:updateStatus,enquiry')->name('enquiries.status');
+            Route::post('/enquiries/{enquiry}/confirm-booking', [AccountEnquiryController::class, 'confirmBooking'])->middleware('can:confirmBooking,enquiry')->name('enquiries.confirm-booking');
 
             Route::get('/clicks', ClickReportController::class)->middleware('can:view-own-clicks')->name('clicks');
         });

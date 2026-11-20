@@ -19,6 +19,12 @@ class EnquiryPolicy
         return $this->isRecipient($user, $enquiry);
     }
 
+    /** Only the recipient books the requested dates on their own calendar (Confirm Booking). */
+    public function confirmBooking(User $user, Enquiry $enquiry): bool
+    {
+        return $this->isRecipient($user, $enquiry);
+    }
+
     public function markSpam(User $user, Enquiry $enquiry): bool
     {
         return $this->isRecipient($user, $enquiry) || $this->adminCovers($user, $enquiry);
