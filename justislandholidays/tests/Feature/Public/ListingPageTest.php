@@ -77,6 +77,23 @@ class ListingPageTest extends TestCase
             ->assertDontSee('booking.example.com', false);
     }
 
+    public function test_affiliate_pages_show_the_from_price_above_the_partner_logo(): void
+    {
+        $affiliate = User::factory()->affiliate()->create();
+        $priced = $this->listing(['owner_id' => $affiliate->id, 'min_price_week_cents' => 95000], fn ($f) => $f->withDeeplink());
+        $unpriced = $this->listing(['owner_id' => $affiliate->id, 'min_price_week_cents' => null], fn ($f) => $f->withDeeplink());
+        $owned = $this->listing(['plan_code' => 'standard', 'min_price_week_cents' => 120000], fn ($f) => $f->withDeeplink());
+
+        $html = $this->get($priced->publicUrl('en'))->assertOk()->getContent();
+        $this->assertStringContainsString('data-affiliate-price', $html);
+        $this->assertMatchesRegularExpression('#data-affiliate-price>.*?€950 a week#s', $html);
+        $this->assertLessThan(strpos($html, 'data-partner-logo'), strpos($html, 'data-affiliate-price'), 'The price sits above the logo.');
+        $this->assertStringContainsString('bg-orange-700', substr($html, strpos($html, 'data-affiliate-price') - 120, 200));
+
+        $this->get($unpriced->publicUrl('en'))->assertOk()->assertDontSee('data-affiliate-price', false)->assertSee('data-partner-logo', false);
+        $this->get($owned->publicUrl('en'))->assertOk()->assertDontSee('data-affiliate-price', false);
+    }
+
     public function test_free_plan_has_the_contact_form_and_agents_pages_say_agent(): void
     {
         $owners = $this->listing(['plan_code' => 'free']);

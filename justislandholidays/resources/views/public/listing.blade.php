@@ -220,6 +220,13 @@
             <aside class="space-y-6" aria-label="{{ __('Contact and availability') }}">
                 @if ($listing->showsCheckAvailability())
                     <div class="rounded-lg border-2 border-[var(--colour-brand)] bg-white p-5">
+                        @if ($isAffiliate && $listing->guidePrice())
+                            {{-- Affiliates (21 Nov 2026): the From price above the partner logo, white on orange. --}}
+                            <p class="mb-4 rounded bg-orange-700 px-4 py-3 text-center text-white" data-affiliate-price>
+                                <span class="block text-sm font-medium">{{ __('From Price') }}</span>
+                                <span class="block text-2xl font-semibold">{{ __(':price a week', ['price' => $listing->guidePrice()]) }}</span>
+                            </p>
+                        @endif
                         @if ($isAffiliate)
                             {{-- The affiliate's logo, 100 pixels tall and fitted inside; a placeholder until one is uploaded. Not a link. --}}
                             @php
