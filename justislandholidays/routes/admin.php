@@ -210,6 +210,12 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     });
 
     // Maintenance mode (super admins only, 20 Nov 2026).
+    // Footer links (super admins only, 21 Nov 2026).
+    Route::middleware('can:manage-footer')->group(function () {
+        Route::get('/footer-links', [\App\Http\Controllers\Admin\FooterLinksController::class, 'edit'])->name('footer-links.edit');
+        Route::put('/footer-links', [\App\Http\Controllers\Admin\FooterLinksController::class, 'update'])->name('footer-links.update');
+    });
+
     Route::middleware('can:manage-maintenance')->group(function () {
         Route::get('/maintenance', [\App\Http\Controllers\Admin\MaintenanceController::class, 'edit'])->name('maintenance.edit');
         Route::put('/maintenance', [\App\Http\Controllers\Admin\MaintenanceController::class, 'update'])->name('maintenance.update');

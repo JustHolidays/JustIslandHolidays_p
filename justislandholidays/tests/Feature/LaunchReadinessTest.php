@@ -140,6 +140,8 @@ class LaunchReadinessTest extends TestCase
 
     public function test_footer_links_to_the_accessibility_statement(): void
     {
+        // Footer links to content pages show once the page exists (21 Nov 2026); deploys seed it.
+        $this->seed(LegalPagesSeeder::class);
         $this->get('/en')->assertSee(route('pages.show', ['lang' => 'en', 'slug' => 'accessibility']), false);
     }
 

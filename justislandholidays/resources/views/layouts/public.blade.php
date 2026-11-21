@@ -143,12 +143,10 @@
             <nav aria-label="{{ __('Footer') }}">
                 @php($footerButton = 'flex min-h-11 w-full items-center justify-center rounded-full bg-orange-700 px-4 text-center font-medium text-white no-underline shadow-sm hover:bg-orange-800 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white')
                 <ul class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-                    @foreach (['about' => __('About us'), 'contact' => __('Contact'), 'terms' => __('Terms'), 'privacy' => __('Privacy'), 'accessibility' => __('Accessibility')] as $slug => $label)
-                        <li><a href="{{ route('pages.show', $slug) }}" class="{{ $footerButton }}">{{ $label }}</a></li>
+                    {{-- Edited on Settings › Footer links (21 Nov 2026); the standard set until changed. --}}
+                    @foreach (\App\Support\FooterLinks::forFooter(app()->getLocale()) as $link)
+                        <li><a href="{{ $link['url'] }}" class="{{ $footerButton }}" @if ($link['external']) rel="noopener" @endif data-footer-link>{{ $link['label'] }}</a></li>
                     @endforeach
-                    <li><a href="{{ route('partners') }}" class="{{ $footerButton }}">{{ __('Our partners') }}</a></li>
-                    <li><a href="{{ route('owners') }}" class="{{ $footerButton }}">{{ __('For owners') }}</a></li>
-                    <li><a href="{{ route('login') }}" class="{{ $footerButton }}">{{ __('Owner sign in') }}</a></li>
                 </ul>
             </nav>
         </div>

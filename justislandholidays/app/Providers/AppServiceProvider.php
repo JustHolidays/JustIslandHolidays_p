@@ -32,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         'manage-maintenance',    // /admin/maintenance: maintenance mode (super admins only, 20 Nov 2026)
         'manage-owners',         // /admin/users/add: add owner and agent accounts (super admins only, 20 Nov 2026)
         'manage-user-csv',       // /admin/users/csv: owner and agent CSV import and export (super admins only, 21 Nov 2026)
+        'manage-footer',         // /admin/footer-links: the public footer's links (super admins only, 21 Nov 2026)
     ];
 
     public function register(): void

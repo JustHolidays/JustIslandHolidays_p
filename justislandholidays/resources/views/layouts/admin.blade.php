@@ -21,6 +21,7 @@
         [null, 'Settings', null],
         ['admin.staff.index', 'Staff', 'manage-staff'],
         ['admin.pages.index', 'Content pages', null],
+        ['admin.footer-links.edit', 'Footer links', 'manage-footer'],
         ['admin.property-types.index', 'Property types', 'manage-property-types'],
         ['admin.appearance.edit', 'Frontend Styler', 'manage-appearance'],
         ['admin.admin-colours.edit', 'Admin Styler', 'manage-appearance'],
