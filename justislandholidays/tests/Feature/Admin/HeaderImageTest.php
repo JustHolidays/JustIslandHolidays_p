@@ -80,6 +80,8 @@ class HeaderImageTest extends TestCase
     public function test_island_heading_and_resorts_sit_over_the_image_with_no_breadcrumb(): void
     {
         $this->area->update(['name' => ['en' => 'Cala Galdana']]);
+        // Resorts are only listed when they have a live home (21 Nov 2026).
+        \App\Models\Listing::factory()->live()->create(['island_id' => $this->island->id, 'area_id' => $this->area->id]);
 
         $html = $this->islandPage();
         $header = substr($html, strpos($html, 'data-header-image'));

@@ -23,9 +23,11 @@ class IslandController extends Controller
         return view('public.island', [
             'island' => $island,
             'area' => null,
+            // Only resorts with at least one live home (21 Nov 2026); empty ones are not shown.
             'areas' => $island->areas()
                 ->withCount(['listings' => fn ($q) => $q->live()])
-                ->orderBy('sort_order')->get(),
+                ->orderBy('sort_order')->get()
+                ->filter(fn ($a) => $a->listings_count > 0)->values(),
             'filters' => $filters,
             'result' => $search->run($filters),
             'amenities' => $this->filterAmenities(),

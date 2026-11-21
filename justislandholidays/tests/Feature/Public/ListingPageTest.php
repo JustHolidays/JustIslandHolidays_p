@@ -94,6 +94,26 @@ class ListingPageTest extends TestCase
         $this->get($owned->publicUrl('en'))->assertOk()->assertDontSee('data-affiliate-price', false);
     }
 
+    public function test_island_pages_list_only_resorts_with_live_homes(): void
+    {
+        $island = Island::factory()->create(['is_active' => true, 'slug' => 'menorca']);
+        $busy = \App\Models\Area::factory()->create(['island_id' => $island->id, 'name' => ['en' => 'Busy Bay'], 'slug' => 'busy-bay']);
+        $quiet = \App\Models\Area::factory()->create(['island_id' => $island->id, 'name' => ['en' => 'Quiet Cove'], 'slug' => 'quiet-cove']);
+        $draftOnly = \App\Models\Area::factory()->create(['island_id' => $island->id, 'name' => ['en' => 'Draft Point'], 'slug' => 'draft-point']);
+        Listing::factory()->live()->count(2)->create(['island_id' => $island->id, 'area_id' => $busy->id]);
+        Listing::factory()->create(['island_id' => $island->id, 'area_id' => $draftOnly->id]);   // a draft does not count
+
+        $html = $this->get(route('islands.show', ['en', 'menorca']))->assertOk()->getContent();
+        $this->assertStringContainsString('Busy Bay', $html);
+        $this->assertMatchesRegularExpression('#Busy Bay\s*<span[^>]*>\(2\)</span>#', $html);
+        $this->assertStringNotContainsString(route('areas.show', ['menorca', 'quiet-cove']), $html);
+        $this->assertStringNotContainsString(route('areas.show', ['menorca', 'draft-point']), $html);
+
+        // With no live homes at all, the "Resorts and towns" list is left out.
+        Listing::query()->update(['status' => ListingStatus::Paused]);
+        $this->get(route('islands.show', ['en', 'menorca']))->assertOk()->assertDontSee('Resorts and towns');
+    }
+
     public function test_free_plan_has_the_contact_form_and_agents_pages_say_agent(): void
     {
         $owners = $this->listing(['plan_code' => 'free']);
