@@ -113,6 +113,16 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::post('/users/add', [\App\Http\Controllers\Admin\OwnerCreateController::class, 'store'])->name('users.store');
         Route::post('/users/{user}/invite', [\App\Http\Controllers\Admin\OwnerCreateController::class, 'invite'])->middleware('throttle:10,1')->name('users.invite');
     });
+    // Owner and agent CSV import and export (super admins only, 21 Nov 2026). Before /users/{user}.
+    Route::middleware('can:manage-user-csv')->prefix('/users/csv')->name('users.csv')->group(function () {
+        $csv = \App\Http\Controllers\Admin\UserCsvController::class;
+        Route::get('/', [$csv, 'index']);
+        Route::get('/export', [$csv, 'export'])->middleware('throttle:10,1')->name('.export');
+        Route::get('/template', [$csv, 'template'])->name('.template');
+        Route::post('/', [$csv, 'upload'])->middleware('throttle:10,1')->name('.upload');
+        Route::get('/preview/{token}', [$csv, 'preview'])->where('token', '[A-Za-z0-9]{32}')->name('.preview');
+        Route::post('/preview/{token}', [$csv, 'apply'])->where('token', '[A-Za-z0-9]{32}')->name('.apply');
+    });
     Route::get('/users', [UserController::class, 'index'])->defaults('role', 'owner')->name('users.index');
     Route::get('/agents', [UserController::class, 'index'])->defaults('role', 'agent')->name('agents.index');
     Route::get('/agents/{user}', [UserController::class, 'agent'])->middleware('can:view,user')->name('agents.show');
