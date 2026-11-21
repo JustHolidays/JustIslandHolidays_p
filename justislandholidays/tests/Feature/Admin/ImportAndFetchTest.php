@@ -213,6 +213,48 @@ class ImportAndFetchTest extends TestCase
         $this->get($listing->publicUrl('en'))->assertOk()->assertDontSee('provider.example/villa')->assertSee('Check availability');
     }
 
+    // --- Finding coordinates elsewhere on the page (21 Nov 2026) -------------------------------
+
+    /** @return array{0: ?float, 1: ?float} */
+    private function coordsFrom(string $body): array
+    {
+        $out = (new PageParser())->parse('<html><head><title>Villa</title></head><body>'.$body.'</body></html>', 'https://provider.example/villa');
+
+        return [$out['lat'], $out['lng']];
+    }
+
+    public function test_coordinates_are_found_in_schema_data_scripts_attributes_and_map_links(): void
+    {
+        // schema.org latitude and longitude on the item itself, of any type (James Villas style)
+        $this->assertSame([39.432173, 2.748143], $this->coordsFrom('<script type="application/ld+json">{"@type":"Product","name":"Villa","latitude":"39.432173","longitude":"2.7481430000000273"}</script>'));
+        // a lat/lng pair in the page's own scripts (Solmar style, and map settings)
+        $this->assertSame([39.400403, 3.098867], $this->coordsFrom('<script>var villa = {"latitude": "39.400403476372", "longitude": "3.0988667540824"};</script>'));
+        $this->assertSame([39.9361, 3.9634], $this->coordsFrom('<script>initMap({lat: 39.9361, lng: 3.9634, zoom: 12});</script>'));
+        // data-lat and data-lng on a map element
+        $this->assertSame([38.9067, 1.4206], $this->coordsFrom('<div class="map" data-lat="38.9067" data-zoom="10" data-lng="1.4206"></div>'));
+        // Google Maps links
+        $this->assertSame([39.5696, 2.6502], $this->coordsFrom('<a href="https://www.google.com/maps/place/Villa/@39.5696,2.6502,15z">Map</a>'));
+        $this->assertSame([39.8885, 4.2658], $this->coordsFrom('<iframe src="https://maps.google.com/maps?hl=en&amp;q=39.8885,4.2658&amp;z=14"></iframe>'));
+    }
+
+    public function test_coordinates_off_the_islands_are_skipped(): void
+    {
+        // The provider's London office first, then the villa: the villa is used.
+        $this->assertSame([39.9361, 3.9634], $this->coordsFrom('<script>office = {lat: 51.5074, lng: -0.1278}; villa = {lat: 39.9361, lng: 3.9634};</script>'));
+        // Nothing on the islands: nothing filled in.
+        $this->assertSame([null, null], $this->coordsFrom('<script>office = {lat: 51.5074, lng: -0.1278};</script><p>Sleeps 6, 39.5 sq m</p>'));
+    }
+
+    public function test_map_tags_and_geo_still_come_first(): void
+    {
+        $html = '<html><head><meta property="place:location:latitude" content="39.95"><meta property="place:location:longitude" content="3.85"></head>'
+            .'<body><script>villa = {lat: 39.10, lng: 2.90};</script></body></html>';
+        $out = (new PageParser())->parse($html, 'https://provider.example/villa');
+
+        $this->assertSame([39.95, 3.85], [$out['lat'], $out['lng']]);
+        $this->assertContains('lat', $out['found']);
+    }
+
     // --- Finding a photo big enough (21 Nov 2026) ----------------------------------------------
 
     public function test_parser_lists_every_photo_the_page_offers_main_first(): void

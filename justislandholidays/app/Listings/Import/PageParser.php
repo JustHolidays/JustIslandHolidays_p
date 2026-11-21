@@ -2,6 +2,7 @@
 
 namespace App\Listings\Import;
 
+use App\Listings\DisplayLocation;
 use DOMDocument;
 use DOMXPath;
 
@@ -42,6 +43,11 @@ final class PageParser
             foreach ($this->nodes($data) as $node) {
                 $this->fromSchema($node, $out);
             }
+        }
+
+        // Coordinates elsewhere on the page (21 Nov 2026), used only when they are on the Balearic Islands.
+        if (! $this->onIslands($out['lat'], $out['lng'])) {
+            [$out['lat'], $out['lng']] = $this->findCoordinates($xp, $html) ?? [null, null];
         }
 
         foreach (['title', 'summary'] as $k) {
@@ -146,6 +152,56 @@ final class PageParser
         }
 
         return $best;
+    }
+
+    private function onIslands(mixed $lat, mixed $lng): bool
+    {
+        return is_numeric($lat) && is_numeric($lng) && DisplayLocation::parse($lat.', '.$lng) !== null;
+    }
+
+    /**
+     * The first coordinate pair on the Balearic Islands found, in order: schema.org data of any
+     * type (geo, or latitude and longitude on the item itself), "lat"/"lng" pairs in the page's
+     * scripts, data-lat and data-lng attributes, and Google Maps links (@lat,lng or q=lat,lng).
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    private function findCoordinates(DOMXPath $xp, string $html): ?array
+    {
+        $pairs = [];
+
+        foreach ($xp->query('//script[@type="application/ld+json"]') as $script) {
+            foreach ($this->nodes(json_decode(trim($script->textContent), true)) as $node) {
+                foreach ([$node['geo'] ?? null, $node, $node['containsPlace']['geo'] ?? null, $node['location']['geo'] ?? null] as $place) {
+                    if (is_array($place) && isset($place['latitude'], $place['longitude'])) {
+                        $pairs[] = [$place['latitude'], $place['longitude']];
+                    }
+                }
+            }
+        }
+
+        $num = '"?(-?\d{1,3}\.\d{3,})"?';
+        $patterns = [
+            '/["\']?\b(?:lat|latitude)["\']?\s*[:=]\s*'.$num.'\s*,\s*["\']?\b(?:lng|lon|long|longitude)["\']?\s*[:=]\s*'.$num.'/i',
+            '/\bdata-lat(?:itude)?\s*=\s*["\'](-?\d{1,3}\.\d{3,})["\'][^>]*?\bdata-(?:lng|lon|long|longitude)\s*=\s*["\'](-?\d{1,3}\.\d{3,})["\']/i',
+            '#google\.[a-z.]+/maps[^"\'\s<>]*?@(-?\d{1,3}\.\d{3,}),(-?\d{1,3}\.\d{3,})#i',
+            '#(?:google\.[a-z.]+/maps|maps\.google\.[a-z.]+)[^"\'\s<>]*?[?&;](?:amp;)?(?:q|ll|center|query|daddr)=(-?\d{1,3}\.\d{3,})(?:,|%2C)\s*(-?\d{1,3}\.\d{3,})#i',
+        ];
+        foreach ($patterns as $pattern) {
+            if (preg_match_all($pattern, $html, $m, PREG_SET_ORDER)) {
+                foreach ($m as $match) {
+                    $pairs[] = [$match[1], $match[2]];
+                }
+            }
+        }
+
+        foreach ($pairs as [$lat, $lng]) {
+            if ($this->onIslands($lat, $lng)) {
+                return [(string) $lat, (string) $lng];
+            }
+        }
+
+        return null;
     }
 
     /** Flattens @graph and lists into individual schema.org nodes. */
