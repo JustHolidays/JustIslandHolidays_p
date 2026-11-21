@@ -352,6 +352,39 @@ class ImportAndFetchTest extends TestCase
             ->assertDontSee('id="image_permission"', false);
     }
 
+    public function test_an_uploaded_photo_is_used_even_when_the_found_address_is_odd(): void
+    {
+        [, $area, $affiliate, $admin] = $this->setUpImport();
+        Http::fake();
+
+        $this->actingAs($admin)->post('/admin/listings/import', $this->storeData($area, $affiliate, [
+            'image_url' => 'https://www.solmarvillas.com/sites/default/files/Finca Los Hibiscus - Mallorca-1001.jpg',
+            'image_permission' => 0,
+            'photo' => UploadedFile::fake()->image('villa.jpg', 1200, 900),
+        ]))->assertSessionHasNoErrors()->assertRedirect();
+
+        $listing = Listing::sole();
+        Storage::disk('public')->assertExists($listing->image_path);
+        Http::assertNothingSent();   // the provider's photo was not fetched
+    }
+
+    public function test_photo_addresses_with_spaces_are_written_safely(): void
+    {
+        $html = '<html><head><meta property="og:image" content="https://www.solmarvillas.com/sites/default/files/Finca Los Hibiscus - Mallorca-1001.jpg"></head><body></body></html>';
+        $out = (new PageParser())->parse($html, 'https://www.solmarvillas.com/villa');
+
+        $this->assertSame('https://www.solmarvillas.com/sites/default/files/Finca%20Los%20Hibiscus%20-%20Mallorca-1001.jpg', $out['image_url']);
+        $this->assertSame('https://a.example/x%20y.jpg?w=1', PageParser::encodeUrl('https://a.example/x%20y.jpg?w=1'), 'Already-encoded addresses are kept.');
+
+        // A found address with spaces still saves when the box is ticked.
+        [, $area, $affiliate, $admin] = $this->setUpImport();
+        $jpg = $this->jpeg();
+        Http::fake(['https://provider.example/*' => fn () => Http::response($jpg, 200)]);
+        $this->actingAs($admin)->post('/admin/listings/import', $this->storeData($area, $affiliate, ['image_url' => 'https://provider.example/img/Villa One.jpg']))
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertNotNull(Listing::sole()->image_path);
+    }
+
     public function test_a_save_that_fails_its_checks_shows_the_form_again_not_an_error(): void
     {
         [, $area, $affiliate, $admin] = $this->setUpImport();

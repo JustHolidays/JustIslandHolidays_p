@@ -95,6 +95,12 @@ class ImportController extends AdminController
     public function store(Request $request, SafeFetcher $fetcher, ListingWorkflow $workflow): RedirectResponse
     {
         $ctx = $this->ctx();
+        // An uploaded photo replaces the one found on the page, so its address is not checked (21 Nov 2026).
+        if ($request->hasFile('photo')) {
+            $request->merge(['image_url' => null, 'image_permission' => null]);
+        } elseif (filled($request->input('image_url'))) {
+            $request->merge(['image_url' => PageParser::encodeUrl((string) $request->input('image_url'))]);
+        }
         $data = $request->validate([
             'affiliate_id' => ['required', Rule::exists('users', 'id')->where('role', Role::Affiliate->value)->whereNull('deactivated_at')],
             'source_url' => ['nullable', 'url:https', 'max:2048'],

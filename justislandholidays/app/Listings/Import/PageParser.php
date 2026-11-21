@@ -255,17 +255,27 @@ final class PageParser
     private function absolute(string $url, string $base): ?string
     {
         if (str_starts_with($url, 'https://')) {
-            return $url;
+            return self::encodeUrl($url);
         }
         if (str_starts_with($url, '//')) {
-            return 'https:'.$url;
+            return self::encodeUrl('https:'.$url);
         }
         if (str_starts_with($url, '/')) {
             $b = parse_url($base);
 
-            return 'https://'.$b['host'].$url;
+            return self::encodeUrl('https://'.$b['host'].$url);
         }
 
         return null;   // http images are not copied
+    }
+
+    /**
+     * Spaces and other characters that are not allowed in a web address are written as %XX
+     * (21 Nov 2026). Some sites give photo addresses like ".../Finca Los Hibiscus - 1001.jpg",
+     * which browsers accept but a strict address check refuses. Existing %XX are kept.
+     */
+    public static function encodeUrl(string $url): string
+    {
+        return preg_replace_callback('/[^A-Za-z0-9\-._~:\/?#\[\]@!$&\'()*+,;=%]/u', fn ($m) => rawurlencode($m[0]), trim($url));
     }
 }
