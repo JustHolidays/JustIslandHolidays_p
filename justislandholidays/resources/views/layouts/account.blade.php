@@ -41,7 +41,7 @@
                     if ($user->can('use-billing')) {
                         $links[] = ['account.billing', 'Plan and billing'];
                     }
-                    $links[] = ['account.security', 'Two-factor sign-in'];
+                    $links[] = ['account.security', 'Password and sign-in'];
                     $links[] = ['account.favourites', 'My favourites'];   // everyone can save homes; always the last tab (20 Nov 2026)
                 @endphp
                 @foreach ($links as [$route, $label])
@@ -64,7 +64,13 @@
 
     <main id="main" class="mx-auto max-w-6xl px-4 py-8">
         @if (session('status'))
-            <div role="status" class="mb-6 rounded border border-green-300 bg-green-50 p-4">{{ session('status') }}</div>
+            {{-- Fortify answers with codes such as "password-updated": shown as plain words. --}}
+            <div role="status" class="mb-6 rounded border border-green-300 bg-green-50 p-4">{{ [
+                'password-updated' => 'Your password has been changed.',
+                'two-factor-authentication-enabled' => 'Now scan the code with your authenticator app.',
+                'two-factor-authentication-confirmed' => 'Authenticator app sign-in is on.',
+                'two-factor-authentication-disabled' => 'Authenticator app sign-in is off.',
+            ][session('status')] ?? session('status') }}</div>
         @endif
 
         @if ($errors->any())

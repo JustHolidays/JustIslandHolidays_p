@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Support\Audit;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -26,10 +27,12 @@ class UpdateUserPassword implements UpdatesUserPasswords
             'password' => $this->passwordRules(),
         ], [
             'current_password.current_password' => __('The provided password does not match your current password.'),
-        ])->validateWithBag('updatePassword');
+        ])->validate();   // the default error bag, so the form and page alert show the messages
 
         $user->forceFill([
             'password' => Hash::make($input['password']),
         ])->save();
+
+        Audit::record($user, 'user.password_change', $user);
     }
 }

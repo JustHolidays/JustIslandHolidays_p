@@ -1,7 +1,24 @@
-@extends('layouts.account', ['title' => 'Two-factor sign-in'])
+@extends('layouts.account', ['title' => 'Password and sign-in'])
 
 @section('content')
-    <h1 class="mb-6 text-2xl font-semibold">Two-factor sign-in</h1>
+    <h1 class="mb-6 text-2xl font-semibold">Password and sign-in</h1>
+
+    {{-- Change password (21 Nov 2026), through Fortify's user-password.update. --}}
+    <section aria-labelledby="password-heading" class="mb-10 max-w-md">
+        <h2 id="password-heading" class="mb-2 text-lg font-semibold">Change your password</h2>
+        <p class="mb-4">Enter your current password, then the new one twice. Use at least 8 characters; a password manager can make a strong one for you.</p>
+        <form method="POST" action="{{ route('user-password.update') }}" data-change-password>
+            @csrf
+            @method('PUT')
+            <x-field name="current_password" label="Current password" type="password" autocomplete="current-password" required />
+            <x-field name="password" label="New password" type="password" autocomplete="new-password" required />
+            <x-field name="password_confirmation" label="New password again" type="password" autocomplete="new-password" required />
+            <x-button>Change password</x-button>
+        </form>
+        <p class="mt-3 text-sm">Forgotten your current password? Sign out and use <a href="{{ route('password.request') }}" class="underline">Forgot password</a> on the sign-in page.</p>
+    </section>
+
+    <h2 class="mb-4 text-xl font-semibold">Two-factor sign-in</h2>
 
     @if ($user->isAdmin())
         <p class="mb-2">Admin accounts always need a second step when signing in. You can choose how:</p>
@@ -25,7 +42,7 @@
         </form>
 
         @if (request('show') === 'codes')
-            <h2 class="mb-2 text-lg font-semibold">Recovery codes</h2>
+            <h3 class="mb-2 text-lg font-semibold">Recovery codes</h3>
             <p class="mb-2">Keep these somewhere safe. Each one works once if you lose your phone.</p>
             <ul class="mb-6 rounded border border-slate-300 bg-white p-4 font-mono">
                 @foreach ($user->recoveryCodes() as $code)
@@ -40,7 +57,7 @@
             <x-button>{{ $user->isAdmin() ? 'Stop using the app and get codes by email instead' : 'Turn off two-factor sign-in' }}</x-button>
         </form>
     @elseif ($user->two_factor_secret)
-        <h2 class="mb-2 text-lg font-semibold">Step 2: scan the code</h2>
+        <h3 class="mb-2 text-lg font-semibold">Step 2: scan the code</h3>
         <p class="mb-4">Scan this with your authenticator app, then enter the 6-digit code it shows.</p>
         <div class="mb-4 inline-block bg-white p-4" role="img" aria-label="QR code for your authenticator app">{!! $user->twoFactorQrCodeSvg() !!}</div>
         <p class="mb-6 text-sm">Cannot scan it? Enter this key in the app instead: <span class="font-mono">{{ decrypt($user->two_factor_secret) }}</span></p>
@@ -51,7 +68,7 @@
             <x-button>Turn on authenticator app sign-in</x-button>
         </form>
     @else
-        <h2 class="mb-2 text-lg font-semibold">{{ $user->isAdmin() ? 'Use an authenticator app instead' : 'Step 1: start set-up' }}</h2>
+        <h3 class="mb-2 text-lg font-semibold">{{ $user->isAdmin() ? 'Use an authenticator app instead' : 'Step 1: start set-up' }}</h3>
         <form method="POST" action="{{ route('two-factor.enable') }}">
             @csrf
             <x-button>Set up an authenticator app</x-button>

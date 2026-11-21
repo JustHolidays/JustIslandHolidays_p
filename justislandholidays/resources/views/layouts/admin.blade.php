@@ -71,6 +71,7 @@
                     <span class="text-sm">Island: {{ $adminIslands->first()->translate('name', 'en') }}</span>
                 @endif
                 <span class="text-sm">{{ $admin->name }} ({{ $admin->role->label() }})</span>
+                <a href="{{ route('account.security') }}" class="inline-flex min-h-11 items-center rounded px-3 text-sm underline">Password and sign-in</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="min-h-11 rounded px-3 text-sm underline">Sign out</button>
