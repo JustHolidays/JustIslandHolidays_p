@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(\App\Http\Middleware\CanonicalHost::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
+        // Signed-in people opening a guest page (sign in, create account, forgot password) go to
+        // their account. Laravel's default is route('home'), which needs a language and failed (21 Nov 2026).
+        $middleware->redirectUsersTo('/account');
+
         // Trusted proxies are set in AppServiceProvider from config('site.trusted_proxies'),
         // so they still work when the config is cached on the server.
 
