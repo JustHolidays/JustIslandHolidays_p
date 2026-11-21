@@ -114,6 +114,12 @@ class ListingController extends AdminController
         return $this->run(fn () => $this->workflow->approve($listing, $request->user()), $listing, 'Approved. The listing is live and the lister has been emailed.');
     }
 
+    /** Affiliate drafts: send for review on the affiliate's behalf and approve, in one step. */
+    public function publishDraft(Request $request, Listing $listing): RedirectResponse
+    {
+        return $this->run(fn () => $this->workflow->publishAffiliateDraft($listing, $request->user()), $listing, 'Published. The listing is live.');
+    }
+
     public function reject(Request $request, Listing $listing): RedirectResponse
     {
         $reason = $this->reason($request);

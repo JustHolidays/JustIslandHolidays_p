@@ -57,6 +57,30 @@ final class ListingWorkflow
         $this->move($listing, S::PendingReview, $admin, 'listing.submit');
     }
 
+    /**
+     * An admin publishes an affiliate draft in one step (21 Nov 2026), as "Approve and publish"
+     * on the URL import does: it is sent for review on the affiliate's behalf and approved. All
+     * approval checks are made first, so a draft that is not ready is left as it was.
+     */
+    public function publishAffiliateDraft(Listing $listing, User $admin): void
+    {
+        $this->authorize($admin, 'approve', $listing);
+        if (! $listing->isAffiliateListing()) {
+            throw new ListingWorkflowException('Only an affiliate draft can be published this way. Owners and agents send their own listings for review.');
+        }
+        $this->expect($listing, [S::Draft], 'Only a draft can be published this way.');
+
+        $missing = ListingChecklist::missingForApproval($listing);
+        if ($missing !== []) {
+            throw new ListingWorkflowException('This draft cannot be published yet.', $missing);
+        }
+
+        DB::transaction(function () use ($listing, $admin) {
+            $this->submitOnBehalf($listing, $admin);
+            $this->approve($listing->fresh(), $admin);
+        });
+    }
+
     public function approve(Listing $listing, User $admin): void
     {
         $this->authorize($admin, 'approve', $listing);

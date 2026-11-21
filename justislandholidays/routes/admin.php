@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/listings/{listing}', [ListingController::class, 'show'])->middleware('can:view,listing')->name('listings.show');
     Route::put('/listings/{listing}', [ListingController::class, 'update'])->name('listings.update');
     Route::post('/listings/{listing}/approve', [ListingController::class, 'approve'])->name('listings.approve');
+    Route::post('/listings/{listing}/publish-draft', [ListingController::class, 'publishDraft'])->name('listings.publish-draft');   // affiliate drafts (21 Nov 2026)
     Route::post('/listings/{listing}/reject', [ListingController::class, 'reject'])->name('listings.reject');
     Route::post('/listings/{listing}/recommend-rejection', [ListingController::class, 'recommendRejection'])->name('listings.recommend');
     Route::post('/listings/{listing}/pause', [ListingController::class, 'pause'])->name('listings.pause');

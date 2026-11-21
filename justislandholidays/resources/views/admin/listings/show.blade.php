@@ -17,7 +17,14 @@
 @section('content')
     <p><a href="{{ route('admin.listings.index') }}" class="inline-flex min-h-11 items-center underline">Back to listings</a></p>
     <h1 class="text-2xl font-semibold">{{ $listing->title('en') }}</h1>
-    <p class="mt-1">{{ $listing->status->label() }} · {{ $listing->island->translate('name', 'en') }}, {{ $listing->area->translate('name', 'en') }} · listed by {{ $listing->owner->name }} ({{ $listing->owner->role->label() }}, {{ $listing->owner->email }})</p>
+    <p class="mt-1">{{ $listing->status->label() }} · {{ $listing->island->translate('name', 'en') }}, {{ $listing->area->translate('name', 'en') }}
+        {{-- Affiliates (21 Nov 2026): "Supplied by … (Partner)", and their email is not shown. --}}
+        @if ($isAffiliate)
+            · Supplied by <span data-lister>{{ $listing->owner->name }}</span> (Partner)
+        @else
+            · Listed by <span data-lister>{{ $listing->owner->name }}</span> ({{ $listing->owner->role->label() }}, {{ $listing->owner->email }})
+        @endif
+    </p>
     @can('editAsAdmin', $listing)
         <p class="mt-3 flex flex-wrap gap-2">
             <a href="{{ route('admin.listings.editor.edit', $listing) }}" class="inline-flex min-h-11 items-center rounded bg-slate-900 px-5 font-medium text-white hover:bg-slate-700">Edit the whole property</a>
@@ -148,6 +155,19 @@
                             <x-admin.reason-action :action="route('admin.listings.recommend', $listing)" label="Recommend rejection" hint="A super admin reads this and decides." :danger="false" />
                         @endif
                     @endcan
+                @endif
+                @if ($status === 'draft' && $isAffiliate)
+                    @can('approve', $listing)
+                        <p class="text-sm">This affiliate property is a draft. Publishing makes it live straight away.</p>
+                        <form method="POST" action="{{ route('admin.listings.publish-draft', $listing) }}" data-publish-draft
+                              onsubmit="return confirm('Publish this property? It goes live on the site straight away.')">
+                            @csrf
+                            <button type="submit" @disabled($missing !== []) class="min-h-11 w-full rounded bg-green-800 px-4 font-medium text-white disabled:opacity-50">Approve and publish</button>
+                        </form>
+                        @if ($missing !== [])<p class="text-sm">Not ready yet: see the Checklist.</p>@endif
+                    @endcan
+                @elseif ($status === 'draft')
+                    <p class="text-sm">This is a draft. The {{ $listing->owner?->role?->label() === 'Agent' ? 'agent' : 'owner' }} sends it for review from their account.</p>
                 @endif
                 @if ($status === 'live')
                     <x-admin.reason-action :action="route('admin.listings.pause', $listing)" label="Pause" confirm="Pause this listing? It disappears from the site." />
