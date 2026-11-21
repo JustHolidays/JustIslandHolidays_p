@@ -44,7 +44,7 @@ class AffiliateLogoTest extends TestCase
         $start = strpos($html, 'border-2 border-[var(--colour-brand)]');
         $this->assertNotFalse($start, 'The Check availability box is on the page.');
 
-        return substr($html, $start, strpos($html, 'Check availability</a>', $start) - $start);
+        return substr($html, $start, strpos($html, 'data-link-type=', $start) - $start);
     }
 
     public function test_placeholder_shows_above_check_availability_until_a_logo_is_added(): void

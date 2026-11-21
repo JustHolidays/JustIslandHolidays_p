@@ -52,7 +52,7 @@ class AffiliateBookingNotesTest extends TestCase
         $this->assertStringNotContainsString('<script>alert(1)</script>', $html);
         $this->assertStringNotContainsString('javascript:alert', $html);
 
-        $button = strpos($html, 'Check availability</a>');
+        $button = strpos($html, 'data-link-type=');
         $notes = strpos($html, 'data-booking-notes');
         $this->assertGreaterThan($button, $notes, 'Below the Check availability button.');
         $adverts = strpos($html, 'data-advert-section');

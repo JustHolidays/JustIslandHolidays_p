@@ -77,6 +77,36 @@ class ListingPageTest extends TestCase
             ->assertDontSee('booking.example.com', false);
     }
 
+    public function test_affiliate_check_availability_opens_in_a_new_tab_and_owner_links_do_not(): void
+    {
+        $affiliate = $this->listing(['owner_id' => User::factory()->affiliate()], fn ($f) => $f->withDeeplink());
+        $owned = $this->listing(['plan_code' => 'standard'], fn ($f) => $f->withDeeplink());
+
+        $html = $this->get($affiliate->publicUrl('en'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('#<a href="[^"]*/go/'.$affiliate->public_ref.'[^"]*"\s+target="_blank"\s+rel="sponsored nofollow noopener"#', $html);
+        $this->assertStringContainsString('<span class="sr-only"> (opens in a new tab)</span>', $html);
+        $this->assertStringContainsString('in a new tab. We may earn a commission', $html);
+
+        $ownerHtml = $this->get($owned->publicUrl('en'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('#<a href="[^"]*/go/'.$owned->public_ref.'[^"]*"\s+rel="sponsored nofollow"#', $ownerHtml);
+        $this->assertStringNotContainsString('target="_blank" rel="sponsored', $ownerHtml);
+    }
+
+    public function test_price_guide_note_is_left_off_affiliate_homes_and_location_names_the_home(): void
+    {
+        $affiliate = $this->listing(['owner_id' => User::factory()->affiliate(), 'min_price_week_cents' => 90000], fn ($f) => $f->withDeeplink());
+        $owned = $this->listing(['min_price_week_cents' => 120000]);
+
+        $this->get($affiliate->publicUrl('en'))->assertOk()
+            ->assertDontSee('data-price-guide-note', false)
+            ->assertDontSee('Prices are a guide')
+            ->assertSee('Villa Sunset is inside the circle, in or near');
+        $this->get($owned->publicUrl('en'))->assertOk()
+            ->assertSee('Prices are a guide from the owner. The owner confirms the final price and terms.')
+            ->assertSee('Villa Sunset is inside the circle, in or near')
+            ->assertDontSee('The home is inside the circle');
+    }
+
     public function test_affiliate_pages_show_the_from_price_above_the_partner_logo(): void
     {
         $affiliate = User::factory()->affiliate()->create();

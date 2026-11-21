@@ -181,7 +181,7 @@ class IslandAdvertsTest extends TestCase
             ->create(['island_id' => $this->menorca->id, 'area_id' => $this->resort->id, 'owner_id' => User::factory()->affiliate()])->load(['island', 'area']);
 
         $html = $this->get($affiliateHome->publicUrl('en'))->assertOk()->getContent();
-        $button = strpos($html, 'Check availability</a>');
+        $button = strpos($html, 'data-link-type=');
         $this->assertNotFalse($button);
         $this->assertGreaterThan($button, strpos($html, 'data-advert-section="sidebar"'));
     }
