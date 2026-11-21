@@ -35,6 +35,9 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::post('/listings/bulk', [ListingController::class, 'bulk'])->name('listings.bulk');
     Route::get('/listings/import', [ImportController::class, 'create'])->name('import.create');
     Route::post('/listings/import/fetch', [ImportController::class, 'fetch'])->middleware('throttle:20,1')->name('import.fetch');
+    // Coming back to the fetch address as a page visit (a save that failed its checks goes "back"
+    // there, or the browser's Back button): show the form again with what was typed (21 Nov 2026).
+    Route::get('/listings/import/fetch', [ImportController::class, 'backToForm']);
     Route::post('/listings/import', [ImportController::class, 'store'])->name('import.store');
     // Add a property for an owner or agent (island admins for their own islands).
     // Listing CSV import and export (super admins only, 20 Nov 2026).

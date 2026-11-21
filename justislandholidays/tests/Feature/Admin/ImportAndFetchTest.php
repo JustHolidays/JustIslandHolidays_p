@@ -352,6 +352,23 @@ class ImportAndFetchTest extends TestCase
             ->assertDontSee('id="image_permission"', false);
     }
 
+    public function test_a_save_that_fails_its_checks_shows_the_form_again_not_an_error(): void
+    {
+        [, $area, $affiliate, $admin] = $this->setUpImport();
+
+        // The browser is on the fetch address (the page was read there) when Save fails.
+        $this->actingAs($admin)->from('/admin/listings/import/fetch')
+            ->post('/admin/listings/import', $this->storeData($area, $affiliate, ['image_alt' => '', 'title' => 'Villa Kept']))
+            ->assertRedirect('/admin/listings/import/fetch');
+
+        $this->actingAs($admin)->get('/admin/listings/import/fetch')->assertRedirect(route('admin.import.create'));
+        $this->actingAs($admin)->get(route('admin.import.create'))->assertOk()
+            ->assertSee('Describe the photo for people who cannot see it.')
+            ->assertSee('value="Villa Kept"', false)
+            ->assertSee('id="import-form"', false);
+        $this->assertSame(0, Listing::count());
+    }
+
     public function test_island_admin_cannot_import_onto_another_island(): void
     {
         [, , $affiliate, $admin] = $this->setUpImport();

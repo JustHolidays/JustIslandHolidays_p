@@ -41,6 +41,14 @@ class ImportController extends AdminController
         return $this->form([]);
     }
 
+    /** The fetch address opened as a page: back to the form, keeping the errors and what was typed. */
+    public function backToForm(Request $request): RedirectResponse
+    {
+        $request->session()->reflash();
+
+        return redirect()->route('admin.import.create');
+    }
+
     public function fetch(Request $request, SafeFetcher $fetcher, PageParser $parser, ImageFinder $images): View
     {
         $data = $request->validate([

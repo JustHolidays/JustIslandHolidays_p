@@ -29,7 +29,7 @@
         <p role="status" class="mt-4 rounded border border-green-300 bg-green-50 p-4">Page read. Fields marked “needs input” were not found on the page.</p>
     @endif
 
-    @if ($fetched || old('title'))
+    @if ($fetched || old('title') || old('save'))
         <form method="POST" action="{{ route('admin.import.store') }}" enctype="multipart/form-data" class="mt-6 grid gap-6 xl:grid-cols-[1fr_24rem]" id="import-form">
             @csrf
             <input type="hidden" name="affiliate_id" value="{{ $d('affiliate_id') }}">
