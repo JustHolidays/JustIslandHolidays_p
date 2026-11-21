@@ -35,6 +35,7 @@
             <input type="hidden" name="affiliate_id" value="{{ $d('affiliate_id') }}">
             <input type="hidden" name="source_url" value="{{ $d('source_url') }}">
             <input type="hidden" name="image_url" value="{{ $d('image_url') }}">
+            <input type="hidden" name="image_size" value="{{ $d('image_size') }}">{{-- shown only, never trusted --}}
 
             <div class="space-y-6">
                 <section class="rounded-lg bg-white p-5 shadow-sm" aria-labelledby="details-heading">
@@ -76,10 +77,10 @@
                 <section class="rounded-lg bg-white p-5 shadow-sm" aria-labelledby="photo-heading">
                     <h2 id="photo-heading" class="text-lg font-semibold">Photo</h2>
                     @if ($d('image_url'))
-                        <p class="mt-1 text-sm">Photo found on the page. It is copied to our own storage and resized only if you tick the box.</p>
+                        <p class="mt-1 text-sm" data-photo-found>Photo found on the page{{ $d('image_size') ? ' ('.$d('image_size').' pixels)' : '' }}. It is copied to our own storage and resized only if you tick the box.</p>
                         <div class="mt-2 flex items-start gap-2"><input type="hidden" name="image_permission" value="0"><input id="image_permission" type="checkbox" name="image_permission" value="1" class="mt-1 h-5 w-5" @checked($d('image_permission'))><label for="image_permission">We have permission from the provider to use this photo.</label></div>
                     @else
-                        <p class="mt-1 text-sm">No photo was found on the page. Upload one.</p>
+                        <p class="mt-1 text-sm" data-photo-note>{{ $draft['image_note'] ?? 'No photo was found on the page. Upload one.' }}</p>
                     @endif
                     <div class="mt-3"><label for="photo" class="mb-1 block font-medium">{{ $d('image_url') ? 'Or upload a different photo' : 'Photo' }}</label>
                         <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" class="block min-h-11"></div>
@@ -100,7 +101,7 @@
                         @if ($d('image_url'))
                             {{-- Not loaded from the provider (no hot-linking). Our own copy is made on save. --}}
                             <p class="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-sm text-slate-700">
-                                Photo found on the page.
+                                Photo found on the page{{ $d('image_size') ? ' ('.$d('image_size').' pixels)' : '' }}.
                                 <a href="{{ $d('image_url') }}" target="_blank" rel="noopener noreferrer" class="underline">Open it on the provider's site</a>
                             </p>
                         @else

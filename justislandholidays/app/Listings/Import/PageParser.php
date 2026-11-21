@@ -16,7 +16,7 @@ final class PageParser
     public function parse(string $html, string $pageUrl): array
     {
         $out = ['title' => null, 'summary' => null, 'image_url' => null, 'lat' => null, 'lng' => null,
-            'bedrooms' => null, 'bathrooms' => null, 'sleeps' => null, 'locality' => null, 'found' => []];
+            'bedrooms' => null, 'bathrooms' => null, 'sleeps' => null, 'locality' => null, 'found' => [], 'image_candidates' => []];
 
         if (trim($html) === '') {
             return $out;
@@ -54,9 +54,98 @@ final class PageParser
             $out[$k] = is_numeric($out[$k]) ? round((float) $out[$k], 6) : null;
         }
 
-        $out['found'] = array_keys(array_filter(array_diff_key($out, ['found' => 1]), fn ($v) => $v !== null));
+        $out['found'] = array_keys(array_filter(array_diff_key($out, ['found' => 1, 'image_candidates' => 1]), fn ($v) => $v !== null));
+        // Every photo the page offers, main one first (21 Nov 2026): ImageFinder picks one big enough.
+        $out['image_candidates'] = $this->imageCandidates($xp, $out['image_url'], $pageUrl);
 
         return $out;
+    }
+
+    public const MAX_CANDIDATES = 20;
+
+    /**
+     * Photo addresses on the page, in order: the main photo (Open Graph or schema.org), other
+     * sharing images, every schema.org image, then the page's own pictures (largest srcset
+     * entry first). https only, no SVG or GIF, no duplicates.
+     *
+     * @return list<string>
+     */
+    private function imageCandidates(DOMXPath $xp, ?string $main, string $pageUrl): array
+    {
+        $raw = [$main];
+        foreach (['//meta[@property="og:image:secure_url"]', '//meta[@property="og:image"]', '//meta[@name="twitter:image"]', '//meta[@property="twitter:image"]'] as $q) {
+            foreach ($xp->query($q) as $n) {
+                $raw[] = $n->getAttribute('content');
+            }
+        }
+        foreach ($xp->query('//link[@rel="image_src"]') as $n) {
+            $raw[] = $n->getAttribute('href');
+        }
+        foreach ($xp->query('//script[@type="application/ld+json"]') as $script) {
+            array_push($raw, ...$this->schemaImages(json_decode(trim($script->textContent), true)));
+        }
+        foreach ($xp->query('//img | //source') as $n) {
+            foreach (['srcset', 'data-srcset'] as $attr) {
+                if ($best = $this->largestFromSrcset((string) $n->getAttribute($attr))) {
+                    $raw[] = $best;
+                }
+            }
+            foreach (['data-src', 'data-lazy-src', 'data-original', 'src'] as $attr) {
+                $raw[] = $n->getAttribute($attr);
+            }
+        }
+
+        $out = [];
+        foreach ($raw as $url) {
+            $url = is_string($url) ? trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5)) : '';
+            if ($url === '' || str_starts_with($url, 'data:')) {
+                continue;
+            }
+            $abs = $this->absolute($url, $pageUrl);
+            if (! $abs || preg_match('/\.(svg|gif)(\?|$)/i', $abs) || in_array($abs, $out, true)) {
+                continue;
+            }
+            $out[] = $abs;
+            if (count($out) >= self::MAX_CANDIDATES) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return list<string> every image address in schema.org data */
+    private function schemaImages(mixed $data): array
+    {
+        $found = [];
+        foreach ($this->nodes($data) as $node) {
+            foreach ([$node['image'] ?? null, $node['photo'] ?? null, $node['containsPlace']['image'] ?? null] as $image) {
+                foreach (is_array($image) && array_is_list($image) ? $image : [$image] as $item) {
+                    $found[] = is_array($item) ? ($item['url'] ?? $item['contentUrl'] ?? null) : $item;
+                }
+            }
+        }
+
+        return array_values(array_filter($found, 'is_string'));
+    }
+
+    /** The widest entry of a srcset ("a.jpg 600w, b.jpg 1200w" gives b.jpg). */
+    private function largestFromSrcset(string $srcset): ?string
+    {
+        $best = null;
+        $bestSize = -1.0;
+        foreach (preg_split('/,\s+/', trim($srcset)) ?: [] as $part) {
+            $bits = preg_split('/\s+/', trim($part));
+            if (($bits[0] ?? '') === '') {
+                continue;
+            }
+            $size = isset($bits[1]) ? (float) $bits[1] : 1.0;   // "1200w" or "2x"
+            if ($size > $bestSize) {
+                [$best, $bestSize] = [$bits[0], $size];
+            }
+        }
+
+        return $best;
     }
 
     /** Flattens @graph and lists into individual schema.org nodes. */

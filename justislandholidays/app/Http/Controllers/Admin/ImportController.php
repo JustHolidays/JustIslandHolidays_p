@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Role;
 use App\Jobs\ProcessListingImage;
 use App\Listings\DisplayLocation;
+use App\Listings\Import\ImageFinder;
 use App\Listings\Import\PageParser;
 use App\Listings\ListingWorkflow;
 use App\Listings\ListingWorkflowException;
@@ -40,7 +41,7 @@ class ImportController extends AdminController
         return $this->form([]);
     }
 
-    public function fetch(Request $request, SafeFetcher $fetcher, PageParser $parser): View
+    public function fetch(Request $request, SafeFetcher $fetcher, PageParser $parser, ImageFinder $images): View
     {
         $data = $request->validate([
             'affiliate_id' => ['required', Rule::exists('users', 'id')->where('role', Role::Affiliate->value)->whereNull('deactivated_at')],
@@ -56,7 +57,19 @@ class ImportController extends AdminController
                 $error = "The page answered with error {$result->status}. Fill in the details by hand.";
             } else {
                 $parsed = $parser->parse($result->body, $result->url);
+                $candidates = $parsed['image_candidates'];
+                unset($parsed['image_candidates'], $parsed['image_url']);
                 $draft += array_filter($parsed, fn ($v) => $v !== null && $v !== []);
+
+                // A photo at least 800 pixels wide, trying bigger copies of small previews (21 Nov 2026).
+                // Measured only; it is copied to our storage on save, after the permission box is ticked.
+                $photo = $images->find($candidates);
+                if ($photo['url']) {
+                    $draft['image_url'] = $photo['url'];
+                    $draft['image_size'] = $photo['width'].' × '.$photo['height'];
+                } elseif ($photo['largest']) {
+                    $draft['image_note'] = 'Only a small photo was found on the page ('.$photo['largest']['width'].' × '.$photo['largest']['height'].' pixels). Upload one at least '.ImageFinder::MIN_WIDTH.' pixels wide.';
+                }
                 if ($parsed['lat'] !== null && $parsed['lng'] !== null && DisplayLocation::parse($parsed['lat'].', '.$parsed['lng'])) {
                     $draft['coordinates'] = $parsed['lat'].', '.$parsed['lng'];
                 }
@@ -66,7 +79,7 @@ class ImportController extends AdminController
             $error = $e->getMessage().' Fill in the details by hand.';
         }
 
-        Audit::record($request->user(), 'import.fetch', 'listing', null, ['url' => $data['source_url'], 'found' => $draft['found'] ?? [], 'error' => $error]);
+        Audit::record($request->user(), 'import.fetch', 'listing', null, ['url' => $data['source_url'], 'found' => $draft['found'] ?? [], 'photo' => $draft['image_size'] ?? null, 'error' => $error]);
 
         return $this->form($draft, $error);
     }

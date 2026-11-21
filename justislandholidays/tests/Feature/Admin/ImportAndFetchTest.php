@@ -33,9 +33,9 @@ class ImportAndFetchTest extends TestCase
         </head><body>Hello</body></html>
         HTML;
 
-    private function jpeg(): string
+    private function jpeg(int $width = 1200, int $height = 900): string
     {
-        $img = imagecreatetruecolor(1200, 900);
+        $img = imagecreatetruecolor($width, $height);
         ob_start();
         imagejpeg($img);
 
@@ -211,6 +211,103 @@ class ImportAndFetchTest extends TestCase
         $listing = Listing::sole();
         $this->assertSame(S::Live, $listing->status);
         $this->get($listing->publicUrl('en'))->assertOk()->assertDontSee('provider.example/villa')->assertSee('Check availability');
+    }
+
+    // --- Finding a photo big enough (21 Nov 2026) ----------------------------------------------
+
+    public function test_parser_lists_every_photo_the_page_offers_main_first(): void
+    {
+        $html = <<<'HTML'
+            <html><head>
+            <meta property="og:image" content="https://cdn.example/pic/600/main.jpg">
+            <meta name="twitter:image" content="/share/main-wide.jpg">
+            <script type="application/ld+json">{"@type":"VacationRental","image":["https://cdn.example/a.jpg",{"url":"https://cdn.example/b.jpg"}]}</script>
+            </head><body>
+            <img src="/img/logo.svg" alt="">
+            <img src="/img/gallery-small.jpg" srcset="/img/g-600.jpg 600w, /img/g-1400.jpg 1400w" alt="">
+            <img data-src="https://cdn.example/lazy.webp" src="data:image/gif;base64,R0lGOD" alt="">
+            <img src="http://insecure.example/x.jpg" alt="">
+            </body></html>
+            HTML;
+
+        $out = (new PageParser())->parse($html, 'https://provider.example/villa');
+
+        $this->assertSame([
+            'https://cdn.example/pic/600/main.jpg',
+            'https://provider.example/share/main-wide.jpg',
+            'https://cdn.example/a.jpg',
+            'https://cdn.example/b.jpg',
+            'https://provider.example/img/g-1400.jpg',
+            'https://provider.example/img/gallery-small.jpg',
+            'https://cdn.example/lazy.webp',
+        ], $out['image_candidates']);
+        $this->assertNotContains('image_candidates', $out['found']);
+    }
+
+    public function test_larger_versions_follow_common_size_patterns(): void
+    {
+        $f = fn ($u) => \App\Listings\Import\ImageFinder::largerVersions($u);
+
+        $this->assertSame(['https://image.novasol.com/pic/1600/eml/x.jpg', 'https://image.novasol.com/pic/1024/eml/x.jpg'], $f('https://image.novasol.com/pic/600/eml/x.jpg'));
+        $this->assertSame(['https://s.example/sites/default/files/Villa%20One-1001.jpg'], $f('https://s.example/sites/default/files/styles/villa_main/public/Villa%20One-1001.jpg.webp?itok=abc'));
+        $this->assertSame(['https://w.example/uploads/2026/05/pool.jpg'], $f('https://w.example/uploads/2026/05/pool-600x400.jpg'));
+        $this->assertSame(['https://q.example/img.jpg?w=1600&fit=crop'], $f('https://q.example/img.jpg?w=600&h=400&fit=crop'));
+        $this->assertSame([], $f('https://plain.example/photos/villa.jpg'));
+    }
+
+    public function test_a_small_preview_is_swapped_for_a_bigger_copy(): void
+    {
+        [, , $affiliate, $admin] = $this->setUpImport();
+        $page = str_replace('https://provider.example/img/villa.jpg', 'https://cdn.example/pic/600/villa.jpg', self::PAGE);
+        $small = $this->jpeg(600, 382);
+        $big = $this->jpeg(1024, 652);
+        Http::fake([
+            'https://provider.example/villa' => Http::response($page, 200),
+            'https://cdn.example/pic/1600/*' => Http::response('', 403),
+            'https://cdn.example/pic/1024/*' => fn () => Http::response($big, 200),
+            'https://cdn.example/pic/600/*' => fn () => Http::response($small, 200),
+        ]);
+
+        $this->actingAs($admin)->post('/admin/listings/import/fetch', ['affiliate_id' => $affiliate->id, 'source_url' => 'https://provider.example/villa'])
+            ->assertOk()
+            ->assertSee('name="image_url" value="https://cdn.example/pic/1024/villa.jpg"', false)
+            ->assertSee('Photo found on the page (1024 × 652 pixels)')
+            ->assertDontSee('<img src="https://cdn.example', false);
+        Storage::disk('local')->assertDirectoryEmpty('/');
+    }
+
+    public function test_a_bigger_gallery_photo_is_used_when_the_main_one_is_small(): void
+    {
+        [, , $affiliate, $admin] = $this->setUpImport();
+        $page = str_replace('</body>', '<img src="/img/gallery-2.jpg" alt=""></body>', self::PAGE);
+        $small = $this->jpeg(640, 480);
+        $big = $this->jpeg(1200, 800);
+        Http::fake([
+            'https://provider.example/villa' => Http::response($page, 200),
+            'https://provider.example/img/villa.jpg' => fn () => Http::response($small, 200),
+            'https://provider.example/img/gallery-2.jpg' => fn () => Http::response($big, 200),
+        ]);
+
+        $this->actingAs($admin)->post('/admin/listings/import/fetch', ['affiliate_id' => $affiliate->id, 'source_url' => 'https://provider.example/villa'])
+            ->assertOk()
+            ->assertSee('name="image_url" value="https://provider.example/img/gallery-2.jpg"', false)
+            ->assertSee('(1200 × 800 pixels)');
+    }
+
+    public function test_only_small_photos_ask_for_an_upload(): void
+    {
+        [, , $affiliate, $admin] = $this->setUpImport();
+        $small = $this->jpeg(600, 382);
+        Http::fake([
+            'https://provider.example/villa' => Http::response(self::PAGE, 200),
+            'https://provider.example/img/villa.jpg' => fn () => Http::response($small, 200),
+        ]);
+
+        $this->actingAs($admin)->post('/admin/listings/import/fetch', ['affiliate_id' => $affiliate->id, 'source_url' => 'https://provider.example/villa'])
+            ->assertOk()
+            ->assertSee('Only a small photo was found on the page (600 × 382 pixels). Upload one at least 800 pixels wide.')
+            ->assertSee('name="image_url" value=""', false)
+            ->assertDontSee('id="image_permission"', false);
     }
 
     public function test_island_admin_cannot_import_onto_another_island(): void
