@@ -257,6 +257,15 @@
                     </div>
                 @endif
 
+                {{-- Booking Notes (21 Nov 2026): the affiliate's notes, written by a super admin, between
+                     Check availability and the adverts. Markdown with raw HTML removed. --}}
+                @if ($isAffiliate && ($bookingNotes = \App\Support\BookingNotes::html($listing->owner, app()->getLocale())))
+                    <section class="rounded-lg border border-slate-200 bg-white p-5" aria-labelledby="booking-notes-heading" data-booking-notes>
+                        <h2 id="booking-notes-heading" class="text-xl font-semibold">{{ __('Booking Notes') }}</h2>
+                        <div class="prose mt-3">{!! $bookingNotes !!}</div>
+                    </section>
+                @endif
+
                 {{-- Sidebar Section, directly below Check availability. Homes without a Check
                      availability button show it at the end of the sidebar instead (see below). --}}
                 @if ($listing->showsCheckAvailability())

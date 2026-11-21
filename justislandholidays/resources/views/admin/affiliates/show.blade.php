@@ -88,6 +88,32 @@
         @endif
     </section>
 
+    {{-- Booking Notes (21 Nov 2026): shown to visitors under Check availability. --}}
+    <section class="mt-6 max-w-3xl rounded-lg bg-white p-5 shadow-sm" aria-labelledby="notes-heading" data-booking-notes-form>
+        <h2 id="notes-heading" class="text-lg font-semibold">Booking Notes</h2>
+        <p class="mt-1 text-sm">Shown to visitors under a "Booking Notes" heading, below the Check availability button on every {{ $affiliate->name }} property page. Use it for things like deposits, what the price includes or how to book. Leave it empty to show nothing.</p>
+        <p class="mt-1 text-sm">You can use simple formatting: a blank line starts a new paragraph, <code>**bold**</code>, lines starting with <code>- </code> for a list, and links like <code>[Terms](https://example.com)</code>. Up to {{ number_format(\App\Support\BookingNotes::MAX_LENGTH) }} characters.</p>
+        <form method="POST" action="{{ route('admin.affiliates.booking-notes', $affiliate) }}" class="mt-3 space-y-3">
+            @csrf
+            @foreach (config('site.enabled_languages', ['en']) as $lang)
+                <div>
+                    <label for="notes-{{ $lang }}" class="mb-1 block font-medium">Booking Notes{{ count(config('site.enabled_languages', ['en'])) > 1 ? ' ('.(['en' => 'English', 'es' => 'Spanish', 'de' => 'German'][$lang] ?? $lang).')' : '' }}</label>
+                    <textarea id="notes-{{ $lang }}" name="notes[{{ $lang }}]" rows="6" maxlength="{{ \App\Support\BookingNotes::MAX_LENGTH }}"
+                              @error("notes.{$lang}") aria-invalid="true" aria-errormessage="notes-{{ $lang }}-error" @enderror
+                              class="block w-full rounded border border-slate-400 bg-white px-3 py-2">{{ old("notes.{$lang}", ($affiliate->affiliate_booking_notes ?? [])[$lang] ?? '') }}</textarea>
+                    @error("notes.{$lang}")<p id="notes-{{ $lang }}-error" class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
+            @endforeach
+            <x-button>Save Booking Notes</x-button>
+        </form>
+        @if ($notesHtml = \App\Support\BookingNotes::html($affiliate))
+            <div class="mt-4 rounded border border-slate-200 p-4">
+                <p class="text-sm font-medium text-slate-600">How it looks to visitors</p>
+                <div class="prose mt-2 text-sm">{!! $notesHtml !!}</div>
+            </div>
+        @endif
+    </section>
+
     @php
         $partnerClicks = \App\Support\Partners::clicks($affiliate);
     @endphp

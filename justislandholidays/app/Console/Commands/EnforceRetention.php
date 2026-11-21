@@ -104,6 +104,7 @@ class EnforceRetention extends Command
                 'affiliate_logo_path' => null,
                 'affiliate_logo_alt' => null,
                 'affiliate_website_url' => null,
+                'affiliate_booking_notes' => null,
                 'marketing_consent' => false,
                 'consented_at' => null,
                 'closure_reason' => null,   // their own words about closing (20 Nov 2026)

@@ -169,6 +169,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::put('/affiliates/{affiliate}', [AffiliateController::class, 'update'])->name('affiliates.update');
         Route::post('/affiliates/{affiliate}/logo', [AffiliateController::class, 'updateLogo'])->name('affiliates.logo');
         Route::post('/affiliates/{affiliate}/website', [AffiliateController::class, 'updateWebsite'])->name('affiliates.website');
+        Route::post('/affiliates/{affiliate}/booking-notes', [AffiliateController::class, 'updateBookingNotes'])->name('affiliates.booking-notes');   // 21 Nov 2026
         Route::post('/affiliates/{affiliate}/deactivate', [AffiliateController::class, 'deactivate'])->name('affiliates.deactivate');
         Route::post('/affiliates/{affiliate}/reactivate', [AffiliateController::class, 'reactivate'])->name('affiliates.reactivate');
         Route::post('/affiliates/{affiliate}/invite', [AffiliateController::class, 'invite'])->name('affiliates.invite');

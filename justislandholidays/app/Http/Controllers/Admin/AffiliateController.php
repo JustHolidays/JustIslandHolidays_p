@@ -157,6 +157,31 @@ class AffiliateController extends AdminController
         return back()->with('status', $affiliate->affiliate_website_url ? 'Website saved. Their logo on the Our partners page links there.' : 'Website removed. Their logo on the Our partners page is no longer a link.');
     }
 
+    /** Booking Notes shown to visitors under Check availability (21 Nov 2026). Empty removes them. Audited. */
+    public function updateBookingNotes(Request $request, User $affiliate): RedirectResponse
+    {
+        $this->ensureAffiliate($affiliate);
+        $languages = config('site.enabled_languages', ['en']);
+        $data = $request->validate(collect($languages)->mapWithKeys(fn ($lang) => [
+            "notes.{$lang}" => ['nullable', 'string', 'max:'.\App\Support\BookingNotes::MAX_LENGTH],
+        ])->all(), ['notes.*.max' => 'Booking Notes can be up to '.number_format(\App\Support\BookingNotes::MAX_LENGTH).' characters.']);
+
+        $before = $affiliate->affiliate_booking_notes;
+        $notes = (array) ($before ?? []);
+        foreach ($languages as $lang) {
+            $text = trim((string) ($data['notes'][$lang] ?? ''));
+            if ($text === '') {
+                unset($notes[$lang]);
+            } else {
+                $notes[$lang] = $text;
+            }
+        }
+        $affiliate->forceFill(['affiliate_booking_notes' => $notes ?: null])->save();
+        Audit::record($request->user(), 'affiliate.booking_notes_update', $affiliate, null, ['before' => $before, 'after' => $affiliate->affiliate_booking_notes]);
+
+        return back()->with('status', $notes ? 'Booking Notes saved. They show under Check availability on '.$affiliate->name.'\'s property pages.' : 'Booking Notes removed.');
+    }
+
     /** Logo for the banner above Check availability: add, replace, change its description or remove. Audited. */
     public function updateLogo(Request $request, User $affiliate): RedirectResponse
     {

@@ -56,6 +56,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'last_login_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'closure_requested_at' => 'datetime',
+            'affiliate_booking_notes' => 'array',   // per language, Markdown (21 Nov 2026)
             'marketing_consent' => 'boolean',
             'password' => 'hashed',
         ];

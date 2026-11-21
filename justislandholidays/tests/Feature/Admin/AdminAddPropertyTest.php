@@ -81,7 +81,8 @@ class AdminAddPropertyTest extends TestCase
         $this->assertSame('Villa Blanca', $listing->title('en'));
         $this->assertEqualsWithDelta(39.9112, (float) $listing->private->lat, 0.0001);
         $this->assertSame('olive@example.com', $listing->private->contact_email, 'Enquiries go to the owner by default.');
-        $this->assertNotEquals((float) $listing->private->lat, (float) $listing->display_lat, 'The public point is moved.');
+        // Moved in a random direction, so one of the two numbers may stay the same (due east or west).
+        $this->assertNotEquals([(float) $listing->private->lat, (float) $listing->private->lng], [(float) $listing->display_lat, (float) $listing->display_lng], 'The public point is moved.');
         $this->assertSame(150000, $listing->min_price_week_cents);
         $this->assertDatabaseHas('audit_log', ['action' => 'listing.admin_create']);
         $this->assertDatabaseHas('audit_log', ['action' => 'licence.verify']);
